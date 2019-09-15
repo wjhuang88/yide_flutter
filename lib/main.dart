@@ -22,7 +22,14 @@ class MyWidget extends StatelessWidget {
       children: <Widget>[
         Expanded(
           flex: 4,
-          child: Container(color: Colors.black,),
+          child: Container(
+            child: ListView(
+              children: <Widget>[
+                Text("data", style: TextStyle(color: Colors.white))
+              ],
+            ),
+            color: Colors.black,
+          ),
         ),
         Expanded(
           flex: 6,
