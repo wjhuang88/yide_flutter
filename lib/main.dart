@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'screens/splash_screen/splash_screen.dart';
+import 'components/side_menu/side_menu.dart';
+import 'screens/list_screen/list_screen.dart';
 
 void main() => runApp(MyApp());
 
@@ -7,34 +10,31 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Hello world',
-      home: Scaffold(
-        body: MyWidget(),
+      title: 'Yide',
+      initialRoute: '/',
+      routes: {
+        '/': (context) => SplashScreen(),
+        'test': (context) => ListScreen()
+      },
+      theme: ThemeData(
+        primaryColor: Colors.white,
+        scaffoldBackgroundColor: Color(0xfff6f7f7)
       ),
     );
   }
 }
 
-class MyWidget extends StatelessWidget {
+class MainWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    
     return Row(
       children: <Widget>[
+        SideMenu(),
         Expanded(
-          flex: 4,
-          child: Container(
-            child: ListView(
-              children: <Widget>[
-                Text("data", style: TextStyle(color: Colors.white))
-              ],
-            ),
-            color: Colors.black,
-          ),
-        ),
-        Expanded(
-          flex: 6,
           child: Container(color: Colors.white,)
-        )
+        ),
+        //SideTimeline(width: 140, color: Color(0xff262626),)
       ],
     );
   }
