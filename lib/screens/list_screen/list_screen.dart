@@ -1,266 +1,148 @@
 import 'package:flutter/material.dart';
+
+import 'list_today.dart';
+import 'menu_block.dart';
+import 'edit_page.dart';
 import '../../weather_icons.dart';
 
 class ListScreen extends StatelessWidget {
 
-  buildScaffold() {
-    return Scaffold(
-      appBar: PreferredSize(
-        child: AppBar(
-          elevation: 0.0,
-          automaticallyImplyLeading: false,
-          leading: _LeadingButton(),
-          title: _TitleView(),
-          flexibleSpace: FlexibleSpaceBar(
-            title: _SearchBar(),
-          ),
-        ),
-        preferredSize: Size.fromHeight(120),
-      ),
-      body: _ListBody(),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      child: buildScaffold(),
-      behavior: HitTestBehavior.translucent,
-      onTap: () {
-        FocusScope.of(context).requestFocus(FocusNode());
-      },
-    );
+    return _buildScaffold(context);
   }
+}
+
+Widget _buildScaffold(BuildContext context) {
+  
+  return Scaffold(
+    appBar: PreferredSize(
+      child: AppBar(
+        elevation: 0.0,
+        automaticallyImplyLeading: false,
+        leading: _LeadingButton(),
+        actions: <Widget>[
+          _SearchButton(),
+        ],
+        title: _buildTitleView(),
+      ),
+      preferredSize: Size.fromHeight(50),
+    ),
+    body: _buildListBody(context),
+  );
 }
 
 class _LeadingButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    
     return IconButton(
       icon: Icon(
-        Icons.menu
+        Icons.menu,
+        color: Color(0xff161a37),
       ), 
+      onPressed: () => Scaffold.of(context).openDrawer(),
+    );
+  }
+}
+
+class _SearchButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: Icon(Icons.search),
+      color: Color(0xff161a37),
       onPressed: () {},
     );
   }
 
 }
 
-class _TitleView extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
+Widget _buildTitleView() {
     
-    return Row(
-      children: <Widget>[
-        Icon(
-          WeatherIcons.sun,
-          color: Color(0xffffc400),
-          size: 25,
-        ),
-        Container(
-          child: Text('周三', style: TextStyle(fontSize: 16)),
-          margin: EdgeInsets.only(left: 10),
-        ),
-        Container(
-          child: Text('9月18日', style: TextStyle(fontSize: 16)),
-          margin: EdgeInsets.only(left: 10),
-        )
-      ],
-    );
-  }
-
+  return Row(
+    children: <Widget>[
+      Icon(
+        WeatherIcons.sun,
+        color: Color(0xffffc400),
+        size: 25,
+      ),
+      SizedBox(width: 10,),
+      Text('周三', style: TextStyle(fontSize: 16, color: Color(0xff161a37))),
+      SizedBox(width: 10,),
+      Text('9月18日', style: TextStyle(fontSize: 16, color: Color(0xff161a37))),
+      SizedBox(width: 20,),
+      // Container(
+      //   height: 30,
+      //   width: 30,
+      //   decoration: BoxDecoration(
+      //     shape: BoxShape.circle,
+      //     border: Border.all(width: 1, color: Color(0xff262626)),
+      //     image: DecorationImage(
+      //       image: AssetImage('assets/images/user.jpg'),
+      //     ),
+      //   ),
+      // ),
+    ],
+  );
 }
 
-class _SearchBar extends StatelessWidget {
+Widget _buildListBody(BuildContext context) {
 
-  buildTextField() {
-    return TextField(
-      decoration: InputDecoration(
-        icon: Icon(Icons.search, color: Color(0xffe5e5e5),size: 30,),
-        hintText: '搜索',
-        hintStyle: TextStyle(color: Color(0xffe5e5e5)),
-        border: InputBorder.none,
-      ),
-      keyboardType: TextInputType.text,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    
-    return Container(
-      child: buildTextField(),
-      margin: EdgeInsets.only(left: 20, right: 20),
-      padding: EdgeInsets.only(left: 15, right: 15),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.all(Radius.circular(30)),
-        color: Color(0xfff6f7f7f7)
-      ),
-    );
-  }
-
-}
-
-class _ListBody extends StatelessWidget {
-
-  static const headStyle = TextStyle(
+  var headStyle = TextStyle(
     fontSize: 20,
     fontWeight: FontWeight.w700,
     color: Color(0xff0a2453)
   );
-
-  @override
-  Widget build(BuildContext context) {
-    
-    return Container(
-      padding: EdgeInsets.only(top: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Container(
-            child: Text('筛选', style: headStyle),
-            padding: EdgeInsets.only(left: 20),
-          ),
-          constructMenuRow(),
-          Container(
-            child: Text('今日', style: headStyle),
-            padding: EdgeInsets.only(left: 20),
-          ),
-          constructList(),
-          buildBottomBar()
-        ],
-      ),
-    );
-  }
-
-  constructMenuRow() {
-    return Container(
-      height: 150,
-      padding: EdgeInsets.only(top: 20, bottom: 20),
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: <Widget>[
-          buildMenuBlock('收集箱', Icons.inbox, first: true),
-          buildMenuBlock('今日', Icons.star, actived: true),
-          buildMenuBlock('计划', Icons.calendar_today),
-          buildMenuBlock('随时', Icons.folder_open),
-          buildMenuBlock('某天', Icons.archive, last: true),
-        ],
-      ),
-    );
-  }
-
-  buildMenuBlock(String title, IconData iconData, {
-    bool actived = false,
-    bool first = false,
-    bool last = false
-  }) {
-
-    var marginLeft = first ? 20.0 : 10.0;
-    var marginRight = last ? 20.0 : 0.0;
-
-    Color backgroundColor, textColor;
-    if (actived) {
-      backgroundColor = const Color(0xffffc400);
-      textColor = Colors.white;
-    } else {
-      backgroundColor = Colors.white;
-      textColor = const Color(0xff0a2453);
-    }
-
-    return Container(
-      width: 160,
-      margin: EdgeInsets.only(left: marginLeft, right: marginRight),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.all(Radius.circular(10))
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Container(
-            child: Icon(iconData, color: textColor, size: 30,),
-            margin: EdgeInsets.only(top: 20, left: 20),
-          ),
-          Container(
-            child: Text(title, style: TextStyle(color: textColor, fontSize: 18, fontWeight: FontWeight.w700)),
-            margin: EdgeInsets.only(top: 15, left: 20),
-          )
-        ],
-      ),
-    );
-  }
-
-  constructList() {
-
-    var list = <Widget>[];
-
-    for (var i = 0; i < 5; i ++) {
-      list.add(
-        Container(
-          margin: EdgeInsets.only(top: 10, left: 20, right: 20),
-          padding: EdgeInsets.all(15),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.all(Radius.circular(10))
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Container(
-                child: Text(
-                  '我要做一件事，我要做一件事我要做一件事，我要做一件事我要做一件事。', 
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Color(0xff0a2453)
-                  ),
-                  softWrap: true,
-                ),
-              ),
-              Container(
-                margin: EdgeInsets.only(top: 15),
-                child: Row(
-                  children: <Widget>[
-                    Icon(Icons.alarm, color: Colors.grey[400], size: 18,),
-                    Container(
-                      margin: EdgeInsets.only(left: 5),
-                      child: Text(
-                        '2019/10/1',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[400]
-                        ),
-                      ),
-                    )
-                  ],
-                ),
-              )
-            ],
-          ),
-        )
-      );
-    }
-
-    return Expanded(
-      child: Container(
-        padding: EdgeInsets.only(top: 10),
-        child: ListView(
-          children: list,
-        ),
-      )
-    );
-  }
-
-  buildBottomBar() {
-    return Stack(
+  
+  return Container(
+    padding: EdgeInsets.only(top: 20),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Container(
-          color: Color(0x55000000),
-          height: 100,
+          child: Text('筛选', style: headStyle),
+          padding: EdgeInsets.only(left: 20),
+        ),
+        _constructMenuRow(),
+        Container(
+          child: Text('今日', style: headStyle),
+          padding: EdgeInsets.only(left: 20),
+        ),
+        Expanded(
+          child: Container(
+            padding: EdgeInsets.only(top: 10),
+            child: ListToday(),
+          )
+        ),
+        Container(
+          child: InkResponse(
+            child: Hero(
+              child: EditPage(),
+              tag: 'bottom_bar',
+            ),
+            onTap: () {
+              Navigator.pushNamed(context, 'add');
+            },
+          ),
         )
       ],
-    );
-  }
+    ),
+  );
+}
 
+Widget _constructMenuRow() {
+  return Container(
+    height: 130,
+    padding: EdgeInsets.only(top: 20, bottom: 20),
+    child: ListView(
+      scrollDirection: Axis.horizontal,
+      children: <Widget>[
+        MenuBlock(title: '收集箱', iconData: Icons.inbox, first: true),
+        MenuBlock(title: '今日', iconData: Icons.star, actived: true),
+        MenuBlock(title: '计划', iconData: Icons.assignment),
+        MenuBlock(title: '随时', iconData: Icons.widgets),
+        MenuBlock(title: '某天', iconData: Icons.archive, last: true),
+      ],
+    ),
+  );
 }
