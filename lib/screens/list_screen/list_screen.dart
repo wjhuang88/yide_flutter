@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'list_today.dart';
 import 'menu_block.dart';
-import 'edit_page.dart';
+import '../../components/drawer.dart';
 import '../../weather_icons.dart';
 
 class ListScreen extends StatelessWidget {
@@ -29,6 +29,14 @@ Widget _buildScaffold(BuildContext context) {
       preferredSize: Size.fromHeight(50),
     ),
     body: _buildListBody(context),
+    drawer: ListDrawer(),
+    floatingActionButton: FloatingActionButton(
+      child: Icon(Icons.add),
+      backgroundColor: Color(0xff0a2463),
+      onPressed: () {
+        Navigator.pushNamed(context, 'add');
+      },
+    ),
   );
 }
 
@@ -100,7 +108,7 @@ Widget _buildListBody(BuildContext context) {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Container(
-          child: Text('筛选', style: headStyle),
+          child: Text('分类', style: headStyle),
           padding: EdgeInsets.only(left: 20),
         ),
         _constructMenuRow(),
@@ -114,17 +122,6 @@ Widget _buildListBody(BuildContext context) {
             child: ListToday(),
           )
         ),
-        Container(
-          child: InkResponse(
-            child: Hero(
-              child: EditPage(),
-              tag: 'bottom_bar',
-            ),
-            onTap: () {
-              Navigator.pushNamed(context, 'add');
-            },
-          ),
-        )
       ],
     ),
   );

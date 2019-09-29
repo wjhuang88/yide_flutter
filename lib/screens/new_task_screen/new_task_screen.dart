@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../list_screen/edit_page.dart';
+import 'edit_page.dart';
 
 class NewTaskScreen extends StatelessWidget {
 
@@ -19,26 +19,11 @@ class NewTaskScreen extends StatelessWidget {
           leading: _buildBackButton(context),
           actions: <Widget>[
             _buildComfirmButton(context),
-            SizedBox(width: 10,)
           ],
         ),
         preferredSize: Size.fromHeight(headerHeight),
       ),
-      body: Stack(
-        children: <Widget>[
-          Hero(
-            child: EditPage(isOpened: true,),
-            tag: 'bottom_bar',
-            flightShuttleBuilder: (context, anim, dir, from, to) => Container(
-              height: 40,
-              margin: EdgeInsets.fromLTRB(20, 30, 20, 30),
-              decoration: BoxDecoration(
-                  color: Color(0xfff6f7f7),
-                  borderRadius: BorderRadius.all(Radius.circular(20))),
-            ),
-          ),
-        ],
-      )
+      body: EditPage()
     );
   }
 
@@ -51,11 +36,10 @@ Widget _buildBackButton(BuildContext context) {
 }
 
 Widget _buildComfirmButton(BuildContext context) {
-  return IconButton(
-    icon: Icon(Icons.done),
-    color: Colors.white,
-    iconSize: 30,
-    tooltip: 'Done',
+  return FlatButton(
+    textColor: Color(0xffffc400),
+    child: Text('保存', style: TextStyle(fontSize: 18),),
+    shape: StadiumBorder(),
     onPressed: () {},
   );
 }

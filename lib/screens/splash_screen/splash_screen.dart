@@ -14,7 +14,7 @@ class SplashScreen extends StatelessWidget {
         ),
         preferredSize: Size.fromHeight(30),
       ),
-      body: InkResponse(
+      body: GestureDetector(
         onTap: () {
           Navigator.pushReplacementNamed(context, 'test');
         },

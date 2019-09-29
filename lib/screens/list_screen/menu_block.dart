@@ -55,7 +55,13 @@ class _MenuBlockState extends State<MenuBlock> {
       padding: EdgeInsets.fromLTRB(20, 15, 20, 0),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.all(Radius.circular(10))
+        borderRadius: BorderRadius.all(Radius.circular(10)),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: Color(0xffe5e5e5),
+            blurRadius: 10,
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
