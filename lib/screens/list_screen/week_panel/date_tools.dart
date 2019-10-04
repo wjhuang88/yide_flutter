@@ -34,3 +34,18 @@ String getWeekName(int week) {
   assert(value != null);
   return value;
 }
+
+class DayInfo {
+  DayInfo(this.weekday, this.day, {this.isSelected = false, this.dateTime});
+
+  DayInfo.fromDateTime(DateTime dateTime, {bool isSelected = false})
+    : weekday = dateTime.weekday, 
+      day = dateTime.day, 
+      isSelected = isSelected,
+      dateTime = dateTime;
+    
+  final int weekday;
+  final int day;
+  final DateTime dateTime;
+  bool isSelected = false;
+}

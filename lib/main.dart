@@ -15,6 +15,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Yide',
       initialRoute: '/',
+      debugShowCheckedModeBanner: false,
       onGenerateRoute: (RouteSettings settings) {
         final String name = settings.name;
         switch (name) {
