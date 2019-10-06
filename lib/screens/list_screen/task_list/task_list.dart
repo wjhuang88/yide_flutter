@@ -24,10 +24,12 @@ class TaskList extends StatelessWidget {
     return ListView.separated(
       itemCount: listData.length,
       itemBuilder: (context, index) {
-        return Task(data: listData[index],);
+        var data = listData[index];
+        assert(data.id != null);
+        return Task(key: ValueKey('task_list_item_${data.id}'), data: data,);
       },
       separatorBuilder: (context, index) => SizedBox(height: _taskListGap,),
-      padding: EdgeInsets.fromLTRB(_taskListLTPadding, _taskListGap, _taskListLTPadding, 0),
+      padding: EdgeInsets.fromLTRB(_taskListLTPadding, _taskListGap, _taskListLTPadding, _taskListGap * 3),
     );
   }
 }
@@ -118,7 +120,7 @@ TaskTag getTagData(TaskData taskData) {
     ),
   ];
 
-  var ran = Random();
+  var ran = Random(taskData.id.hashCode);
 
   // TODO: 改为读取动态数据
   return randomList[ran.nextInt(4)];

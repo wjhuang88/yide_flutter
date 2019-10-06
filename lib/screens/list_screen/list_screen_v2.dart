@@ -40,7 +40,7 @@ class _ListScreenV2State extends State<ListScreenV2> with SingleTickerProviderSt
   List<TaskData> taskListData = [];
   double _listOffset = 0.0;
   double _listMovedOffset = 0.0;
-  bool _isHeadHide = false;
+  bool _isHeadShow = true;
 
   AnimationController _controller;
   Animation<double> _animation;
@@ -59,7 +59,7 @@ class _ListScreenV2State extends State<ListScreenV2> with SingleTickerProviderSt
     _animation = Tween<double>(begin: 0.0, end: 1.0).animate(_controller);
     _animation.addListener((){
       setState(() {
-        if (_isHeadHide) {
+        if (_isHeadShow) {
           _listOffset = lerpDouble(_listMovedOffset, 0.0, _animation.value);
         } else {
           _listOffset = lerpDouble(_listMovedOffset, _listOffsetEdge, _animation.value);
@@ -79,6 +79,14 @@ class _ListScreenV2State extends State<ListScreenV2> with SingleTickerProviderSt
     return Scaffold(
       backgroundColor: _backgroundColor,
       appBar: _buildAppBar(title: _buildDatePan()),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: _backgroundColor,
+        child: Icon(Icons.add),
+        onPressed: () {
+          Navigator.pushNamed(context, 'add');
+        },
+      ),
       body: Stack(
         children: <Widget>[
           WeekPanel(
@@ -112,6 +120,19 @@ class _ListScreenV2State extends State<ListScreenV2> with SingleTickerProviderSt
               child: _buildListPage(),
             ),
           ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.green,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20)
+                )
+              ),
+              child: TextField(),
+            ),
+          )
         ],
       ),
     );
@@ -150,20 +171,24 @@ class _ListScreenV2State extends State<ListScreenV2> with SingleTickerProviderSt
   }
 
   Widget _buildListPage() {
+    double _scrollPixel;
     return Column(
       children: <Widget>[
-        SizedBox(height: 5,),
-        Container(
-          height: 4,
-          width: 50,
-          decoration: BoxDecoration(
-            color: Color(0xff999999),
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        SizedBox(height: 10,),
         GestureDetector(
-          child: Text('任务', style: _mainPanTitleStyle,),
+          behavior: HitTestBehavior.opaque,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Container(
+                height: 20,
+                child: Image(
+                  image: AssetImage('assets/images/horizontal-line.png'),
+                ),
+              ),
+              Text('任务', textAlign: TextAlign.center, style: _mainPanTitleStyle,),
+              SizedBox(height: 15,),
+            ],
+          ),
           onVerticalDragUpdate: (detail) {
             setState(() {
               _listMovedOffset = _listOffset = (_listOffset + detail.delta.dy).clamp(_listOffsetEdge, 0.0);
@@ -172,32 +197,38 @@ class _ListScreenV2State extends State<ListScreenV2> with SingleTickerProviderSt
           onVerticalDragEnd: (detail) {
             var v = detail.velocity.pixelsPerSecond.dy;
             if (v > 100) {
-              _isHeadHide = true;
+              _isHeadShow = true;
               _controller.forward(from: 0);
               return;
             } else if (v < -100) {
-              _isHeadHide = false;
+              _isHeadShow = false;
               _controller.forward(from: 0);
               return;
             }
             if (_listOffset > (- _calendarBoxHeight - _mainPanDefaultMarginTop) / 2) {
-              _isHeadHide = true;
+              _isHeadShow = true;
               _controller.forward(from: 0);
             } else {
-              _isHeadHide = false;
+              _isHeadShow = false;
               _controller.forward(from: 0);
             }
           },
         ),
-        SizedBox(height: 15,),
         Divider(height: 0,),
         Expanded(
           child: NotificationListener(
             child: TaskList(listData: taskListData,),
             onNotification: (ScrollNotification n) {
-              if (_isHeadHide) return true;
-              if (n.metrics.pixels < 0) {
-                _isHeadHide = true;
+              if (_isHeadShow) {
+                if (_scrollPixel != null && !n.metrics.outOfRange && n.metrics.pixels - _scrollPixel > 10) {
+                  _listMovedOffset = 0.0;
+                  _isHeadShow = false;
+                  _controller.forward(from: 0);
+                }
+                _scrollPixel = n.metrics.pixels;
+              } else if (n.metrics.pixels < 0) {
+                _listMovedOffset = _listOffsetEdge;
+                _isHeadShow = true;
                 _controller.forward(from: 0);
               }
               return true;
@@ -213,30 +244,37 @@ Future<List<TaskData>> _getTaskListData() async {
   // TODO: 请求远程数据
   return [
     TaskData(
+      id: '0',
       taskTime: DateTime.now(),
       content: '我要做点什么事情，要做一件事！看看,look look, English!'
     ),
     TaskData(
+      id: '1',
       taskTime: DateTime.now(),
       content: '我要做点什么事情，要做一件事！看看,look look, English!'
     ),
     TaskData(
+      id: '2',
       taskTime: DateTime.now(),
       content: '我要做点什么事情，要做一件事！看看,look look, English!'
     ),
     TaskData(
+      id: '3',
       taskTime: DateTime.now(),
       content: '我要做点什么事情，要做一件事！看看,look look, English!'
     ),
     TaskData(
+      id: '4',
       taskTime: DateTime.now(),
       content: '我要做点什么事情，要做一件事！看看,look look, English!'
     ),
     TaskData(
+      id: '5',
       taskTime: DateTime.now(),
       content: '我要做点什么事情，要做一件事！看看,look look, English!'
     ),
     TaskData(
+      id: '6',
       taskTime: DateTime.now(),
       content: '我要做点什么事情，要做一件事！看看,look look, English!'
     ),
