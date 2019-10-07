@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+@deprecated
 class MenuBlock extends StatefulWidget {
   MenuBlock({
     @required this.title,

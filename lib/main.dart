@@ -4,7 +4,7 @@ import 'components/side_menu/side_menu.dart';
 import 'screens/splash_screen/splash_screen.dart';
 import 'screens/new_task_screen/new_task_screen.dart';
 
-import 'screens/list_screen/list_screen_v2.dart';
+import 'screens/list_screen/list_screen.dart';
 
 void main() => runApp(MyApp());
 
@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
         switch (name) {
           case 'test':
             return PageRouteBuilder(
-              pageBuilder: (context, anim1, anim2) => ListScreenV2(),
+              pageBuilder: (context, anim1, anim2) => ListScreen(),
               transitionDuration: Duration(milliseconds: 500),
               transitionsBuilder: (context, anim1, anim2, child) {
                 return FadeTransition(

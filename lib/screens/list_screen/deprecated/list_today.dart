@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
+@deprecated
 class ListToday extends StatefulWidget {
   @override
   _ListToday createState() => _ListToday();
