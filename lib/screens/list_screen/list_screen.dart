@@ -8,7 +8,7 @@ import 'task_list/task_list.dart';
 import 'task_list/task_list_data.dart';
 import 'input_layer.dart';
 
-const _appBarHeight = 70.0;
+const _appTitleHeight = 50.0;
 const _backgroundColor = const Color(0xff0a3f74);
 const _brightness = Brightness.dark;
 const _pageMargin = 20.0;
@@ -26,7 +26,7 @@ const _calendarBoxGap = 20.0;
 const _calendarTextGap = 6.0;
 
 const _mainPanColor = Colors.white;
-const _mainPanDefaultMarginTop = 45;
+const _mainPanDefaultMarginTop = 20;
 const _mainPanRadius = 45.0;
 const _mainPanTitleStyle = const TextStyle(color: const Color(0xff020e2c), fontSize: 20, letterSpacing: 5, fontWeight: FontWeight.w600);
 
@@ -35,37 +35,70 @@ class ListScreen extends StatefulWidget {
   _ListScreenState createState() => _ListScreenState();
 }
 
-class _ListScreenState extends State<ListScreen> with SingleTickerProviderStateMixin {
+class _ListScreenState extends State<ListScreen> with TickerProviderStateMixin {
 
   DateTime selectedDateTime = DateTime.now();
   List<TaskData> taskListData = [];
-  double _listOffset = 0.0;
-  double _listMovedOffset = 0.0;
+  double _listOffset = _appTitleHeight;
+  double _listMovedOffset = _appTitleHeight;
   bool _isHeadShow = true;
 
   AnimationController _controller;
   Animation<double> _animation;
 
-  final _listOffsetEdge = - _calendarBoxHeight - _mainPanDefaultMarginTop + _calendarBoxHeight * 0.2;
+  double _inputBackgroundOpacity = 0.0;
+  bool _inputIsShow = false;
+  double _inputHeightFctor = 0.0;
+  double _inputPanelOpacity = 0.0;
+  void Function() _inputOnCancel;
+  FocusNode _inputFocusNode = FocusNode();
+
+  AnimationController _inputLayerController;
+  Animation<double> _inputLayerAnimation;
+
+  final _listOffsetEdge = - _appTitleHeight;
 
   @override
   void initState() {
     super.initState();
+    // 获取初始数据
     _getTaskListData().then((list){
       setState(() {
         taskListData = list;
       });
     });
+
+    // 列表拖拽动画初始化
     _controller = AnimationController(duration: Duration(milliseconds: 200), vsync: this);
     _animation = Tween<double>(begin: 0.0, end: 1.0).animate(_controller);
+    // 列表拖拽动画参数监听
     _animation.addListener((){
       setState(() {
         if (_isHeadShow) {
-          _listOffset = lerpDouble(_listMovedOffset, 0.0, _animation.value);
+          _listOffset = lerpDouble(_listMovedOffset, _appTitleHeight, _animation.value);
         } else {
           _listOffset = lerpDouble(_listMovedOffset, _listOffsetEdge, _animation.value);
         }
       });
+    });
+
+    // 输入面板动画初始化
+    _inputLayerController = AnimationController(duration: Duration(milliseconds: 150), vsync: this);
+    _inputLayerAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(_inputLayerController);
+    // 输入面板动画参数监听
+    _inputLayerAnimation.addListener((){
+      setState(() {
+        var delta = _inputLayerAnimation.value;
+        _inputBackgroundOpacity = lerpDouble(0.0, 0.5, delta);
+        _inputPanelOpacity = delta;
+        _inputHeightFctor = delta;
+      });
+    });
+    _inputLayerAnimation.addStatusListener((status) {
+      if (status == AnimationStatus.dismissed) {
+        _inputIsShow = false;
+        _inputOnCancel = null;
+      }
     });
   }
 
@@ -79,83 +112,119 @@ class _ListScreenState extends State<ListScreen> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _backgroundColor,
-      appBar: _buildAppBar(title: _buildDatePan()),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: _backgroundColor,
-        child: Icon(Icons.add),
-        onPressed: () {
-          Navigator.pushNamed(context, 'add');
-        },
+      floatingActionButton: Offstage(
+        offstage: _inputIsShow,
+        child: FloatingActionButton(
+          backgroundColor: _backgroundColor,
+          child: Icon(Icons.add),
+          // 添加内容按钮点击事件
+          onPressed: () {
+            _inputIsShow = true;
+            // 绑定取消输入的动作
+            _inputOnCancel = () {
+              _inputLayerController.reverse(from: 1);
+            };
+            _inputLayerController.forward(from: 0);
+            FocusScope.of(context).requestFocus(_inputFocusNode);
+          },
+        ),
       ),
       body: Stack(
         children: <Widget>[
-          WeekPanel(
-            calendarColor: _calendarColor,
-            calendarStyle: _calendarStyle,
-            calendarBoxHeight: _calendarBoxHeight,
-            calendarBoxWidth: _calendarBoxWidth,
-            calendarBoxRadius: _calendarBoxRadius,
-            calendarBoxGap: _calendarBoxGap,
-            calendarTextGap: _calendarTextGap,
-            pageMargin: _pageMargin,
-            baseTime: selectedDateTime,
-            onChange: (date) {
-              setState(() {
-                selectedDateTime = date;
-              });
-            },
+          Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: <Widget>[
+              _buildTitleBar(),
+              WeekPanel(
+                calendarColor: _calendarColor,
+                calendarStyle: _calendarStyle,
+                calendarBoxHeight: _calendarBoxHeight,
+                calendarBoxWidth: _calendarBoxWidth,
+                calendarBoxRadius: _calendarBoxRadius,
+                calendarBoxGap: _calendarBoxGap,
+                calendarTextGap: _calendarTextGap,
+                pageMargin: _pageMargin,
+                baseTime: selectedDateTime,
+                onChange: (date) {
+                  setState(() {
+                    selectedDateTime = date;
+                  });
+                },
+              ),
+            ],
           ),
           Align(
             alignment: Alignment.bottomCenter,
-            child: Container(
-              width: double.infinity,
-              margin: EdgeInsets.only(top: _calendarBoxHeight + _mainPanDefaultMarginTop + _listOffset),
-              decoration: BoxDecoration(
-                color: _mainPanColor,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(_mainPanRadius),
-                  topRight: Radius.circular(_mainPanRadius),
-                )
+            child: SafeArea(
+              bottom: false,
+              child: Container(
+                width: double.infinity,
+                margin: EdgeInsets.only(top: _appTitleHeight + _calendarBoxHeight + _mainPanDefaultMarginTop + _listOffset),
+                decoration: BoxDecoration(
+                  color: _mainPanColor,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(_mainPanRadius),
+                    topRight: Radius.circular(_mainPanRadius),
+                  ),
+                  boxShadow: <BoxShadow>[
+                    BoxShadow(
+                      offset: const Offset(0.0, 1.0),
+                      blurRadius: 5.0,
+                      spreadRadius: 1.0,
+                      color: Colors.grey[500],
+                    )
+                  ],
+                ),
+                child: _buildListPage(),
               ),
-              child: _buildListPage(),
             ),
           ),
-          InputLayer()
+          InputLayer(
+            panelHeightFactor: _inputHeightFctor,
+            isShow: _inputIsShow,
+            backgroundOpacity: _inputBackgroundOpacity,
+            onCancel: _inputOnCancel,
+            focusNode: _inputFocusNode,
+            panelOpacity: _inputPanelOpacity,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildAppBar({Widget title}) {
-    return PreferredSize(
-      preferredSize: Size.fromHeight(_appBarHeight),
-      child: AppBar(
-        backgroundColor: _backgroundColor,
-        brightness: _brightness,
-        elevation: 0.0,
-        automaticallyImplyLeading: false,
-        actions: <Widget>[
-          IconButton(
-            icon: Icon(Icons.more_horiz, color: _iconColor,),
-            onPressed: () {},
-          )
-        ],
-        title: title,
-        titleSpacing: 0,
+  Widget _buildTitleBar({Widget title}) {
+    return SafeArea(
+      bottom: false,
+      child: Container(
+        margin: EdgeInsets.fromLTRB(_pageMargin, 0.0, 0.0, _pageMargin),
+        height: _appTitleHeight,
+        decoration: BoxDecoration(
+          color: _backgroundColor,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: <Widget>[
+                Text(getMonthName(selectedDateTime.month), style: _selectMonthStyle),
+                SizedBox(width: 8,),
+                Text(selectedDateTime.year.toString() + ' 年', style: _selectYearStyle,),
+              ],
+            ),
+            Material(
+              color: Colors.transparent,
+              child: IconButton(
+                icon: Icon(Icons.more_horiz, color: _iconColor,),
+                padding: EdgeInsets.zero,
+                onPressed: () {},
+              ),
+            ),
+          ],
+        ),
       ),
-    );
-  }
-
-  Widget _buildDatePan() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: <Widget>[
-        SizedBox(width: _pageMargin,),
-        Text(getMonthName(selectedDateTime.month), style: _selectMonthStyle),
-        SizedBox(width: 8,),
-        Text(selectedDateTime.year.toString() + ' 年', style: _selectYearStyle,)
-      ],
     );
   }
 
@@ -180,7 +249,7 @@ class _ListScreenState extends State<ListScreen> with SingleTickerProviderStateM
           ),
           onVerticalDragUpdate: (detail) {
             setState(() {
-              _listMovedOffset = _listOffset = (_listOffset + detail.delta.dy).clamp(_listOffsetEdge, 0.0);
+              _listMovedOffset = _listOffset = (_listOffset + detail.delta.dy).clamp(_listOffsetEdge, _appTitleHeight);
             });
           },
           onVerticalDragEnd: (detail) {
@@ -194,7 +263,7 @@ class _ListScreenState extends State<ListScreen> with SingleTickerProviderStateM
               _controller.forward(from: 0);
               return;
             }
-            if (_listOffset > (- _calendarBoxHeight - _mainPanDefaultMarginTop) / 2) {
+            if (_listOffset > _appTitleHeight + (- _calendarBoxHeight - _mainPanDefaultMarginTop) / 2) {
               _isHeadShow = true;
               _controller.forward(from: 0);
             } else {
@@ -210,7 +279,7 @@ class _ListScreenState extends State<ListScreen> with SingleTickerProviderStateM
             onNotification: (ScrollNotification n) {
               if (_isHeadShow) {
                 if (_scrollPixel != null && !n.metrics.outOfRange && n.metrics.pixels - _scrollPixel > 10) {
-                  _listMovedOffset = 0.0;
+                  _listMovedOffset = _appTitleHeight;
                   _isHeadShow = false;
                   _controller.forward(from: 0);
                 }
