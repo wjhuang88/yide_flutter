@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'components/side_menu/side_menu.dart';
 import 'screens/splash_screen/splash_screen.dart';
-import 'screens/new_task_screen/new_task_screen.dart';
-
 import 'screens/list_screen/list_screen.dart';
 
 void main() => runApp(MyApp());
@@ -19,7 +16,7 @@ class MyApp extends StatelessWidget {
       onGenerateRoute: (RouteSettings settings) {
         final String name = settings.name;
         switch (name) {
-          case 'test':
+          case 'main':
             return PageRouteBuilder(
               pageBuilder: (context, anim1, anim2) => ListScreen(),
               transitionDuration: Duration(milliseconds: 500),
@@ -33,12 +30,6 @@ class MyApp extends StatelessWidget {
                   child: child,
                 );
               },
-            );
-            break;
-          case 'add':
-            return MaterialPageRoute(
-              builder: (context) => NewTaskScreen(),
-              fullscreenDialog: true,
             );
             break;
           default:
@@ -59,20 +50,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-class MainWidget extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    
-    return Row(
-      children: <Widget>[
-        SideMenu(),
-        Expanded(
-          child: Container(color: Colors.white,)
-        ),
-        //SideTimeline(width: 140, color: Color(0xff262626),)
-      ],
-    );
-  }
-}
-

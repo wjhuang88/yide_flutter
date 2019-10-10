@@ -48,4 +48,9 @@ class DayInfo {
   final int day;
   final DateTime dateTime;
   bool isSelected = false;
+
+  @override
+  String toString() {
+    return '\{weekday: $weekday, monthday: $day, real: $dateTime, isSelected: $isSelected\}';
+  }
 }

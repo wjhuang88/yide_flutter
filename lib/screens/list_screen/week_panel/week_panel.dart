@@ -6,8 +6,13 @@ import 'package:flutter/rendering.dart';
 
 import 'date_tools.dart';
 
+const double _sizeFactor = 1.3;
+const int _indexOffset = 2;
+const double _offsetFactor = 0.7;
+const int _animationSpeed = 300;
+
 class WeekPanel extends StatefulWidget {
-  WeekPanel({
+  const WeekPanel({
     Key key,
     @required this.calendarColor,
     @required this.calendarStyle,
@@ -41,7 +46,7 @@ class WeekPanel extends StatefulWidget {
 }
 
 class _WeekPanelState extends State<WeekPanel> with TickerProviderStateMixin {
-  _WeekPanelState(this._selectedTime, int titleCount) : _selectedIndex = titleCount ~/ 2;
+  _WeekPanelState(this._selectedTime, int titleCount) : _selectedIndex = titleCount ~/ 2 - _indexOffset;
 
   DateTime _selectedTime;
   SplayTreeMap<int, DayInfo> _weekData;
@@ -67,8 +72,8 @@ class _WeekPanelState extends State<WeekPanel> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _weekData = _getDayInfoList(_selectedTime);
-    _listOffset = (widget.calendarBoxWidth + widget.calendarBoxGap) * (widget.tileCount ~/ 2) - widget.calendarBoxWidth * 0.6;
-    _weekController = AnimationController(duration: Duration(milliseconds: 500), vsync: this);
+    _listOffset = (widget.calendarBoxWidth + widget.calendarBoxGap) * (_selectedIndex) - widget.calendarBoxWidth * _offsetFactor;
+    _weekController = AnimationController(duration: Duration(milliseconds: _animationSpeed), vsync: this);
     _listAnim = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(
       parent: _weekController,
       curve: Curves.bounceInOut
@@ -93,7 +98,7 @@ class _WeekPanelState extends State<WeekPanel> with TickerProviderStateMixin {
     var first = _weekData.firstKey();
     var last = _weekData.lastKey();
     for (var i = first; i <= last; i++) {
-      var tileCtrl = AnimationController(duration: Duration(milliseconds: 500), vsync: this);
+      var tileCtrl = AnimationController(duration: Duration(milliseconds: _animationSpeed), vsync: this);
       var tileAnim = Tween<double>(begin: 0, end: 1).animate(tileCtrl);
       if (i == _selectedIndex) {
         tileCtrl.value = 1;
@@ -102,7 +107,7 @@ class _WeekPanelState extends State<WeekPanel> with TickerProviderStateMixin {
       _tileAnims[i] = tileAnim;
       tileAnim.addListener((){
         setState(() {
-          
+          // 触发渲染
         });
       });
     }
@@ -111,13 +116,19 @@ class _WeekPanelState extends State<WeekPanel> with TickerProviderStateMixin {
   @override
   void dispose() {
     _weekController.dispose();
+    _tileKeyList.clear();
+    _weekData.clear();
+
+    _tileControllers.forEach((i, e) => e.dispose());
+    _tileControllers.clear();
+    _tileAnims.clear();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: widget.calendarBoxHeight * 1.2,
+      height: widget.calendarBoxHeight * _sizeFactor,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onHorizontalDragDown: (detail) {
@@ -146,9 +157,9 @@ class _WeekPanelState extends State<WeekPanel> with TickerProviderStateMixin {
   }
 
   void _doListMove(double dragDelta) {
-    if (dragDelta > 0) {
+    if (dragDelta > 10) {
       _goPrevTile();
-    } else if (dragDelta < 0) {
+    } else if (dragDelta < -10) {
       _goNextTile();
     }
     _weekController.forward();
@@ -156,14 +167,15 @@ class _WeekPanelState extends State<WeekPanel> with TickerProviderStateMixin {
 
   void _goNextTile() {
     final lastkey = _weekData.lastKey();
+    final firstkey = _weekData.firstKey();
     final nextDate = _weekData[lastkey].dateTime.add(Duration(days: 1));
-    final tileCtrl = AnimationController(duration: Duration(milliseconds: 500), vsync: this);
-    final tileAnim = Tween<double>(begin: 0, end: 1).animate(tileCtrl);
     setState(() {
       _weekData[lastkey + 1] = DayInfo.fromDateTime(nextDate);
-      _tileControllers[lastkey + 1] = tileCtrl;
-      _tileAnims[lastkey + 1] = tileAnim;
-      _weekData.remove(_weekData.firstKey());
+      _tileControllers[lastkey + 1] = _tileControllers[firstkey];
+      _tileControllers.remove(firstkey);
+      _tileAnims[lastkey + 1] = _tileAnims[firstkey];
+      _tileAnims.remove(firstkey);
+      _weekData.remove(firstkey);
       _listOffset -= widget.calendarBoxWidth + widget.calendarBoxGap;
     });
     _listOffsetDeltaNext = _listOffsetDelta + widget.calendarBoxWidth + widget.calendarBoxGap;
@@ -174,15 +186,16 @@ class _WeekPanelState extends State<WeekPanel> with TickerProviderStateMixin {
 
   void _goPrevTile() {
     final firstkey = _weekData.firstKey();
+    final lastkey = _weekData.lastKey();
     final prevDate = _weekData[firstkey].dateTime.subtract(Duration(days: 1));
-    final tileCtrl = AnimationController(duration: Duration(milliseconds: 500), vsync: this);
-    final tileAnim = Tween<double>(begin: 0, end: 1).animate(tileCtrl);
     setState(() {
       _weekData[firstkey - 1] = DayInfo.fromDateTime(prevDate);
-      _tileControllers[firstkey - 1] = tileCtrl;
-      _tileAnims[firstkey - 1] = tileAnim;
+      _tileControllers[firstkey - 1] = _tileControllers[lastkey];
+      _tileControllers.remove(lastkey);
+      _tileAnims[firstkey - 1] = _tileAnims[lastkey];
+      _tileAnims.remove(lastkey);
+      _weekData.remove(lastkey);
       _listOffset += widget.calendarBoxWidth + widget.calendarBoxGap;
-      _weekData.remove(_weekData.lastKey());
     });
     _listOffsetDeltaNext = _listOffsetDelta - widget.calendarBoxWidth - widget.calendarBoxGap;
     _tileControllers[_selectedIndex].reverse(from: 1);
@@ -223,7 +236,7 @@ class _WeekPanelState extends State<WeekPanel> with TickerProviderStateMixin {
     var list = SplayTreeMap<int, DayInfo>();
     var range = widget.tileCount ~/ 2;
     var mapIndex = 0;
-    for (var i = - range; i <= range; i++) {
+    for (var i = - range + _indexOffset; i <= range + _indexOffset; i++) {
       if (i < 0 ) {
         list[mapIndex] = DayInfo.fromDateTime(baseTime.subtract(Duration(days: -i)));
       } else if (i == 0) {
@@ -256,7 +269,7 @@ class _WeekPanTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var sizeMultiple = lerpDouble(1.0, 1.2, emphasize);
+    var sizeMultiple = lerpDouble(1.0, _sizeFactor, emphasize);
     var opacityLerp = lerpDouble(0.3, 1.0, emphasize);
     return Align(
       key: ValueKey('weekday_panel_key_${data.weekday}_${data.day}'),

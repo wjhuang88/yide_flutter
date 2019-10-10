@@ -46,14 +46,23 @@ class Task extends StatelessWidget {
   Widget build(BuildContext context) {
     var timeFomatter = (DateTime time) {
       var hour = time.hour;
-      String apm;
+      String period;
+
+      String _addLeadingZeroIfNeeded(int value) {
+        if (value < 10)
+          return '0$value';
+        return value.toString();
+      }
+
       if (hour > 12) {
         hour = hour - 12;
-        apm = 'pm';
+        period = 'pm';
+      } else if (hour == 12) {
+        period = 'pm';
       } else {
-        apm = 'am';
+        period = 'am';
       }
-      return '$hour:${time.minute} $apm';
+      return '$hour:${_addLeadingZeroIfNeeded(time.minute)} $period';
     };
 
     var tagData = getTagData(data);
@@ -84,7 +93,7 @@ class Task extends StatelessWidget {
                   SizedBox(width: _taskContentPadding,),
                   tagData.icon,
                   SizedBox(width: _taskContentPadding,),
-                  Expanded(child: Text(data.content)),
+                  Expanded(child: Text(data.content, maxLines: 2, overflow: TextOverflow.ellipsis,)),
                   SizedBox(width: _taskContentPadding,),
                 ],
               ),

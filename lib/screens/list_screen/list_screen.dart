@@ -1,16 +1,15 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:yide_flutter/screens/list_screen/week_panel/week_panel.dart';
 
+import 'week_panel/week_panel.dart';
 import 'week_panel/date_tools.dart';
-import 'task_list/task_list.dart';
 import 'task_list/task_list_data.dart';
+import 'task_list/list_layer.dart';
 import 'input_layer.dart';
 
-const _appTitleHeight = 50.0;
+const _appTitleHeight = 45.0;
 const _backgroundColor = const Color(0xff0a3f74);
-const _brightness = Brightness.dark;
 const _pageMargin = 20.0;
 
 const _selectMonthStyle = const TextStyle(color: Colors.white, fontSize: 16);
@@ -18,17 +17,19 @@ const _selectYearStyle = const TextStyle(color: Colors.white, fontSize: 14);
 const _iconColor = Colors.white;
 
 const _calendarColor = Colors.white;
-const _calendarStyle = const TextStyle(color: const Color(0xff020e2c), fontSize: 16, fontWeight: FontWeight.w600);
-const _calendarBoxHeight = 70.0;
-const _calendarBoxWidth = 70.0;
+const _calendarStyle = const TextStyle(color: const Color(0xff020e2c), fontSize: 14, fontWeight: FontWeight.w600);
+const _calendarBoxHeight = 60.0;
+const _calendarBoxWidth = 60.0;
 const _calendarBoxRadius = 15.0;
-const _calendarBoxGap = 20.0;
-const _calendarTextGap = 6.0;
+const _calendarBoxGap = 16.0;
+const _calendarTextGap = 5.0;
 
 const _mainPanColor = Colors.white;
-const _mainPanDefaultMarginTop = 20;
+const _mainPanDefaultMarginTop = 50.0;
 const _mainPanRadius = 45.0;
-const _mainPanTitleStyle = const TextStyle(color: const Color(0xff020e2c), fontSize: 20, letterSpacing: 5, fontWeight: FontWeight.w600);
+const _mainPanTitleStyle = const TextStyle(color: const Color(0xff020e2c), fontSize: 16, letterSpacing: 5, fontWeight: FontWeight.w600);
+
+const _showMonthDetail = false;
 
 class ListScreen extends StatefulWidget {
   @override
@@ -38,189 +39,79 @@ class ListScreen extends StatefulWidget {
 class _ListScreenState extends State<ListScreen> with TickerProviderStateMixin {
 
   DateTime selectedDateTime = DateTime.now();
-  List<TaskData> taskListData = [];
-  double _listOffset = _appTitleHeight;
-  double _listMovedOffset = _appTitleHeight;
-  bool _isHeadShow = true;
 
-  AnimationController _controller;
-  Animation<double> _animation;
-
-  double _inputBackgroundOpacity = 0.0;
   bool _inputIsShow = false;
-  double _inputHeightFctor = 0.0;
-  double _inputPanelOpacity = 0.0;
-  void Function() _inputOnCancel;
-  FocusNode _inputFocusNode = FocusNode();
 
-  AnimationController _inputLayerController;
-  Animation<double> _inputLayerAnimation;
+  InputLayerController _inputLayerController = InputLayerController(
+    focusNode: FocusNode(),
+  );
 
-  final _listOffsetEdge = - _appTitleHeight;
+  ListLayerController _listLayerController = ListLayerController();
 
   @override
   void initState() {
     super.initState();
+
+    _inputLayerController.onCancel((){
+      setState(() {
+        _inputIsShow = false;
+      });
+    });
+
     // 获取初始数据
     _getTaskListData().then((list){
       setState(() {
-        taskListData = list;
+        _listLayerController.updateList(list);
       });
     });
-
-    // 列表拖拽动画初始化
-    _controller = AnimationController(duration: Duration(milliseconds: 200), vsync: this);
-    _animation = Tween<double>(begin: 0.0, end: 1.0).animate(_controller);
-    // 列表拖拽动画参数监听
-    _animation.addListener((){
-      setState(() {
-        if (_isHeadShow) {
-          _listOffset = lerpDouble(_listMovedOffset, _appTitleHeight, _animation.value);
-        } else {
-          _listOffset = lerpDouble(_listMovedOffset, _listOffsetEdge, _animation.value);
-        }
-      });
-    });
-
-    // 输入面板动画初始化
-    _inputLayerController = AnimationController(duration: Duration(milliseconds: 150), vsync: this);
-    _inputLayerAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(_inputLayerController);
-    // 输入面板动画参数监听
-    _inputLayerAnimation.addListener((){
-      setState(() {
-        var delta = _inputLayerAnimation.value;
-        _inputBackgroundOpacity = lerpDouble(0.0, 0.5, delta);
-        _inputPanelOpacity = delta;
-        _inputHeightFctor = delta;
-      });
-    });
-    _inputLayerAnimation.addStatusListener((status) {
-      if (status == AnimationStatus.dismissed) {
-        _inputIsShow = false;
-        _inputOnCancel = null;
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _backgroundColor,
+      backgroundColor: _mainPanColor,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: Offstage(
         offstage: _inputIsShow,
         child: FloatingActionButton(
           backgroundColor: _backgroundColor,
-          child: Icon(Icons.add),
+          child: const Icon(Icons.add),
           // 添加内容按钮点击事件
           onPressed: () {
             _inputIsShow = true;
-            // 绑定取消输入的动作
-            _inputOnCancel = () {
-              _inputLayerController.reverse(from: 1);
-            };
-            _inputLayerController.forward(from: 0);
-            FocusScope.of(context).requestFocus(_inputFocusNode);
+            _inputLayerController.open();
           },
         ),
       ),
-      body: Stack(
-        children: <Widget>[
-          Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: <Widget>[
-              _buildTitleBar(),
-              WeekPanel(
-                calendarColor: _calendarColor,
-                calendarStyle: _calendarStyle,
-                calendarBoxHeight: _calendarBoxHeight,
-                calendarBoxWidth: _calendarBoxWidth,
-                calendarBoxRadius: _calendarBoxRadius,
-                calendarBoxGap: _calendarBoxGap,
-                calendarTextGap: _calendarTextGap,
-                pageMargin: _pageMargin,
-                baseTime: selectedDateTime,
-                onChange: (date) {
-                  setState(() {
-                    selectedDateTime = date;
-                  });
-                },
-              ),
-            ],
-          ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: SafeArea(
-              bottom: false,
-              child: Container(
-                width: double.infinity,
-                margin: EdgeInsets.only(top: _appTitleHeight + _calendarBoxHeight + _mainPanDefaultMarginTop + _listOffset),
-                decoration: BoxDecoration(
-                  color: _mainPanColor,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(_mainPanRadius),
-                    topRight: Radius.circular(_mainPanRadius),
-                  ),
-                  boxShadow: <BoxShadow>[
-                    BoxShadow(
-                      offset: const Offset(0.0, 1.0),
-                      blurRadius: 5.0,
-                      spreadRadius: 1.0,
-                      color: Colors.grey[500],
-                    )
-                  ],
-                ),
-                child: _buildListPage(),
-              ),
-            ),
-          ),
-          InputLayer(
-            panelHeightFactor: _inputHeightFctor,
-            isShow: _inputIsShow,
-            backgroundOpacity: _inputBackgroundOpacity,
-            onCancel: _inputOnCancel,
-            focusNode: _inputFocusNode,
-            panelOpacity: _inputPanelOpacity,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTitleBar({Widget title}) {
-    return SafeArea(
-      bottom: false,
-      child: Container(
-        margin: EdgeInsets.fromLTRB(_pageMargin, 0.0, 0.0, _pageMargin),
-        height: _appTitleHeight,
-        decoration: BoxDecoration(
-          color: _backgroundColor,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
+      body: Container(
+        color: _backgroundColor,
+        // decoration: BoxDecoration(
+        //   image: DecorationImage(
+        //     image: AssetImage('assets/images/bg.jpg'),
+        //     fit: BoxFit.contain,
+        //     alignment: Alignment.topCenter
+        //   ),
+        // ),
+        child: Stack(
           children: <Widget>[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
+            Column(
+              mainAxisAlignment: MainAxisAlignment.start,
               children: <Widget>[
-                Text(getMonthName(selectedDateTime.month), style: _selectMonthStyle),
-                SizedBox(width: 8,),
-                Text(selectedDateTime.year.toString() + ' 年', style: _selectYearStyle,),
+                _buildTitleBar(),
+                _showMonthDetail ? _buildDatePanelDetail(1.0) : _buildDatePanelSimple(1.0),
               ],
             ),
-            Material(
-              color: Colors.transparent,
-              child: IconButton(
-                icon: Icon(Icons.more_horiz, color: _iconColor,),
-                padding: EdgeInsets.zero,
-                onPressed: () {},
-              ),
+            ListLayer(
+              panelColor: _mainPanColor,
+              panelRadius: _mainPanRadius,
+              panelTitleStyle: _mainPanTitleStyle,
+              topOffsetMin: _appTitleHeight,
+              topOffsetMax: _appTitleHeight + _calendarBoxHeight + _mainPanDefaultMarginTop,
+              taskListData: const [],
+              controller: _listLayerController,
+            ),
+            InputLayer(
+              controller: _inputLayerController,
             ),
           ],
         ),
@@ -228,72 +119,67 @@ class _ListScreenState extends State<ListScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildListPage() {
-    double _scrollPixel;
-    return Column(
-      children: <Widget>[
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+  Widget _buildDatePanelSimple(double opacity) {
+    return Opacity(
+      opacity: opacity,
+      child: WeekPanel(
+        calendarColor: _calendarColor,
+        calendarStyle: _calendarStyle,
+        calendarBoxHeight: _calendarBoxHeight,
+        calendarBoxWidth: _calendarBoxWidth,
+        calendarBoxRadius: _calendarBoxRadius,
+        calendarBoxGap: _calendarBoxGap,
+        calendarTextGap: _calendarTextGap,
+        pageMargin: _pageMargin,
+        baseTime: selectedDateTime,
+        onChange: (date) {
+          setState(() {
+            selectedDateTime = date;
+          });
+        },
+      ),
+    );
+  }
+
+  Widget _buildDatePanelDetail(double opacity) {
+    return Container();
+  }
+
+  Widget _buildTitleBar({Widget title}) {
+    return SafeArea(
+      bottom: false,
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(_pageMargin, 0.0, 0.0, _pageMargin / 2),
+        height: _appTitleHeight,
+        decoration: const BoxDecoration(
+          color: Colors.transparent,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              Container(
-                height: 20,
-                child: Image(
-                  image: AssetImage('assets/images/horizontal-line.png'),
-                ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: <Widget>[
+                  Text(getMonthName(selectedDateTime.month), style: _selectMonthStyle),
+                  const SizedBox(width: 8,),
+                  Text(selectedDateTime.year.toString() + ' 年', style: _selectYearStyle,),
+                ],
               ),
-              Text('任务', textAlign: TextAlign.center, style: _mainPanTitleStyle,),
-              SizedBox(height: 15,),
+              IconButton(
+                icon: const Icon(Icons.more_horiz, color: _iconColor,),
+                padding: EdgeInsets.zero,
+                onPressed: () {
+                  _listLayerController.animationToFold();
+                },
+              ),
             ],
           ),
-          onVerticalDragUpdate: (detail) {
-            setState(() {
-              _listMovedOffset = _listOffset = (_listOffset + detail.delta.dy).clamp(_listOffsetEdge, _appTitleHeight);
-            });
-          },
-          onVerticalDragEnd: (detail) {
-            var v = detail.velocity.pixelsPerSecond.dy;
-            if (v > 100) {
-              _isHeadShow = true;
-              _controller.forward(from: 0);
-              return;
-            } else if (v < -100) {
-              _isHeadShow = false;
-              _controller.forward(from: 0);
-              return;
-            }
-            if (_listOffset > _appTitleHeight + (- _calendarBoxHeight - _mainPanDefaultMarginTop) / 2) {
-              _isHeadShow = true;
-              _controller.forward(from: 0);
-            } else {
-              _isHeadShow = false;
-              _controller.forward(from: 0);
-            }
-          },
         ),
-        Divider(height: 0,),
-        Expanded(
-          child: NotificationListener(
-            child: TaskList(listData: taskListData,),
-            onNotification: (ScrollNotification n) {
-              if (_isHeadShow) {
-                if (_scrollPixel != null && !n.metrics.outOfRange && n.metrics.pixels - _scrollPixel > 10) {
-                  _listMovedOffset = _appTitleHeight;
-                  _isHeadShow = false;
-                  _controller.forward(from: 0);
-                }
-                _scrollPixel = n.metrics.pixels;
-              } else if (n.metrics.pixels < 0) {
-                _listMovedOffset = _listOffsetEdge;
-                _isHeadShow = true;
-                _controller.forward(from: 0);
-              }
-              return true;
-            },
-          ),
-        )
-      ],
+      ),
     );
   }
 }
@@ -309,7 +195,7 @@ Future<List<TaskData>> _getTaskListData() async {
     TaskData(
       id: '1',
       taskTime: DateTime.now(),
-      content: '我要做点什么事情，要做一件事！看看,look look, English!'
+      content: '我要做点什么事情，要做一件事！看看,look look, English!再来一个'
     ),
     TaskData(
       id: '2',
@@ -333,6 +219,21 @@ Future<List<TaskData>> _getTaskListData() async {
     ),
     TaskData(
       id: '6',
+      taskTime: DateTime.now(),
+      content: '我要做点什么事情，要做一件事！看看,look look, English!'
+    ),
+    TaskData(
+      id: '7',
+      taskTime: DateTime.now(),
+      content: '我要做点什么事情，要做一件事！看看,look look, English!'
+    ),
+    TaskData(
+      id: '8',
+      taskTime: DateTime.now(),
+      content: '我要做点什么事情，要做一件事！看看,look look, English!'
+    ),
+    TaskData(
+      id: '9',
       taskTime: DateTime.now(),
       content: '我要做点什么事情，要做一件事！看看,look look, English!'
     ),

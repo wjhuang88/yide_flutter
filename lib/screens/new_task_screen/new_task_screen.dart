@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'edit_page.dart';
 
+@deprecated
 class NewTaskScreen extends StatelessWidget {
 
   static const headerHeight = 50.0;

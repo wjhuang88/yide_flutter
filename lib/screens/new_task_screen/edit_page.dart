@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+@deprecated
 class EditPage extends StatelessWidget {
 
   @override
