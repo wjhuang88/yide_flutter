@@ -3,16 +3,14 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class InputLayerController {
-  InputLayerController({FocusNode focusNode}) : _focusNode = focusNode ?? FocusNode();
+  InputLayerController({FocusNode focusNode, void Function() onCancel})
+    : _focusNode = focusNode ?? FocusNode(),
+      _onCancel = onCancel;
 
   _InputLayerState _state;
   BuildContext _context;
   FocusNode _focusNode;
   void Function() _onCancel;
-  
-  void onCancel(void Function() cancelCallback) {
-    _onCancel = cancelCallback;
-  }
 
   void open() {
     _state._inputIsShow = true;
@@ -67,10 +65,10 @@ class _InputLayerState extends State<InputLayer> with SingleTickerProviderStateM
     _controller._state = this;
 
     // 输入面板动画初始化
-    _animController = AnimationController(duration: Duration(milliseconds: 100), vsync: this);
+    _animController = AnimationController(duration: Duration(milliseconds: 200), vsync: this);
     _anim = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
       parent: _animController,
-      curve: Curves.easeOut
+      curve: Curves.easeOutSine
     ));
     // 输入面板动画参数监听
     _anim.addListener((){

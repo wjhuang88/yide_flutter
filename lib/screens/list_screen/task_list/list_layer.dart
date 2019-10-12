@@ -9,19 +9,19 @@ class ListLayerController {
   _ListLayerState _state;
 
   void updateList(List<TaskData> newData) {
-    _state._flush(newData);
+    _state?._flush(newData);
   }
 
   void animationToCover() {
-    _state._upFrom(_state._listMovedOffset);
+    _state?._upFrom(_state._listMovedOffset);
   }
 
   void animationToNormal() {
-    _state._downFrom(_state._listMovedOffset);
+    _state?._downFrom(_state._listMovedOffset);
   }
 
   void animationToFold() {
-    _state._foldFrom(_state._listMovedOffset);
+    _state?._foldFrom(_state._listMovedOffset);
   }
 
   void dispose() {
@@ -38,8 +38,9 @@ class ListLayer extends StatefulWidget {
     this.topOffsetMax = 300,
     this.topOffsetMin = 0,
     this.taskListData = const <TaskData>[],
+    double topOffsetFold,
     this.controller
-  }) : topOffsetFold = topOffsetMax * 2, super(key: key);
+  }) : topOffsetFold = topOffsetFold ?? topOffsetMax * 2, super(key: key);
 
   final Color panelColor;
   final double panelRadius;
@@ -81,35 +82,49 @@ class _ListLayerState extends State<ListLayer> with SingleTickerProviderStateMix
     _controller._state = this;
 
     // 列表拖拽动画初始化
-    _animController = AnimationController(duration: Duration(milliseconds: 150), vsync: this);
-    _animation = Tween<double>(begin: 0.0, end: 1.0).animate(_animController);
+    _animController = AnimationController(duration: Duration(milliseconds: 200), vsync: this);
+    _animation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutSine
+    ));
     // 列表拖拽动画参数监听
     _animation.addListener((){
       setState(() {
-        if (_direction == MoveDirection.up) {
-          _listOffset = lerpDouble(_listMovedOffset, widget.topOffsetMin, _animation.value);
-        } else if (_direction == MoveDirection.down) {
-          _listOffset = lerpDouble(_listMovedOffset, widget.topOffsetMax, _animation.value);
-        } else if (_direction == MoveDirection.fold) {
-          _listOffset = lerpDouble(_listMovedOffset, widget.topOffsetFold, _animation.value);
+        double offsetTarget;
+        switch (_direction) {
+          case MoveDirection.up: {
+            offsetTarget = widget.topOffsetMin;
+            break;
+          }
+          case MoveDirection.down: {
+            offsetTarget = widget.topOffsetMax;
+            break;
+          }
+          case MoveDirection.fold: {
+            offsetTarget = widget.topOffsetFold;
+            break;
+          }
         }
+        _listOffset = lerpDouble(_listMovedOffset, offsetTarget, _animation.value);
       });
     });
 
     _animation.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        switch(_direction) {
-          case MoveDirection.up: 
-            _listMovedOffset = widget.topOffsetMin;
-            break;
-          case MoveDirection.down: 
-            _listMovedOffset = widget.topOffsetMax;
-            break;
-          case MoveDirection.fold: 
-            _listMovedOffset = widget.topOffsetFold;
-            break;
-          default:
-            break;
+      if (status != AnimationStatus.completed) return;
+
+      // if status == AnimationStatus.completed
+      switch(_direction) {
+        case MoveDirection.up: {
+          _listMovedOffset = widget.topOffsetMin;
+          break;
+        }
+        case MoveDirection.down: {
+          _listMovedOffset = widget.topOffsetMax;
+          break;
+        }
+        case MoveDirection.fold: {
+          _listMovedOffset = widget.topOffsetFold;
+          break;
         }
       }
     });
@@ -197,6 +212,7 @@ class _ListLayerState extends State<ListLayer> with SingleTickerProviderStateMix
           onVerticalDragUpdate: (detail) {
             if(_direction == MoveDirection.fold) return;
 
+            // if _direction != MoveDirection.fold
             setState(() {
               _listMovedOffset = _listOffset = (_listOffset + detail.delta.dy).clamp(widget.topOffsetMin, widget.topOffsetMax);
             });
@@ -204,6 +220,7 @@ class _ListLayerState extends State<ListLayer> with SingleTickerProviderStateMix
           onVerticalDragEnd: (detail) {
             if(_direction == MoveDirection.fold) return;
             
+            // if _direction != MoveDirection.fold
             var v = detail.velocity.pixelsPerSecond.dy;
             if (v > 100) {
               _downFrom(_listMovedOffset);
@@ -222,7 +239,12 @@ class _ListLayerState extends State<ListLayer> with SingleTickerProviderStateMix
         const Divider(height: 0,),
         Expanded(
           child: NotificationListener(
-            child: TaskList(listData: _taskListData,),
+            child: TaskList(
+              listData: _taskListData,
+              onItemTap: (data) {
+                Navigator.of(context).pushNamed('detail', arguments: data);
+              },
+            ),
             onNotification: (ScrollNotification n) {
               if (n.metrics.pixels <= n.metrics.minScrollExtent) {
                 if (_direction == MoveDirection.up) {

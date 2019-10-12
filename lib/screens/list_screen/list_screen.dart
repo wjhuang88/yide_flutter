@@ -2,8 +2,9 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
-import 'week_panel/week_panel.dart';
-import 'week_panel/date_tools.dart';
+import 'datetime_panel/week_panel.dart';
+import 'datetime_panel/calendar_panel.dart';
+import 'datetime_panel/date_tools.dart';
 import 'task_list/task_list_data.dart';
 import 'task_list/list_layer.dart';
 import 'input_layer.dart';
@@ -28,35 +29,92 @@ const _mainPanColor = Colors.white;
 const _mainPanDefaultMarginTop = 50.0;
 const _mainPanRadius = 45.0;
 const _mainPanTitleStyle = const TextStyle(color: const Color(0xff020e2c), fontSize: 16, letterSpacing: 5, fontWeight: FontWeight.w600);
+const _mainPanFoldOffset = 400.0;
 
-const _showMonthDetail = false;
+const _panelOffsetBase = 300.0;
 
 class ListScreen extends StatefulWidget {
   @override
   _ListScreenState createState() => _ListScreenState();
 }
 
-class _ListScreenState extends State<ListScreen> with TickerProviderStateMixin {
+class _ListScreenState extends State<ListScreen> with SingleTickerProviderStateMixin {
 
   DateTime selectedDateTime = DateTime.now();
 
   bool _inputIsShow = false;
+  bool _showMonthDetail = false;
+  bool _showMonthSimple = true;
 
-  InputLayerController _inputLayerController = InputLayerController(
-    focusNode: FocusNode(),
-  );
+  InputLayerController _inputLayerController;
 
   ListLayerController _listLayerController = ListLayerController();
+
+  CalendarController _calendarController;
+
+  WeekController _weekController = WeekController();
+
+  AnimationController _panelOpacityController;
+  Animation<double> _panelOpacityAnim;
+  double _panelOpacity = 0.0;
+  double _panelOffset = 0.0;
+
+  int _calendarYear;
+  int _calendarMonth;
 
   @override
   void initState() {
     super.initState();
+    
+    _calendarYear = selectedDateTime.year;
+    _calendarMonth = selectedDateTime.month;
 
-    _inputLayerController.onCancel((){
+    _panelOpacityController = AnimationController(duration: Duration(milliseconds: 300), vsync: this);
+    _panelOpacityAnim = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
+      parent: _panelOpacityController,
+      curve: Curves.easeOutSine
+    ));
+    _panelOpacityAnim.addListener(() {
       setState(() {
-        _inputIsShow = false;
+        _panelOpacity = _panelOpacityAnim.value;
+        _panelOffset = _panelOffsetBase * _panelOpacityAnim.value;
       });
     });
+    _panelOpacityAnim.addStatusListener((status) {
+      switch (status) {
+        case AnimationStatus.forward:
+        case AnimationStatus.reverse: {
+          _showMonthDetail = true;
+          _showMonthSimple = true;
+          break;
+        }
+        case AnimationStatus.completed: {
+          _showMonthDetail = true;
+          _showMonthSimple = false;
+          break;
+        }
+        case AnimationStatus.dismissed: {
+          _showMonthDetail = false;
+          _showMonthSimple = true;
+          break;
+        }
+      }
+    });
+
+    _inputLayerController = InputLayerController(
+      focusNode: FocusNode(),
+      onCancel: () => setState(() => _inputIsShow = false),
+    );
+
+    _calendarController = CalendarController(
+      onSelect: (date) => _closeCalendar(date),
+      onMonthChange: (year, month) {
+        setState(() {
+          _calendarYear = year;
+          _calendarMonth = month;
+        });
+      }
+    );
 
     // 获取初始数据
     _getTaskListData().then((list){
@@ -64,6 +122,30 @@ class _ListScreenState extends State<ListScreen> with TickerProviderStateMixin {
         _listLayerController.updateList(list);
       });
     });
+  }
+
+  void _openCalendar() {
+    _listLayerController.animationToFold();
+    _panelOpacityController.forward(from: 0);
+  }
+
+  void _updateCalendar(DateTime forDate) {
+    setState(() {
+      selectedDateTime = forDate;
+    });
+    _calendarController.update(forDate);
+  } 
+
+  void _closeCalendar(DateTime backDate) {
+    selectedDateTime = backDate;
+    _weekController.update(backDate);
+    _listLayerController.animationToNormal();
+    _panelOpacityController.reverse(from: 1);
+  }
+
+  void _closeCalendarWithNoModify() {
+    _listLayerController.animationToNormal();
+    _panelOpacityController.reverse(from: 1);
   }
 
   @override
@@ -97,8 +179,38 @@ class _ListScreenState extends State<ListScreen> with TickerProviderStateMixin {
             Column(
               mainAxisAlignment: MainAxisAlignment.start,
               children: <Widget>[
-                _buildTitleBar(),
-                _showMonthDetail ? _buildDatePanelDetail(1.0) : _buildDatePanelSimple(1.0),
+                Stack(
+                  alignment: Alignment.topCenter,
+                  children: <Widget>[
+                    Offstage(
+                      offstage: !_showMonthSimple,
+                      child: _buildTitleBar(1.0 - _panelOpacity),
+                    ),
+                    Offstage(
+                      offstage: !_showMonthDetail,
+                      child: _buildCalendarBar(_panelOpacity),
+                    ),
+                  ],
+                ),
+                Stack(
+                  alignment: Alignment.topCenter,
+                  children: <Widget>[
+                    Offstage(
+                      offstage: !_showMonthSimple,
+                      child: Transform.translate(
+                        offset: Offset(0.0, - _panelOffset),
+                        child: _buildDatePanelSimple(1.0 - _panelOpacity),
+                      ),
+                    ),
+                    Offstage(
+                      offstage: !_showMonthDetail,
+                      child: Transform.translate(
+                        offset: Offset(0.0, _panelOffsetBase - _panelOffset),
+                        child: _buildDatePanelDetail(_panelOpacity)
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
             ListLayer(
@@ -107,6 +219,7 @@ class _ListScreenState extends State<ListScreen> with TickerProviderStateMixin {
               panelTitleStyle: _mainPanTitleStyle,
               topOffsetMin: _appTitleHeight,
               topOffsetMax: _appTitleHeight + _calendarBoxHeight + _mainPanDefaultMarginTop,
+              topOffsetFold: _mainPanFoldOffset,
               taskListData: const [],
               controller: _listLayerController,
             ),
@@ -132,51 +245,99 @@ class _ListScreenState extends State<ListScreen> with TickerProviderStateMixin {
         calendarTextGap: _calendarTextGap,
         pageMargin: _pageMargin,
         baseTime: selectedDateTime,
+        controller: _weekController,
         onChange: (date) {
-          setState(() {
-            selectedDateTime = date;
-          });
+          _updateCalendar(date);
         },
       ),
     );
   }
 
   Widget _buildDatePanelDetail(double opacity) {
-    return Container();
+    return Opacity(
+      opacity: opacity,
+      child: CalendarPanel(
+        baseTime: selectedDateTime,
+        controller: _calendarController,
+      ),
+    );
   }
 
-  Widget _buildTitleBar({Widget title}) {
+  Widget _buildBarTitle(int year, int month) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: <Widget>[
+        Text(getMonthName(month), style: _selectMonthStyle),
+        const SizedBox(width: 8,),
+        Text(year.toString() + ' 年', style: _selectYearStyle,),
+      ],
+    );
+  }
+
+  Widget _buildCalendarBar(double opacity) {
     return SafeArea(
       bottom: false,
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(_pageMargin, 0.0, 0.0, _pageMargin / 2),
-        height: _appTitleHeight,
-        decoration: const BoxDecoration(
+      child: Opacity(
+        opacity: opacity,
+        child: Container(
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 25.0),
+          height: _appTitleHeight,
           color: Colors.transparent,
+          child: Material(
+            color: Colors.transparent,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                IconButton(
+                  icon: const Icon(Icons.chevron_left, color: _iconColor,),
+                  padding: EdgeInsets.zero,
+                  onPressed: () {
+                    _calendarController.goPrevMonth();
+                  },
+                ),
+                _buildBarTitle(_calendarYear, _calendarMonth),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right, color: _iconColor,),
+                  padding: EdgeInsets.zero,
+                  onPressed: () {
+                    _calendarController.goNextMonth();
+                  },
+                ),
+              ],
+            ),
+          ),
         ),
-        child: Material(
+      ),
+    );
+  }
+
+  Widget _buildTitleBar(double opacity) {
+    return SafeArea(
+      bottom: false,
+      child: Opacity(
+        opacity: opacity,
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(_pageMargin, 0.0, 0.0, _pageMargin / 2),
+          height: _appTitleHeight,
           color: Colors.transparent,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: <Widget>[
-                  Text(getMonthName(selectedDateTime.month), style: _selectMonthStyle),
-                  const SizedBox(width: 8,),
-                  Text(selectedDateTime.year.toString() + ' 年', style: _selectYearStyle,),
-                ],
-              ),
-              IconButton(
-                icon: const Icon(Icons.more_horiz, color: _iconColor,),
-                padding: EdgeInsets.zero,
-                onPressed: () {
-                  _listLayerController.animationToFold();
-                },
-              ),
-            ],
+          child: Material(
+            color: Colors.transparent,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                _buildBarTitle(selectedDateTime.year, selectedDateTime.month),
+                IconButton(
+                  icon: const Icon(Icons.more_horiz, color: _iconColor,),
+                  padding: EdgeInsets.zero,
+                  onPressed: () {
+                    _openCalendar();
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -11,6 +11,14 @@ const int _indexOffset = 2;
 const double _offsetFactor = 0.7;
 const int _animationSpeed = 300;
 
+class WeekController {
+  _WeekPanelState _state;
+  
+  void update(DateTime newDate) {
+    _state?._update(newDate);
+  }
+}
+
 class WeekPanel extends StatefulWidget {
   const WeekPanel({
     Key key,
@@ -24,6 +32,7 @@ class WeekPanel extends StatefulWidget {
     @required this.pageMargin,
     @required this.baseTime,
     @required this.onChange,
+    this.controller,
     this.tileCount = 9,
   }) : super(key: key);
 
@@ -36,17 +45,19 @@ class WeekPanel extends StatefulWidget {
   final double calendarTextGap;
   final double pageMargin;
 
+  final WeekController controller;
+
   final DateTime baseTime;
   final int tileCount;
 
   final void Function(DateTime date) onChange;
 
   @override
-  _WeekPanelState createState() => _WeekPanelState(baseTime, tileCount);
+  _WeekPanelState createState() => _WeekPanelState(baseTime, controller, tileCount);
 }
 
 class _WeekPanelState extends State<WeekPanel> with TickerProviderStateMixin {
-  _WeekPanelState(this._selectedTime, int titleCount) : _selectedIndex = titleCount ~/ 2 - _indexOffset;
+  _WeekPanelState(this._selectedTime, this._controller, int titleCount) : _selectedIndex = titleCount ~/ 2 - _indexOffset;
 
   DateTime _selectedTime;
   SplayTreeMap<int, DayInfo> _weekData;
@@ -58,7 +69,9 @@ class _WeekPanelState extends State<WeekPanel> with TickerProviderStateMixin {
   double _listOffsetDelta = 0.0;
   double _listOffsetDeltaNext = 0.0;
 
-  AnimationController _weekController;
+  WeekController _controller;
+
+  AnimationController _animController;
   Animation<double> _listAnim;
 
   Map<int, AnimationController> _tileControllers = {};
@@ -71,51 +84,73 @@ class _WeekPanelState extends State<WeekPanel> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _weekData = _getDayInfoList(_selectedTime);
-    _listOffset = (widget.calendarBoxWidth + widget.calendarBoxGap) * (_selectedIndex) - widget.calendarBoxWidth * _offsetFactor;
-    _weekController = AnimationController(duration: Duration(milliseconds: _animationSpeed), vsync: this);
+    if (_controller == null) _controller = WeekController();
+    _controller._state = this;
+    
+    _initList();
+    _listOffset = (widget.calendarBoxWidth + widget.calendarBoxGap) * _selectedIndex - widget.calendarBoxWidth * _offsetFactor;
+
+    _animController = AnimationController(duration: Duration(milliseconds: _animationSpeed), vsync: this);
     _listAnim = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(
-      parent: _weekController,
+      parent: _animController,
       curve: Curves.bounceInOut
     ));
 
-    _weekController.addListener(() {
+    _animController.addListener(() {
       setState(() {
         if (_listOffsetDelta != _listOffsetDeltaNext) {
           _listOffsetDelta = lerpDouble(_listOffsetDelta, _listOffsetDeltaNext, _listAnim.value);
         }
       });
     });
-    _weekController.addStatusListener((status) {
-      if (status == AnimationStatus.forward || status == AnimationStatus.reverse) {
-        _animationBarrier = true;
-      }
-      if (status == AnimationStatus.completed || status == AnimationStatus.dismissed) {
-        _animationBarrier = false;
-        _weekController.reset();
+    _animController.addStatusListener((status) {
+      switch (status) {
+        case AnimationStatus.forward:
+        case AnimationStatus.reverse: {
+          _animationBarrier = true;
+          break;
+        }
+        case AnimationStatus.completed:
+        case AnimationStatus.dismissed: {
+          _animationBarrier = false;
+          _animController.reset();
+          break;
+        }
       }
     });
+  }
+
+  void _initList() {
+    _weekData = _getDayInfoList(_selectedTime);
     var first = _weekData.firstKey();
     var last = _weekData.lastKey();
     for (var i = first; i <= last; i++) {
-      var tileCtrl = AnimationController(duration: Duration(milliseconds: _animationSpeed), vsync: this);
-      var tileAnim = Tween<double>(begin: 0, end: 1).animate(tileCtrl);
-      if (i == _selectedIndex) {
-        tileCtrl.value = 1;
-      }
-      _tileControllers[i] = tileCtrl;
-      _tileAnims[i] = tileAnim;
-      tileAnim.addListener((){
-        setState(() {
-          // 触发渲染
+      if (!_tileControllers.containsKey(i)) {
+        var tileCtrl = AnimationController(duration: Duration(milliseconds: _animationSpeed), vsync: this);
+        var tileAnim = Tween<double>(begin: 0, end: 1).animate(tileCtrl);
+
+        _tileControllers[i] = tileCtrl;
+        _tileAnims[i] = tileAnim;
+        tileAnim.addListener((){
+          setState(() {
+            // 触发渲染
+          });
         });
-      });
+      }
+      _tileControllers[i]?.value = i == _selectedIndex ? 1 : 0;
     }
+  }
+
+  void _update(DateTime newDate) {
+    setState(() {
+      _selectedTime = newDate;
+      _initList();
+    });
   }
 
   @override
   void dispose() {
-    _weekController.dispose();
+    _animController.dispose();
     _tileKeyList.clear();
     _weekData.clear();
 
@@ -162,7 +197,7 @@ class _WeekPanelState extends State<WeekPanel> with TickerProviderStateMixin {
     } else if (dragDelta < -10) {
       _goNextTile();
     }
-    _weekController.forward();
+    _animController.forward();
   }
 
   void _goNextTile() {
@@ -241,6 +276,7 @@ class _WeekPanelState extends State<WeekPanel> with TickerProviderStateMixin {
         list[mapIndex] = DayInfo.fromDateTime(baseTime.subtract(Duration(days: -i)));
       } else if (i == 0) {
         list[mapIndex] = DayInfo.fromDateTime(baseTime, isSelected: true);
+        _selectedIndex = mapIndex;
       } else {
         list[mapIndex] = DayInfo.fromDateTime(baseTime.add(Duration(days: i)));
       }

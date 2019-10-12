@@ -16,7 +16,7 @@ class SplashScreen extends StatelessWidget {
       ),
       body: GestureDetector(
         onTap: () {
-          Navigator.pushReplacementNamed(context, 'main');
+          Navigator.pushReplacementNamed(context, 'list');
         },
         child: Container(
           decoration: BoxDecoration(

@@ -10,14 +10,17 @@ const _taskListHeight = 80.0;
 const _taskContentPadding = 15.0;
 const _taskContentRadius = 20.0;
 const _taskTimeStyle = const TextStyle(color: const Color(0xff020e2c), fontSize: 12, fontWeight: FontWeight.w300);
+const _taskContentStyle = const TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.normal, fontFamily: 'SourceHanSans');
 
 class TaskList extends StatelessWidget {
   const TaskList({
     Key key,
-    @required this.listData
+    @required this.listData,
+    this.onItemTap,
   }) : assert(listData != null), super(key: key);
 
   final List<TaskData> listData;
+  final void Function(TaskData data) onItemTap;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +29,11 @@ class TaskList extends StatelessWidget {
       itemBuilder: (context, index) {
         var data = listData[index];
         assert(data.id != null);
-        return Task(key: ValueKey('task_list_item_${data.id}'), data: data,);
+        return Task(
+          key: ValueKey('task_list_item_${data.id}'),
+          data: data,
+          onTap: (data) => onItemTap(data),
+        );
       },
       separatorBuilder: (context, index) => SizedBox(height: _taskListGap,),
       padding: EdgeInsets.fromLTRB(_taskListLTPadding, _taskListGap, _taskListLTPadding, _taskListGap * 3),
@@ -37,10 +44,12 @@ class TaskList extends StatelessWidget {
 class Task extends StatelessWidget {
   const Task({
     Key key,
-    @required this.data
+    @required this.data,
+    this.onTap,
   }) : assert(data != null), super(key: key);
 
   final TaskData data;
+  final void Function(TaskData data) onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -65,8 +74,6 @@ class Task extends StatelessWidget {
       return '$hour:${_addLeadingZeroIfNeeded(time.minute)} $period';
     };
 
-    var tagData = getTagData(data);
-
     return Container(
       height: _taskListHeight,
       child: Row(
@@ -82,24 +89,46 @@ class Task extends StatelessWidget {
           ),
           SizedBox(width: _taskListLTPadding,),
           Expanded(
-            child: Container(
-              height: double.infinity,
-              decoration: BoxDecoration(
-                color: tagData.backgroundColor,
-                borderRadius: BorderRadius.circular(_taskContentRadius),
-              ),
-              child: Row(
-                children: <Widget>[
-                  SizedBox(width: _taskContentPadding,),
-                  tagData.icon,
-                  SizedBox(width: _taskContentPadding,),
-                  Expanded(child: Text(data.content, maxLines: 2, overflow: TextOverflow.ellipsis,)),
-                  SizedBox(width: _taskContentPadding,),
-                ],
-              ),
+            child: GestureDetector(
+              onTap: () => onTap(data),
+              child: TaskItemContainer(data: data),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class TaskItemContainer extends StatelessWidget {
+  const TaskItemContainer({
+    Key key,
+    @required this.data,
+  }) : super(key: key);
+
+  final TaskData data;
+
+  @override
+  Widget build(BuildContext context) {
+    final tagData = getTagData(data);
+    final heroTag = 'task_list_hero_${data.id}';
+    return Hero(
+      tag: heroTag,
+      child: Container(
+        height: double.infinity,
+        decoration: BoxDecoration(
+          color: tagData.backgroundColor,
+          borderRadius: BorderRadius.circular(_taskContentRadius),
+        ),
+        child: Row(
+          children: <Widget>[
+            const SizedBox(width: _taskContentPadding,),
+            tagData.icon,
+            const SizedBox(width: _taskContentPadding,),
+            Expanded(child: Text(data.content, style: _taskContentStyle, maxLines: 2, overflow: TextOverflow.ellipsis,)),
+            const SizedBox(width: _taskContentPadding,),
+          ],
+        ),
       ),
     );
   }

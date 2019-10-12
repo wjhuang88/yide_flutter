@@ -1,4 +1,4 @@
-const _mouthMap = {
+const mouthMap = {
   1: '一月',
   2: '二月',
   3: '三月',
@@ -13,7 +13,22 @@ const _mouthMap = {
   12: '十二月',
 };
 
-const _weekMap = {
+const mouthMapShort = {
+  1: '一',
+  2: '二',
+  3: '三',
+  4: '四',
+  5: '五',
+  6: '六',
+  7: '七',
+  8: '八',
+  9: '九',
+  10: '十',
+  11: '十一',
+  12: '十二',
+};
+
+const weekMap = {
   1: '周一',
   2: '周二',
   3: '周三',
@@ -23,14 +38,36 @@ const _weekMap = {
   7: '周日',
 };
 
+const weekMapShort = {
+  1: '一',
+  2: '二',
+  3: '三',
+  4: '四',
+  5: '五',
+  6: '六',
+  7: '日',
+};
+
 String getMonthName(int month) {
-  var value = _mouthMap[month];
+  var value = mouthMap[month];
+  assert(value != null);
+  return value;
+}
+
+String getMonthNameShort(int month) {
+  var value = mouthMapShort[month];
   assert(value != null);
   return value;
 }
 
 String getWeekName(int week) {
-  var value = _weekMap[week];
+  var value = weekMap[week];
+  assert(value != null);
+  return value;
+}
+
+String getWeekNameShort(int week) {
+  var value = weekMapShort[week];
   assert(value != null);
   return value;
 }
