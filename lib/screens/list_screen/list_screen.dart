@@ -30,6 +30,7 @@ const _mainPanDefaultMarginTop = 50.0;
 const _mainPanRadius = 45.0;
 const _mainPanTitleStyle = const TextStyle(color: const Color(0xff020e2c), fontSize: 16, letterSpacing: 5, fontWeight: FontWeight.w600);
 const _mainPanFoldOffset = 400.0;
+const _mainPanFoldHigherOffset = 350.0;
 
 const _panelOffsetBase = 300.0;
 
@@ -109,6 +110,11 @@ class _ListScreenState extends State<ListScreen> with SingleTickerProviderStateM
     _calendarController = CalendarController(
       onSelect: (date) => _closeCalendar(date),
       onMonthChange: (year, month) {
+        if (_calendarController.isHigher) {
+          _listLayerController.animationToFoldHigher();
+        } else {
+          _listLayerController.animationToFold();
+        }
         setState(() {
           _calendarYear = year;
           _calendarMonth = month;
@@ -125,7 +131,11 @@ class _ListScreenState extends State<ListScreen> with SingleTickerProviderStateM
   }
 
   void _openCalendar() {
-    _listLayerController.animationToFold();
+    if (_calendarController.isHigher) {
+      _listLayerController.animationToFoldHigher();
+    } else {
+      _listLayerController.animationToFold();
+    }
     _panelOpacityController.forward(from: 0);
   }
 
@@ -220,6 +230,7 @@ class _ListScreenState extends State<ListScreen> with SingleTickerProviderStateM
               topOffsetMin: _appTitleHeight,
               topOffsetMax: _appTitleHeight + _calendarBoxHeight + _mainPanDefaultMarginTop,
               topOffsetFold: _mainPanFoldOffset,
+              topOffsetFoldHigher: _mainPanFoldHigherOffset,
               taskListData: const [],
               controller: _listLayerController,
             ),

@@ -4,6 +4,8 @@ import 'package:yide/screens/list_screen/task_list/task_list.dart';
 
 const _backgroundColor = const Color(0xff0a3f74);
 
+const _appTitleHeight = 45.0;
+
 const _taskListHeight = 80.0;
 const _taskContentPadding = 15.0;
 const _taskContentRadius = 20.0;
@@ -28,21 +30,24 @@ class DetailScreen extends StatelessWidget {
     final heroTag = 'task_list_hero_${data.id}';
     return Scaffold(
       backgroundColor: _backgroundColor,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        brightness: Brightness.dark,
-        elevation: 0.0,
-        leading: IconButton(
-          icon: Icon(Icons.chevron_left, color: Colors.white, size: 28,),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        actions: <Widget>[
-          IconButton(
-            icon: Icon(Icons.edit, color: Colors.white, size: 20,),
-            onPressed: () {},
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(_appTitleHeight),
+        child: AppBar(
+          backgroundColor: Colors.transparent,
+          brightness: Brightness.dark,
+          elevation: 0.0,
+          leading: IconButton(
+            icon: Icon(Icons.chevron_left, color: Colors.white, size: 28,),
+            onPressed: () => Navigator.of(context).pop(),
           ),
-          SizedBox(width: 10.0,)
-        ],
+          actions: <Widget>[
+            IconButton(
+              icon: Icon(Icons.edit, color: Colors.white, size: 20,),
+              onPressed: () {},
+            ),
+            SizedBox(width: 10.0,)
+          ],
+        ),
       ),
       body: Container(
         alignment: Alignment.topCenter,

@@ -24,6 +24,10 @@ class ListLayerController {
     _state?._foldFrom(_state._listMovedOffset);
   }
 
+  void animationToFoldHigher() {
+    _state?._foldHigherFrom(_state._listMovedOffset);
+  }
+
   void dispose() {
     _state = null;
   }
@@ -39,8 +43,11 @@ class ListLayer extends StatefulWidget {
     this.topOffsetMin = 0,
     this.taskListData = const <TaskData>[],
     double topOffsetFold,
+    double topOffsetFoldHigher,
     this.controller
-  }) : topOffsetFold = topOffsetFold ?? topOffsetMax * 2, super(key: key);
+  }) : topOffsetFold = topOffsetFold ?? topOffsetMax * 2,
+      topOffsetFoldHigher = topOffsetFoldHigher ?? topOffsetMax * 2,
+      super(key: key);
 
   final Color panelColor;
   final double panelRadius;
@@ -48,6 +55,7 @@ class ListLayer extends StatefulWidget {
   final double topOffsetMax;
   final double topOffsetMin;
   final double topOffsetFold;
+  final double topOffsetFoldHigher;
   final List<TaskData> taskListData;
   final ListLayerController controller;
 
@@ -56,7 +64,7 @@ class ListLayer extends StatefulWidget {
 }
 
 enum MoveDirection {
-  up, down, fold
+  up, down, fold, foldHigher
 }
 
 class _ListLayerState extends State<ListLayer> with SingleTickerProviderStateMixin {
@@ -104,6 +112,9 @@ class _ListLayerState extends State<ListLayer> with SingleTickerProviderStateMix
             offsetTarget = widget.topOffsetFold;
             break;
           }
+          case MoveDirection.foldHigher: {
+            offsetTarget = widget.topOffsetFoldHigher;
+          }
         }
         _listOffset = lerpDouble(_listMovedOffset, offsetTarget, _animation.value);
       });
@@ -124,6 +135,10 @@ class _ListLayerState extends State<ListLayer> with SingleTickerProviderStateMix
         }
         case MoveDirection.fold: {
           _listMovedOffset = widget.topOffsetFold;
+          break;
+        }
+        case MoveDirection.foldHigher: {
+          _listMovedOffset = widget.topOffsetFoldHigher;
           break;
         }
       }
@@ -158,6 +173,12 @@ class _ListLayerState extends State<ListLayer> with SingleTickerProviderStateMix
   void _foldFrom(double origin) {
     _listMovedOffset = origin;
     _direction = MoveDirection.fold;
+    _animController.forward(from: 0);
+  }
+
+  void _foldHigherFrom(double origin) {
+    _listMovedOffset = origin;
+    _direction = MoveDirection.foldHigher;
     _animController.forward(from: 0);
   }
 

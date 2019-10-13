@@ -12,6 +12,8 @@ class CalendarController {
   _CalendarPanelState _state;
   void Function(DateTime date) onSelect;
   void Function(int year, int month) onMonthChange;
+
+  bool get isHigher => _state._pageLines[_state._pageController.page.round() - _aReallyBigIndex] == 6;
   
   void update(DateTime newDate) {
     _state?._update(newDate);
@@ -51,6 +53,8 @@ class _CalendarPanelState extends State<CalendarPanel> {
   List<DateTime> _prevList = List<DateTime>();
   List<DateTime> _currentList = List<DateTime>();
   List<DateTime> _nextList = List<DateTime>();
+
+  Map<int, int> _pageLines = {};
 
   CalendarController _controller;
 
@@ -157,12 +161,14 @@ class _CalendarPanelState extends State<CalendarPanel> {
             final index = _i - _aReallyBigIndex;
             final itemDate = DateTime(_year, _month + index);
             _initList(itemDate.year, itemDate.month);
+            final children = _buildItems(_prevList, _currentList, _nextList);
+            _pageLines[index] = children.length ~/ 7;
             return GridView.count(
               padding: const EdgeInsets.symmetric(horizontal: 25.0),
               physics: const NeverScrollableScrollPhysics(),
               crossAxisCount: 7,
               childAspectRatio: 1.0,
-              children: _buildItems(_prevList, _currentList, _nextList),
+              children: children,
             );
           },
         ),
