@@ -21,7 +21,7 @@ const _calendarColor = Colors.white;
 const _calendarStyle = const TextStyle(color: const Color(0xff020e2c), fontSize: 14, fontWeight: FontWeight.w600);
 const _calendarBoxHeight = 60.0;
 const _calendarBoxWidth = 60.0;
-const _calendarBoxRadius = 15.0;
+const _calendarBoxRadius = 18.0;
 const _calendarBoxGap = 16.0;
 const _calendarTextGap = 5.0;
 
@@ -29,8 +29,8 @@ const _mainPanColor = Colors.white;
 const _mainPanDefaultMarginTop = 50.0;
 const _mainPanRadius = 45.0;
 const _mainPanTitleStyle = const TextStyle(color: const Color(0xff020e2c), fontSize: 16, letterSpacing: 5, fontWeight: FontWeight.w600);
-const _mainPanFoldOffset = 400.0;
-const _mainPanFoldHigherOffset = 350.0;
+const _mainPanFoldOffset = 450.0;
+const _mainPanFoldHigherOffset = 400.0;
 
 const _panelOffsetBase = 300.0;
 
@@ -196,10 +196,10 @@ class _ListScreenState extends State<ListScreen> with SingleTickerProviderStateM
                       offstage: !_showMonthSimple,
                       child: _buildTitleBar(1.0 - _panelOpacity),
                     ),
-                    Offstage(
-                      offstage: !_showMonthDetail,
-                      child: _buildCalendarBar(_panelOpacity),
-                    ),
+                    // Offstage(
+                    //   offstage: !_showMonthDetail,
+                    //   child: _buildCalendarBar(_panelOpacity),
+                    // ),
                   ],
                 ),
                 Stack(
@@ -286,44 +286,6 @@ class _ListScreenState extends State<ListScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildCalendarBar(double opacity) {
-    return SafeArea(
-      bottom: false,
-      child: Opacity(
-        opacity: opacity,
-        child: Container(
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 25.0),
-          height: _appTitleHeight,
-          color: Colors.transparent,
-          child: Material(
-            color: Colors.transparent,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                IconButton(
-                  icon: const Icon(Icons.chevron_left, color: _iconColor,),
-                  padding: EdgeInsets.zero,
-                  onPressed: () {
-                    _calendarController.goPrevMonth();
-                  },
-                ),
-                _buildBarTitle(_calendarYear, _calendarMonth),
-                IconButton(
-                  icon: const Icon(Icons.chevron_right, color: _iconColor,),
-                  padding: EdgeInsets.zero,
-                  onPressed: () {
-                    _calendarController.goNextMonth();
-                  },
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildTitleBar(double opacity) {
     return SafeArea(
       bottom: false,
@@ -331,7 +293,7 @@ class _ListScreenState extends State<ListScreen> with SingleTickerProviderStateM
         opacity: opacity,
         child: Container(
           margin: const EdgeInsets.fromLTRB(_pageMargin, 0.0, 0.0, _pageMargin / 2),
-          height: _appTitleHeight,
+          height: _appTitleHeight * opacity,
           color: Colors.transparent,
           child: Material(
             color: Colors.transparent,

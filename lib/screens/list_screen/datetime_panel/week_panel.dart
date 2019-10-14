@@ -318,6 +318,10 @@ class _WeekPanTile extends StatelessWidget {
           decoration: BoxDecoration(
             color: parent.calendarColor,
             borderRadius: BorderRadius.circular(parent.calendarBoxRadius)
+            // borderRadius: BorderRadius.only(
+            //   topLeft: Radius.circular(parent.calendarBoxRadius),
+            //   bottomRight: Radius.circular(parent.calendarBoxRadius),
+            // ),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'task_list_data.dart';
 
-const _taskListGap = 20.0;
+const _taskListGap = 25.0;
 const _taskListLTPadding = 20.0;
 const _taskListHeight = 80.0;
 const _taskContentPadding = 15.0;
@@ -119,6 +119,10 @@ class TaskItemContainer extends StatelessWidget {
         decoration: BoxDecoration(
           color: tagData.backgroundColor,
           borderRadius: BorderRadius.circular(_taskContentRadius),
+          // borderRadius: const BorderRadius.only(
+          //   topLeft: const Radius.circular(_taskContentRadius),
+          //   bottomRight: const Radius.circular(_taskContentRadius),
+          // )
         ),
         child: Row(
           children: <Widget>[

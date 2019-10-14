@@ -231,7 +231,7 @@ class _ListLayerState extends State<ListLayer> with SingleTickerProviderStateMix
             ],
           ),
           onVerticalDragUpdate: (detail) {
-            if(_direction == MoveDirection.fold) return;
+            if(_direction == MoveDirection.fold || _direction == MoveDirection.foldHigher) return;
 
             // if _direction != MoveDirection.fold
             setState(() {
@@ -239,7 +239,7 @@ class _ListLayerState extends State<ListLayer> with SingleTickerProviderStateMix
             });
           },
           onVerticalDragEnd: (detail) {
-            if(_direction == MoveDirection.fold) return;
+            if(_direction == MoveDirection.fold || _direction == MoveDirection.foldHigher) return;
             
             // if _direction != MoveDirection.fold
             var v = detail.velocity.pixelsPerSecond.dy;
@@ -257,7 +257,7 @@ class _ListLayerState extends State<ListLayer> with SingleTickerProviderStateMix
             }
           },
         ),
-        const Divider(height: 0,),
+        //const Divider(height: 0,),
         Expanded(
           child: NotificationListener(
             child: TaskList(
