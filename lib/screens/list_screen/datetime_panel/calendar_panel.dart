@@ -1,8 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-
-import 'date_tools.dart';
+import 'package:yide/models/date_tools.dart';
 
 const _weekHeaders = ['日', '一', '二', '三', '四', '五', '六'];
 
@@ -253,6 +252,10 @@ class _CalendarPanelState extends State<CalendarPanel> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
+
+    var blockSizeHigher = (MediaQuery.of(context).size.width - _pagePadding * 2) / 7 * 5;
+    var blockSize = (MediaQuery.of(context).size.width - _pagePadding * 2) / 7 * 6;
+
     return Column(
       children: <Widget>[
         Stack(
@@ -319,7 +322,7 @@ class _CalendarPanelState extends State<CalendarPanel> with SingleTickerProvider
                 _controller.onMonthChange(itemDate.year, itemDate.month);
               }
               setState(() {
-                _boxHeight = _pageLines[index] == 5 ? 227 : 273;
+                _boxHeight = _pageLines[index] == 5 ? blockSizeHigher : blockSize;
               });
               if (index < _currentPage && !_animBarrier) {
                 _animController.forward(from: 0.01);
@@ -336,7 +339,7 @@ class _CalendarPanelState extends State<CalendarPanel> with SingleTickerProvider
               var count = _prevList.length + _currentList.length + _nextList.length;
               if (_pageLines[index] == null) {
                 var lines = _pageLines[index] = count ~/ 7;
-                _boxHeight = lines == 5 ? 227 : 273;
+                _boxHeight = lines == 5 ? blockSizeHigher : blockSize;
               } else {
                 _pageLines[index] = count ~/ 7;
               }

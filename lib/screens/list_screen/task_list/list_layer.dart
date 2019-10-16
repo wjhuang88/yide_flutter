@@ -1,16 +1,13 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:yide/models/task_data.dart';
 
 import 'task_list.dart';
-import 'task_list_data.dart';
 
 class ListLayerController {
   _ListLayerState _state;
-
-  void updateList(List<TaskData> newData) {
-    _state?._flush(newData);
-  }
 
   void animationToCover() {
     _state?._upFrom(_state._listMovedOffset);
@@ -28,6 +25,15 @@ class ListLayerController {
     _state?._foldHigherFrom(_state._listMovedOffset);
   }
 
+  void updateList(DateTime date) {
+    _state.._clear()
+          .._update(date);
+  }
+
+  void clearList() {
+    _state?._clear();
+  }
+
   void dispose() {
     _state = null;
   }
@@ -41,10 +47,10 @@ class ListLayer extends StatefulWidget {
     this.panelTitleStyle,
     this.topOffsetMax = 300,
     this.topOffsetMin = 0,
-    this.taskListData = const <TaskData>[],
     double topOffsetFold,
     double topOffsetFoldHigher,
-    this.controller
+    this.controller,
+    this.initDate,
   }) : topOffsetFold = topOffsetFold ?? topOffsetMax * 2,
       topOffsetFoldHigher = topOffsetFoldHigher ?? topOffsetMax * 2,
       super(key: key);
@@ -56,11 +62,11 @@ class ListLayer extends StatefulWidget {
   final double topOffsetMin;
   final double topOffsetFold;
   final double topOffsetFoldHigher;
-  final List<TaskData> taskListData;
   final ListLayerController controller;
+  final DateTime initDate;
 
   @override
-  _ListLayerState createState() => _ListLayerState(taskListData, controller);
+  _ListLayerState createState() => _ListLayerState(controller);
 }
 
 enum MoveDirection {
@@ -68,11 +74,9 @@ enum MoveDirection {
 }
 
 class _ListLayerState extends State<ListLayer> with SingleTickerProviderStateMixin {
-  _ListLayerState(this._taskListData, this._controller);
+  _ListLayerState(this._controller);
 
   ListLayerController _controller;
-
-  List<TaskData> _taskListData;
 
   double _listMovedOffset;
   double _listOffset;
@@ -81,9 +85,12 @@ class _ListLayerState extends State<ListLayer> with SingleTickerProviderStateMix
   AnimationController _animController;
   Animation<double> _animation;
 
+  List<TaskPack> _taskList = [];
+
   @override
   void initState() {
     super.initState();
+    _update(widget.initDate);
     _listMovedOffset = _listOffset = widget.topOffsetMax;
 
     if (_controller == null) _controller = ListLayerController();
@@ -152,9 +159,17 @@ class _ListLayerState extends State<ListLayer> with SingleTickerProviderStateMix
     super.dispose();
   }
 
-  void _flush(List<TaskData> data) {
+  void _update(DateTime date) {
+    getTaskList(date).then((list) {
+      setState(() {
+        _taskList = list;
+      });
+    });
+  }
+
+  void _clear() {
     setState(() {
-      _taskListData = data;
+      _taskList = const [];
     });
   }
 
@@ -213,79 +228,82 @@ class _ListLayerState extends State<ListLayer> with SingleTickerProviderStateMix
 
   Widget _buildListPage() {
     double _scrollPixel;
-    return Column(
-      children: <Widget>[
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Container(
-                height: 16,
-                child: const Image(
-                  image: AssetImage('assets/images/horizontal-line.png'),
+    return Hero(
+      tag: 'panel_background',
+      child: Column(
+        children: <Widget>[
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Container(
+                  height: 16,
+                  child: const Image(
+                    image: AssetImage('assets/images/horizontal-line.png'),
+                  ),
                 ),
-              ),
-              Text('任务', textAlign: TextAlign.center, style: widget.panelTitleStyle,),
-              const SizedBox(height: 10,),
-            ],
-          ),
-          onVerticalDragUpdate: (detail) {
-            if(_direction == MoveDirection.fold || _direction == MoveDirection.foldHigher) return;
-
-            // if _direction != MoveDirection.fold
-            setState(() {
-              _listMovedOffset = _listOffset = (_listOffset + detail.delta.dy).clamp(widget.topOffsetMin, widget.topOffsetMax);
-            });
-          },
-          onVerticalDragEnd: (detail) {
-            if(_direction == MoveDirection.fold || _direction == MoveDirection.foldHigher) return;
-            
-            // if _direction != MoveDirection.fold
-            var v = detail.velocity.pixelsPerSecond.dy;
-            if (v > 100) {
-              _downFrom(_listMovedOffset);
-              return;
-            } else if (v < -100) {
-              _upFrom(_listMovedOffset);
-              return;
-            }
-            if (_listOffset < (widget.topOffsetMin + widget.topOffsetMax) / 2) {
-              _upFrom(_listMovedOffset);
-            } else {
-              _downFrom(_listMovedOffset);
-            }
-          },
-        ),
-        //const Divider(height: 0,),
-        Expanded(
-          child: NotificationListener(
-            child: TaskList(
-              listData: _taskListData,
-              onItemTap: (data) {
-                Navigator.of(context).pushNamed('detail', arguments: data);
-              },
+                Text('任务', textAlign: TextAlign.center, style: widget.panelTitleStyle,),
+                const SizedBox(height: 10,),
+              ],
             ),
-            onNotification: (ScrollNotification n) {
-              if (n.metrics.pixels <= n.metrics.minScrollExtent) {
-                if (_direction == MoveDirection.up) {
-                  _downFrom(widget.topOffsetMin);
-                }
-              } else if (n.metrics.pixels >= n.metrics.maxScrollExtent) {
-                if (_direction == MoveDirection.down) {
-                  _upFrom(widget.topOffsetMax);
-                }
-              } else {
-                if (_direction == MoveDirection.down && n.metrics.pixels - (_scrollPixel ?? n.metrics.pixels) > 10) {
-                  _upFrom(widget.topOffsetMax);
-                }
-                _scrollPixel = n.metrics.pixels;
+            onVerticalDragUpdate: (detail) {
+              if(_direction == MoveDirection.fold || _direction == MoveDirection.foldHigher) return;
+
+              // if _direction != MoveDirection.fold
+              setState(() {
+                _listMovedOffset = _listOffset = (_listOffset + detail.delta.dy).clamp(widget.topOffsetMin, widget.topOffsetMax);
+              });
+            },
+            onVerticalDragEnd: (detail) {
+              if(_direction == MoveDirection.fold || _direction == MoveDirection.foldHigher) return;
+              
+              // if _direction != MoveDirection.fold
+              var v = detail.velocity.pixelsPerSecond.dy;
+              if (v > 100) {
+                _downFrom(_listMovedOffset);
+                return;
+              } else if (v < -100) {
+                _upFrom(_listMovedOffset);
+                return;
               }
-              return true;
+              if (_listOffset < (widget.topOffsetMin + widget.topOffsetMax) / 2) {
+                _upFrom(_listMovedOffset);
+              } else {
+                _downFrom(_listMovedOffset);
+              }
             },
           ),
-        )
-      ],
+          //const Divider(height: 0,),
+          Expanded(
+            child: NotificationListener(
+              child: TaskList(
+                data: _taskList,
+                onItemTap: (data) {
+                  Navigator.of(context).pushNamed('detail', arguments: data);
+                },
+              ),
+              onNotification: (ScrollNotification n) {
+                if (n.metrics.pixels <= n.metrics.minScrollExtent) {
+                  if (_direction == MoveDirection.up) {
+                    _downFrom(widget.topOffsetMin);
+                  }
+                } else if (n.metrics.pixels >= n.metrics.maxScrollExtent) {
+                  if (_direction == MoveDirection.down) {
+                    _upFrom(widget.topOffsetMax);
+                  }
+                } else {
+                  if (_direction == MoveDirection.down && n.metrics.pixels - (_scrollPixel ?? n.metrics.pixels) > 10) {
+                    _upFrom(widget.topOffsetMax);
+                  }
+                  _scrollPixel = n.metrics.pixels;
+                }
+                return true;
+              },
+            ),
+          )
+        ],
+      ),
     );
   }
 }

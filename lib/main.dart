@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:yide/models/task_data.dart';
 
 import 'screens/splash_screen/splash_screen.dart';
 import 'screens/list_screen/list_screen.dart';
-import 'screens/list_screen/task_list/task_list_data.dart';
 import 'screens/detail_screen/detail_screen.dart';
 
 void main() => runApp(MyApp());

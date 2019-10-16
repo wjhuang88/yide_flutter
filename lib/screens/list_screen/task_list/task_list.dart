@@ -1,8 +1,6 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 
-import 'task_list_data.dart';
+import 'package:yide/models/task_data.dart';
 
 const _taskListGap = 25.0;
 const _taskListLTPadding = 20.0;
@@ -15,23 +13,23 @@ const _taskContentStyle = const TextStyle(color: Colors.black, fontSize: 14, fon
 class TaskList extends StatelessWidget {
   const TaskList({
     Key key,
-    @required this.listData,
+    @required this.data,
     this.onItemTap,
-  }) : assert(listData != null), super(key: key);
+  }) : assert(data != null), super(key: key);
 
-  final List<TaskData> listData;
+  final List<TaskPack> data;
   final void Function(TaskData data) onItemTap;
 
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      itemCount: listData.length,
+      itemCount: data.length,
       itemBuilder: (context, index) {
-        var data = listData[index];
-        assert(data.id != null);
+        var item = data[index];
+        assert(item != null);
         return Task(
-          key: ValueKey('task_list_item_${data.id}'),
-          data: data,
+          key: ValueKey('task_list_item_${item.data.id}'),
+          dataPack: item,
           onTap: (data) => onItemTap(data),
         );
       },
@@ -44,11 +42,11 @@ class TaskList extends StatelessWidget {
 class Task extends StatelessWidget {
   const Task({
     Key key,
-    @required this.data,
+    @required this.dataPack,
     this.onTap,
-  }) : assert(data != null), super(key: key);
+  }) : assert(dataPack != null), super(key: key);
 
-  final TaskData data;
+  final TaskPack dataPack;
   final void Function(TaskData data) onTap;
 
   @override
@@ -82,7 +80,7 @@ class Task extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              Text(timeFomatter(data.taskTime), style: _taskTimeStyle,),
+              Text(timeFomatter(dataPack.data.taskTime), style: _taskTimeStyle,),
               SizedBox(height: 8,),
               Icon(Icons.check_circle_outline, color: Colors.grey[300],),
             ],
@@ -90,8 +88,8 @@ class Task extends StatelessWidget {
           SizedBox(width: _taskListLTPadding,),
           Expanded(
             child: GestureDetector(
-              onTap: () => onTap(data),
-              child: TaskItemContainer(data: data),
+              onTap: () => onTap(dataPack.data),
+              child: TaskItemContainer(dataPack: dataPack),
             ),
           ),
         ],
@@ -103,67 +101,29 @@ class Task extends StatelessWidget {
 class TaskItemContainer extends StatelessWidget {
   const TaskItemContainer({
     Key key,
-    @required this.data,
+    @required this.dataPack,
   }) : super(key: key);
 
-  final TaskData data;
+  final TaskPack dataPack;
 
   @override
   Widget build(BuildContext context) {
-    final tagData = getTagData(data);
-    final heroTag = 'task_list_hero_${data.id}';
-    return Hero(
-      tag: heroTag,
-      child: Container(
-        height: double.infinity,
-        decoration: BoxDecoration(
-          color: tagData.backgroundColor,
-          borderRadius: BorderRadius.circular(_taskContentRadius),
-          // borderRadius: const BorderRadius.only(
-          //   topLeft: const Radius.circular(_taskContentRadius),
-          //   bottomRight: const Radius.circular(_taskContentRadius),
-          // )
-        ),
-        child: Row(
-          children: <Widget>[
-            const SizedBox(width: _taskContentPadding,),
-            tagData.icon,
-            const SizedBox(width: _taskContentPadding,),
-            Expanded(child: Text(data.content, style: _taskContentStyle, maxLines: 2, overflow: TextOverflow.ellipsis,)),
-            const SizedBox(width: _taskContentPadding,),
-          ],
-        ),
+    return Container(
+      height: double.infinity,
+      decoration: BoxDecoration(
+        color: dataPack.tag.backgroundColor,
+        borderRadius: BorderRadius.circular(_taskContentRadius),
+      ),
+      child: Row(
+        children: <Widget>[
+          const SizedBox(width: _taskContentPadding,),
+          dataPack.tag.icon,
+          const SizedBox(width: _taskContentPadding,),
+          Expanded(child: Text(dataPack.data.content, style: _taskContentStyle, maxLines: 2, overflow: TextOverflow.ellipsis,)),
+          const SizedBox(width: _taskContentPadding,),
+        ],
       ),
     );
   }
 }
 
-TaskTag getTagData(TaskData taskData) {
-  var randomList = [
-    const TaskTag(
-      id: '0',
-      backgroundColor: const Color(0xffe9f2ff),
-      icon: const Icon(Icons.home, color: Color(0xff7978fa),),
-    ),
-    const TaskTag(
-      id: '1',
-      backgroundColor: const Color(0xffffedea),
-      icon: const Icon(Icons.home, color: Color(0xfffc9b41),),
-    ),
-    const TaskTag(
-      id: '2',
-      backgroundColor: const Color(0xfffeeaea),
-      icon: const Icon(Icons.home, color: Color(0xffe14265),),
-    ),
-    const TaskTag(
-      id: '3',
-      backgroundColor: const Color(0xfffbe9ff),
-      icon: const Icon(Icons.home, color: Color(0xfff85cc3),),
-    ),
-  ];
-
-  var ran = Random(taskData.id.hashCode);
-
-  // TODO: 改为读取动态数据
-  return randomList[ran.nextInt(4)];
-}

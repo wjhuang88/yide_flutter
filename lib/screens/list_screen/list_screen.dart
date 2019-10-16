@@ -1,11 +1,11 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:yide/models/date_tools.dart';
+import 'package:yide/models/task_data.dart';
 
 import 'datetime_panel/week_panel.dart';
 import 'datetime_panel/calendar_panel.dart';
-import 'datetime_panel/date_tools.dart';
-import 'task_list/task_list_data.dart';
 import 'task_list/list_layer.dart';
 import 'input_layer.dart';
 
@@ -24,13 +24,12 @@ const _calendarBoxWidth = 60.0;
 const _calendarBoxRadius = 18.0;
 const _calendarBoxGap = 16.0;
 const _calendarTextGap = 5.0;
+const _canlendarPagePadding = 30.0;
 
 const _mainPanColor = Colors.white;
 const _mainPanDefaultMarginTop = 50.0;
 const _mainPanRadius = 45.0;
 const _mainPanTitleStyle = const TextStyle(color: const Color(0xff020e2c), fontSize: 16, letterSpacing: 5, fontWeight: FontWeight.w600);
-const _mainPanFoldOffset = 450.0;
-const _mainPanFoldHigherOffset = 400.0;
 
 const _panelOffsetBase = 300.0;
 
@@ -60,15 +59,9 @@ class _ListScreenState extends State<ListScreen> with SingleTickerProviderStateM
   double _panelOpacity = 0.0;
   double _panelOffset = 0.0;
 
-  int _calendarYear;
-  int _calendarMonth;
-
   @override
   void initState() {
     super.initState();
-    
-    _calendarYear = selectedDateTime.year;
-    _calendarMonth = selectedDateTime.month;
 
     _panelOpacityController = AnimationController(duration: Duration(milliseconds: 300), vsync: this);
     _panelOpacityAnim = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
@@ -115,19 +108,8 @@ class _ListScreenState extends State<ListScreen> with SingleTickerProviderStateM
         } else {
           _listLayerController.animationToFold();
         }
-        setState(() {
-          _calendarYear = year;
-          _calendarMonth = month;
-        });
       }
     );
-
-    // 获取初始数据
-    _getTaskListData().then((list){
-      setState(() {
-        _listLayerController.updateList(list);
-      });
-    });
   }
 
   void _openCalendar() {
@@ -144,6 +126,7 @@ class _ListScreenState extends State<ListScreen> with SingleTickerProviderStateM
       selectedDateTime = forDate;
     });
     _calendarController.update(forDate);
+    _listLayerController.updateList(forDate);
   } 
 
   void _closeCalendar(DateTime backDate) {
@@ -151,6 +134,7 @@ class _ListScreenState extends State<ListScreen> with SingleTickerProviderStateM
     _weekController.update(backDate);
     _listLayerController.animationToNormal();
     _panelOpacityController.reverse(from: 1);
+    _listLayerController.updateList(backDate);
   }
 
   void _closeCalendarWithNoModify() {
@@ -160,13 +144,16 @@ class _ListScreenState extends State<ListScreen> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
+    var blockSizeHigher = (MediaQuery.of(context).size.width - _canlendarPagePadding * 2) / 7 * 6 + 75 + _appTitleHeight;
+    var blockSize = (MediaQuery.of(context).size.width - _canlendarPagePadding * 2) / 7 * 7 + 75 + _appTitleHeight;
+
     return Scaffold(
       backgroundColor: _mainPanColor,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: Offstage(
         offstage: _inputIsShow,
         child: FloatingActionButton(
-          backgroundColor: _backgroundColor,
+          backgroundColor: Colors.blue,
           child: const Icon(Icons.add),
           // 添加内容按钮点击事件
           onPressed: () {
@@ -177,30 +164,14 @@ class _ListScreenState extends State<ListScreen> with SingleTickerProviderStateM
       ),
       body: Container(
         color: _backgroundColor,
-        // decoration: BoxDecoration(
-        //   image: DecorationImage(
-        //     image: AssetImage('assets/images/bg.jpg'),
-        //     fit: BoxFit.contain,
-        //     alignment: Alignment.topCenter
-        //   ),
-        // ),
         child: Stack(
           children: <Widget>[
             Column(
               mainAxisAlignment: MainAxisAlignment.start,
               children: <Widget>[
-                Stack(
-                  alignment: Alignment.topCenter,
-                  children: <Widget>[
-                    Offstage(
-                      offstage: !_showMonthSimple,
-                      child: _buildTitleBar(1.0 - _panelOpacity),
-                    ),
-                    // Offstage(
-                    //   offstage: !_showMonthDetail,
-                    //   child: _buildCalendarBar(_panelOpacity),
-                    // ),
-                  ],
+                Offstage(
+                  offstage: !_showMonthSimple,
+                  child: _buildTitleBar(1.0 - _panelOpacity),
                 ),
                 Stack(
                   alignment: Alignment.topCenter,
@@ -212,16 +183,16 @@ class _ListScreenState extends State<ListScreen> with SingleTickerProviderStateM
                         child: _buildDatePanelSimple(1.0 - _panelOpacity),
                       ),
                     ),
-                    Offstage(
-                      offstage: !_showMonthDetail,
-                      child: Transform.translate(
-                        offset: Offset(0.0, _panelOffsetBase - _panelOffset),
-                        child: _buildDatePanelDetail(_panelOpacity)
-                      ),
-                    ),
                   ],
                 ),
               ],
+            ),
+            Offstage(
+              offstage: !_showMonthDetail,
+              child: Transform.translate(
+                offset: Offset(0.0, _panelOffsetBase - _panelOffset),
+                child: _buildDatePanelDetail(_panelOpacity)
+              ),
             ),
             ListLayer(
               panelColor: _mainPanColor,
@@ -229,10 +200,10 @@ class _ListScreenState extends State<ListScreen> with SingleTickerProviderStateM
               panelTitleStyle: _mainPanTitleStyle,
               topOffsetMin: _appTitleHeight,
               topOffsetMax: _appTitleHeight + _calendarBoxHeight + _mainPanDefaultMarginTop,
-              topOffsetFold: _mainPanFoldOffset,
-              topOffsetFoldHigher: _mainPanFoldHigherOffset,
-              taskListData: const [],
+              topOffsetFold: blockSize,
+              topOffsetFoldHigher: blockSizeHigher,
               controller: _listLayerController,
+              initDate: selectedDateTime,
             ),
             InputLayer(
               controller: _inputLayerController,
@@ -316,60 +287,4 @@ class _ListScreenState extends State<ListScreen> with SingleTickerProviderStateM
       ),
     );
   }
-}
-
-Future<List<TaskData>> _getTaskListData() async {
-  // TODO: 请求远程数据
-  return [
-    TaskData(
-      id: '0',
-      taskTime: DateTime.now(),
-      content: '我要做点什么事情，要做一件事！看看,look look, English!'
-    ),
-    TaskData(
-      id: '1',
-      taskTime: DateTime.now(),
-      content: '我要做点什么事情，要做一件事！看看,look look, English!再来一个'
-    ),
-    TaskData(
-      id: '2',
-      taskTime: DateTime.now(),
-      content: '我要做点什么事情，要做一件事！看看,look look, English!'
-    ),
-    TaskData(
-      id: '3',
-      taskTime: DateTime.now(),
-      content: '我要做点什么事情，要做一件事！看看,look look, English!'
-    ),
-    TaskData(
-      id: '4',
-      taskTime: DateTime.now(),
-      content: '我要做点什么事情，要做一件事！看看,look look, English!'
-    ),
-    TaskData(
-      id: '5',
-      taskTime: DateTime.now(),
-      content: '我要做点什么事情，要做一件事！看看,look look, English!'
-    ),
-    TaskData(
-      id: '6',
-      taskTime: DateTime.now(),
-      content: '我要做点什么事情，要做一件事！看看,look look, English!'
-    ),
-    TaskData(
-      id: '7',
-      taskTime: DateTime.now(),
-      content: '我要做点什么事情，要做一件事！看看,look look, English!'
-    ),
-    TaskData(
-      id: '8',
-      taskTime: DateTime.now(),
-      content: '我要做点什么事情，要做一件事！看看,look look, English!'
-    ),
-    TaskData(
-      id: '9',
-      taskTime: DateTime.now(),
-      content: '我要做点什么事情，要做一件事！看看,look look, English!'
-    ),
-  ];
 }

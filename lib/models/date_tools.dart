@@ -38,6 +38,16 @@ const weekMap = {
   7: '周日',
 };
 
+const weekMapLong = {
+  1: '星期一',
+  2: '星期二',
+  3: '星期三',
+  4: '星期四',
+  5: '星期五',
+  6: '星期六',
+  7: '星期日',
+};
+
 const weekMapShort = {
   1: '一',
   2: '二',
@@ -62,6 +72,12 @@ String getMonthNameShort(int month) {
 
 String getWeekName(int week) {
   var value = weekMap[week];
+  assert(value != null);
+  return value;
+}
+
+String getWeekNameLong(int week) {
+  var value = weekMapLong[week];
   assert(value != null);
   return value;
 }
