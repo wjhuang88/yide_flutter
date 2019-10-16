@@ -127,7 +127,7 @@ Future<TaskPack> getTaskData(String id) async {
   }[id];
 
   TaskData data = await _getList(id);
-  TaskTag tag = await getTagData(data);
+  TaskTag tag = await _getTagData(data);
 
   return TaskPack(data, tag);
 }
@@ -144,7 +144,7 @@ Future<List<TaskPack>> getTaskList(Object args) async {
   return result;
 }
 
-Future<TaskTag> getTagData(TaskData taskData) async {
+Future<TaskTag> _getTagData(TaskData taskData) async {
   // TODO: 改为读取动态数据
   var tagList = {
     '0': const TaskTag(
@@ -168,4 +168,27 @@ Future<TaskTag> getTagData(TaskData taskData) async {
   };
 
   return tagList[taskData.tagId];
+}
+
+Future<List<TaskTag>> getTagList() async {
+  return [
+    const TaskTag(
+      id: '0',
+      backgroundColor: const Color(0xffe9f2ff),
+      icon: const Icon(Icons.work, color: Color(0xff7978fa),),
+      name: '工作',
+    ),
+    const TaskTag(
+      id: '1',
+      backgroundColor: const Color(0xffffedea),
+      icon: const Icon(Icons.home, color: Color(0xfffc9b41),),
+      name: '生活',
+    ),
+    const TaskTag(
+      id: '2',
+      backgroundColor: const Color(0xfffeeaea),
+      icon: const Icon(Icons.book, color: Color(0xffe14265),),
+      name: '自我提升',
+    ),
+  ];
 }

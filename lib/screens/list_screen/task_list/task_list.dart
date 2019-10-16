@@ -18,7 +18,7 @@ class TaskList extends StatelessWidget {
   }) : assert(data != null), super(key: key);
 
   final List<TaskPack> data;
-  final void Function(TaskData data) onItemTap;
+  final void Function(TaskPack data) onItemTap;
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +47,7 @@ class Task extends StatelessWidget {
   }) : assert(dataPack != null), super(key: key);
 
   final TaskPack dataPack;
-  final void Function(TaskData data) onTap;
+  final void Function(TaskPack data) onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +88,7 @@ class Task extends StatelessWidget {
           SizedBox(width: _taskListLTPadding,),
           Expanded(
             child: GestureDetector(
-              onTap: () => onTap(dataPack.data),
+              onTap: () => onTap(dataPack),
               child: TaskItemContainer(dataPack: dataPack),
             ),
           ),

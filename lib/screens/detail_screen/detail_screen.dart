@@ -1,8 +1,10 @@
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:yide/models/date_tools.dart';
 import 'package:yide/models/task_data.dart';
+import 'package:yide/components/panel_switcher.dart';
 
 const _backgroundColor = const Color(0xff0a3f74);
 
@@ -29,22 +31,6 @@ const _panelDecoration = const BoxDecoration(
   ),
   boxShadow: <BoxShadow>[
     const BoxShadow(
-      offset: const Offset(0.0, -3.0),
-      blurRadius: 3.0,
-      color: const Color(0x4CBDBDBD),
-    ),
-  ],
-);
-const _subPanelDecoration = const BoxDecoration(
-  color: Colors.white,
-  borderRadius: const BorderRadius.only(
-    topLeft: const Radius.circular(_mainPanRadius),
-    topRight: const Radius.circular(_mainPanRadius),
-    bottomLeft: const Radius.circular(_mainPanRadius),
-    bottomRight: const Radius.circular(_mainPanRadius),
-  ),
-  boxShadow: <BoxShadow>[
-    const BoxShadow(
       offset: const Offset(0.0, 0.0),
       blurRadius: 3.0,
       spreadRadius: 1.0,
@@ -55,15 +41,13 @@ const _subPanelDecoration = const BoxDecoration(
 
 const _panelMargin = const EdgeInsets.fromLTRB(15.0, 0.0, 15.0, _panelBottomMargin);
 
-typedef _PageRouteBuilder = Widget Function(BuildContext);
-
 class DetailScreen extends StatefulWidget {
   DetailScreen(
-    this.data,
+    this.dataPack,
     {Key key}
   ) : super(key: key);
 
-  final TaskData data;
+  final TaskPack dataPack;
 
   @override
   _DetailScreenState createState() => _DetailScreenState();
@@ -71,25 +55,30 @@ class DetailScreen extends StatefulWidget {
 
 class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderStateMixin {
 
-  Future<TaskTag> tagData;
-  double boxOffset = 0.0;
-
-  AnimationController _boxOffsetController;
-  Animation<double> _boxOffsetAnim;
+  TaskTag _tagData;
+  TaskTag _oldTagData;
 
   IconData _floatingButtomIcon = Icons.check;
   VoidCallback _floatingButtomAction = () {};
 
+  List<TaskTag> _tagList = const [];
+
+  PanelSwitcherController _panelSwitcherController;
+
   @override
   void initState() {
     super.initState();
-    tagData = getTagData(widget.data);
-    _boxOffsetController = AnimationController(duration: Duration(milliseconds: 300), vsync: this);
-    _boxOffsetAnim = Tween<double>(begin: 0.0, end: 1.0).animate(_boxOffsetController);
-    _boxOffsetAnim.addListener(() => setState((){
-      boxOffset = lerpDouble(_boxOffsetMin, _boxOffsetMax, _boxOffsetAnim.value);
-    }));
+    _oldTagData = _tagData = widget.dataPack.tag;
+
+    getTagList().then((list) {
+      setState(() {
+        _tagList = list;
+      });
+    });
+
+    _panelSwitcherController = PanelSwitcherController();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -125,91 +114,67 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
           decoration: _panelDecoration,
           margin: _panelMargin,
         ),
-        child: Container(
-          alignment: Alignment.topCenter,
-          transform: Matrix4.translationValues(boxOffset, boxOffset, 0.0),
-          height: _mainHeight,
-          margin: _panelMargin,
-          decoration: _panelDecoration,
-          child: Navigator(
-            initialRoute: 'home',
-            onGenerateRoute: (settings) {
-              switch(settings.name) {
-                case 'home': {
-                  return _buildFadeRoute(_mainPanelBuilder);
-                }
-                case 'tags': {
-                  return _buildSlideRoute(_tagsPanelBuilder);
-                }
-                default:
-                  throw FlutterError(
-                    'The builder for route "${settings.name}" returned null.\n'
-                    'Route builders must never return null.'
-                  );
-              }
+        child: PanelSwitcher(
+          initPage: 'main',
+          backgroundPage: 'main',
+          controller: _panelSwitcherController,
+          pageMap: {
+            'main': (context, animValue) {
+              var boxOffset = lerpDouble(_boxOffsetMin, _boxOffsetMax, animValue);
+              return DetailPanel(
+                boxOffset: boxOffset,
+                child: _mainPanelBuilder(context),
+              );
             },
-          ),
+            'tags': (context, animValue) {
+              var boxOffset = lerpDouble(-300, 0, animValue);
+              return DetailPanel(
+                boxOffset: boxOffset,
+                child: _tagsPanelBuilder(context),
+              );
+            },
+          },
         ),
       ),
     );
   }
 
-  PageRouteBuilder _buildSlideRoute(_PageRouteBuilder pageBuilder) {
-    return PageRouteBuilder<bool>(
-      pageBuilder: (context, anim1, anim2) => pageBuilder(context),
-      transitionDuration: Duration(milliseconds: 300),
-      transitionsBuilder: (context, anim1, anim2, child) {
-        return SlideTransition(
-          position: Tween<Offset>(begin: Offset(-1.0, -1.0), end: Offset(0.0, 0.0)).animate(CurvedAnimation(
-              parent: anim1,
-              curve: Curves.easeOutSine,
-            ),
-          ),
-          child: child,
-        );
-      },
-    );
-  }
-
-  PageRouteBuilder _buildFadeRoute(_PageRouteBuilder pageBuilder) {
-    return PageRouteBuilder<bool>(
-      pageBuilder: (context, anim1, anim2) => pageBuilder(context),
-      transitionDuration: Duration(milliseconds: 300),
-      transitionsBuilder: (context, anim1, anim2, child) {
-        return FadeTransition(
-          opacity: Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
-              parent: anim1,
-              curve: Curves.easeOut,
-            ),
-          ),
-          child: child,
-        );
-      },
-    );
-  }
-
   Widget _tagsPanelBuilder(BuildContext context) {
-    _floatingButtomIcon = Icons.keyboard_backspace;
-    return Container(
-      alignment: Alignment.topCenter,
-      transform: Matrix4.translationValues(-boxOffset, -boxOffset, 0.0),
-      height: _mainHeight,
-      decoration: _subPanelDecoration,
-      child: FlatButton(
-        child: Text('back'),
-        onPressed: () {
-          Navigator.of(context).pop(true);
-        },
-      ),
+    return Column(
+      children: <Widget>[
+        const SizedBox(height: _headerMargin,),
+        const Text('标签', style: _headerStyle,),
+        const SizedBox(height: _headerMargin + 15,),
+      ]..addAll(_tagList.map(
+        (tag) => Container(
+          width: 250.0,
+          height: 50.0,
+          margin: EdgeInsets.all(10.0),
+          child: FlatButton.icon(
+            label: Text(tag.name),
+            icon: tag.icon,
+            color: tag.backgroundColor,
+            shape: StadiumBorder(),
+            onPressed: () {
+              _tagData = tag;
+              _panelSwitcherController.switchBack(() {
+                _floatingButtomAction = () {};
+                setState(() {
+                  _floatingButtomIcon = Icons.check;
+                });
+              });
+            },
+          ),
+        )
+      )),
     );
   }
 
   Widget _mainPanelBuilder(BuildContext context) {
-    _floatingButtomIcon = Icons.check;
     return ListView(
       padding: const EdgeInsets.fromLTRB(40.0, 40.0, 40.0, 0.0),
       children: <Widget>[
-        Text(widget.data.content, style: _headerStyle, textAlign: TextAlign.center,),
+        Text(widget.dataPack.data.content, style: _headerStyle, textAlign: TextAlign.center,),
 
         const SizedBox(height: _headerMargin,),
         Row(
@@ -217,7 +182,7 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
           children: <Widget>[
             const Icon(Icons.calendar_today, color: Colors.grey, size: 18,),
         const SizedBox(width: 5,),
-            Text('${widget.data.taskTime.month}月${widget.data.taskTime.day}日  ${getWeekNameLong(widget.data.taskTime.weekday)}', textAlign: TextAlign.center,),
+            Text('${widget.dataPack.data.taskTime.month}月${widget.dataPack.data.taskTime.day}日  ${getWeekNameLong(widget.dataPack.data.taskTime.weekday)}', textAlign: TextAlign.center,),
           ],
         ),
         const SizedBox(height: _headerMargin,),
@@ -225,25 +190,25 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            StreamBuilder<TaskTag>(
-              stream: (() async* {yield await tagData;})(),
-              initialData: TaskTag.defaultNull(),
-              builder: (context, snapshot) {
-                return FlatButton.icon(
-                  icon: snapshot.data.icon,
-                  label: Text(snapshot.data.name),
-                  color: snapshot.data.backgroundColor,
-                  colorBrightness: Brightness.light,
-                  shape: StadiumBorder(),
-                  onPressed: () async {
-                    _boxOffsetController.forward(from: 0);
-                    var callback = await Navigator.of(context).pushNamed<bool>('tags');
-                    if (callback) {
-                      _boxOffsetController.reverse(from: 1);
-                    }
-                  },
-                );
-              }
+            FlatButton.icon(
+              icon: _tagData.icon,
+              label: Text(_tagData.name),
+              color: _tagData.backgroundColor,
+              colorBrightness: Brightness.light,
+              shape: StadiumBorder(),
+              onPressed: () {
+                _floatingButtomAction = () => _panelSwitcherController.switchBack(() {
+                  _floatingButtomAction = () {};
+                  setState(() {
+                    _floatingButtomIcon = Icons.check;
+                  });
+                });
+                _panelSwitcherController.switchTo('tags', () {
+                  setState(() {
+                    _floatingButtomIcon = Icons.keyboard_backspace;
+                  });
+                });
+              },
             ),
           ],
         ),
@@ -285,12 +250,34 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
   }
 }
 
+class DetailPanel extends StatelessWidget {
+  const DetailPanel({
+    Key key,
+    @required this.boxOffset,
+    this.child,
+  }) : super(key: key);
+
+  final double boxOffset;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      alignment: Alignment.topCenter,
+      transform: Matrix4.translationValues(boxOffset, boxOffset, 0.0),
+      height: _mainHeight,
+      margin: _panelMargin,
+      decoration: _panelDecoration,
+      child: child,
+    );
+  }
+}
+
 class _FloatingLocation extends FloatingActionButtonLocation {
   @override
   Offset getOffset(ScaffoldPrelayoutGeometry scaffoldGeometry) {
     final double fabX = (scaffoldGeometry.scaffoldSize.width - scaffoldGeometry.floatingActionButtonSize.width) / 2.0;
-    double fabY = _appTitleHeight + _mainHeight + 15;
+    double fabY = min(_appTitleHeight + _mainHeight + 15, scaffoldGeometry.scaffoldSize.height - _panelBottomMargin - 30);
     return Offset(fabX, fabY);
   }
-
 }

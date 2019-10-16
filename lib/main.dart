@@ -36,7 +36,7 @@ class MyApp extends StatelessWidget {
           }
           case 'detail': {
             final args = settings.arguments;
-            assert(args is TaskData);
+            assert(args is TaskPack);
             return PageRouteBuilder(
               pageBuilder: (context, anim1, anim2) => DetailScreen(args),
               transitionDuration: Duration(milliseconds: 300),
