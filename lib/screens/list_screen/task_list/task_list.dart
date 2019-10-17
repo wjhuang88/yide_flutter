@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 import 'package:yide/models/task_data.dart';
 
@@ -22,6 +23,15 @@ class TaskList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (data.isEmpty) {
+      return Center(
+        child: SpinKitCircle(
+          color: Colors.blue,
+          size: 70.0,
+        ),
+      );
+    }
+    // data.isNotEmpty
     return ListView.separated(
       itemCount: data.length,
       itemBuilder: (context, index) {

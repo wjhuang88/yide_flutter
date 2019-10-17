@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:yide/models/date_tools.dart';
 
 const double _sizeFactor = 1.3;
@@ -79,6 +80,18 @@ class _WeekPanelState extends State<WeekPanel> with TickerProviderStateMixin {
   bool _animationBarrier = false;
 
   double _dragStart = 0, _dragDelta = 0;
+
+  int _lastHapticIndex;
+
+  void _dateChanged(DateTime date, int index) {
+    if (_lastHapticIndex != index) {
+      HapticFeedback.selectionClick();
+      _lastHapticIndex = index;
+    }
+    if (widget.onChange != null) {
+      widget.onChange(date);
+    }
+  }
 
   @override
   void initState() {
@@ -215,7 +228,7 @@ class _WeekPanelState extends State<WeekPanel> with TickerProviderStateMixin {
     _listOffsetDeltaNext = _listOffsetDelta + widget.calendarBoxWidth + widget.calendarBoxGap;
     _tileControllers[_selectedIndex].reverse(from: 1);
     _tileControllers[++_selectedIndex].forward(from: 0);
-    widget.onChange(_weekData[_selectedIndex].dateTime);
+    _dateChanged(_weekData[_selectedIndex].dateTime, _selectedIndex);
   }
 
   void _goPrevTile() {
@@ -234,7 +247,7 @@ class _WeekPanelState extends State<WeekPanel> with TickerProviderStateMixin {
     _listOffsetDeltaNext = _listOffsetDelta - widget.calendarBoxWidth - widget.calendarBoxGap;
     _tileControllers[_selectedIndex].reverse(from: 1);
     _tileControllers[--_selectedIndex].forward(from: 0);
-    widget.onChange(_weekData[_selectedIndex].dateTime);
+    _dateChanged(_weekData[_selectedIndex].dateTime, _selectedIndex);
   }
 
   List<SliverToBoxAdapter> _makeTileSlivers() {

@@ -5,7 +5,7 @@ import 'package:yide/models/date_tools.dart';
 
 const _weekHeaders = ['日', '一', '二', '三', '四', '五', '六'];
 
-const _aReallyBigIndex = 30000000;
+const _aReallyLargeIndex = 30000000;
 
 const _pagePadding = 30.0;
 const _itemSpace = 8.0;
@@ -36,7 +36,7 @@ class CalendarController {
   void Function(DateTime date) onSelect;
   void Function(int year, int month) onMonthChange;
 
-  bool get isHigher => _state._pageLines[_state._pageController.page.round() - _aReallyBigIndex] == 5;
+  bool get isHigher => _state._pageLines[_state._pageController.page.round() - _aReallyLargeIndex] == 5;
   
   void update(DateTime newDate) {
     _state?._update(newDate);
@@ -51,16 +51,38 @@ class CalendarController {
   }
 
   void resetMonth(DateTime newDate) {
-    _state?._update(newDate);
-    _state?._pageController?.jumpToPage(_aReallyBigIndex);
+    if (_state == null) return;
+
+    _state._update(newDate);
+    var selectedYear = _state._selectedTime.year;
+    var selectedMonth = _state._selectedTime.month;
+    var pageOffset = (selectedYear - _state._year) * 12 + selectedMonth - _state._month;
+    _state?._pageController?.jumpToPage(_aReallyLargeIndex + pageOffset);
   }
 }
 
 class CalendarPanel extends StatefulWidget {
-  const CalendarPanel({Key key, this.baseTime, this.controller}) : super(key: key);
+  const CalendarPanel({
+    Key key, 
+    this.baseTime, 
+    this.controller, 
+    this.color = Colors.transparent, 
+    this.textColor = Colors.white, 
+    this.selectedColor = Colors.white, 
+    this.selectedTextColor = const Color(0xff0a3f74), 
+    this.fadedColor = const Color(0x4fffffff),
+    this.showBottom = true,
+  }) : super(key: key);
 
   final DateTime baseTime;
   final CalendarController controller;
+
+  final Color color;
+  final Color textColor;
+  final Color selectedColor;
+  final Color selectedTextColor;
+  final Color fadedColor;
+  final bool showBottom;
 
   @override
   _CalendarPanelState createState() => _CalendarPanelState(controller, baseTime);
@@ -75,7 +97,7 @@ class _CalendarPanelState extends State<CalendarPanel> with SingleTickerProvider
   int get _index {
     var i;
     try {
-      i = _pageController.page.round() - _aReallyBigIndex;
+      i = _pageController.page.round() - _aReallyLargeIndex;
     } catch (e) {
       i = 0;
     }
@@ -121,7 +143,7 @@ class _CalendarPanelState extends State<CalendarPanel> with SingleTickerProvider
     _initList(_year, _month);
 
     _pageController = PageController(
-      initialPage: _aReallyBigIndex,
+      initialPage: _aReallyLargeIndex,
       keepPage: false,
     );
 
@@ -276,7 +298,7 @@ class _CalendarPanelState extends State<CalendarPanel> with SingleTickerProvider
                     height: 38,
                     alignment: Alignment.center,
                     padding: const EdgeInsets.only(left: _pagePadding),
-                    child: _buildHead(_shuffleMonth, lerpDouble(14.0, 17.0, _anim.value), Colors.white, weight: FontWeight.w600),
+                    child: _buildHead(_shuffleMonth, lerpDouble(14.0, 17.0, _anim.value), widget.textColor, weight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -289,7 +311,7 @@ class _CalendarPanelState extends State<CalendarPanel> with SingleTickerProvider
             opacity: 1 - _opacityFactor,
             child: Transform.translate(
               offset: Offset(0.0, lerpDouble(0.0, 5.0, _opacityFactor)),
-              child: _buildHead(_showCurrentMonth, 17, Colors.white, weight: FontWeight.w700),
+              child: _buildHead(_showCurrentMonth, 17, widget.textColor, weight: FontWeight.w700),
             ),
           ),
         ),
@@ -309,11 +331,11 @@ class _CalendarPanelState extends State<CalendarPanel> with SingleTickerProvider
           child: PageView.builder(
             scrollDirection: Axis.vertical,
             onPageChanged: (_i) {
-              final index = _i - _aReallyBigIndex;
+              final index = _i - _aReallyLargeIndex;
               if (_currentPage == index) return;
 
               if ((index - _currentPage).abs() > 1000) {
-                _pageController.jumpToPage(_currentPage + _aReallyBigIndex);
+                _pageController.jumpToPage(_currentPage + _aReallyLargeIndex);
                 return;
               }
 
@@ -333,7 +355,7 @@ class _CalendarPanelState extends State<CalendarPanel> with SingleTickerProvider
             },
             controller: _pageController,
             itemBuilder: (context, _i) {
-              final index = _i - _aReallyBigIndex;
+              final index = _i - _aReallyLargeIndex;
               final itemDate = DateTime(_year, _month + index);
               _initList(itemDate.year, itemDate.month);
               var count = _prevList.length + _currentList.length + _nextList.length;
@@ -353,11 +375,11 @@ class _CalendarPanelState extends State<CalendarPanel> with SingleTickerProvider
             },
           ),
         ),
-        GestureDetector(
+        widget.showBottom ? GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () => _controller.goNextMonth(),
           child: _buildCalendarBottom(),
-        ),
+        ) : Container(),
       ],
     );
   }
@@ -373,7 +395,7 @@ class _CalendarPanelState extends State<CalendarPanel> with SingleTickerProvider
               child: Container(
                 alignment: Alignment.center,
                 padding: const EdgeInsets.only(left: _pagePadding),
-                child: _buildHead(_showNextMonth, 14, const Color(0x4fffffff)),
+                child: _buildHead(_showNextMonth, 14, widget.fadedColor),
               ),
             ),
             Expanded(
@@ -388,15 +410,15 @@ class _CalendarPanelState extends State<CalendarPanel> with SingleTickerProvider
   Widget _buildHeaderNode(String weekday) {
     return Container(
       key: ValueKey('header_node_$weekday'),
-      color: Colors.transparent,
+      color: widget.color,
       alignment: Alignment.center,
-      child: Text(weekday, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),),
+      child: Text(weekday, style: TextStyle(color: widget.textColor, fontWeight: FontWeight.w700),),
     );
   }
 
   Widget _buildCurrentNode(DateTime date) {
-    const background = Colors.transparent;
-    const textColor = Colors.white;
+    final background = widget.color;
+    final textColor = widget.textColor;
     return InkWell(
       key: ValueKey('header_node_${date.month}_${date.day}'),
       borderRadius: _borderRadius,
@@ -410,7 +432,7 @@ class _CalendarPanelState extends State<CalendarPanel> with SingleTickerProvider
           borderRadius: _borderRadius,
         ),
         alignment: Alignment.center,
-        child: Text(date.day.toString(), style: const TextStyle(color: textColor, fontWeight: FontWeight.w700),),
+        child: Text(date.day.toString(), style: TextStyle(color: textColor, fontWeight: FontWeight.w700),),
       ),
     );
   }
@@ -425,11 +447,11 @@ class _CalendarPanelState extends State<CalendarPanel> with SingleTickerProvider
       },
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: widget.selectedColor,
           borderRadius: _borderRadius,
         ),
         alignment: Alignment.center,
-        child: Text(date.day.toString(), style: const TextStyle(color: const Color(0xff0a3f74), fontWeight: FontWeight.w700),),
+        child: Text(date.day.toString(), style: TextStyle(color: widget.selectedTextColor, fontWeight: FontWeight.w700),),
       ),
     );
   }
@@ -438,11 +460,11 @@ class _CalendarPanelState extends State<CalendarPanel> with SingleTickerProvider
     return Container(
       key: ValueKey('header_node_${date.month}_${date.day}'),
       decoration: BoxDecoration(
-        color: Colors.transparent,
+        color: widget.color,
         borderRadius: _borderRadius,
       ),
       alignment: Alignment.center,
-      child: Text(date.day.toString(), style: const TextStyle(color: const Color(0x2fffffff), fontWeight: FontWeight.w700),),
+      child: Text(date.day.toString(), style: TextStyle(color: widget.fadedColor, fontWeight: FontWeight.w500),),
     );
   }
 
@@ -452,7 +474,7 @@ class _CalendarPanelState extends State<CalendarPanel> with SingleTickerProvider
       child: Container(
         alignment: Alignment.center,
         height: 38,
-        color: Colors.transparent,
+        color: widget.color,
         child: Row(
           children: <Widget>[
             Expanded(
@@ -462,7 +484,7 @@ class _CalendarPanelState extends State<CalendarPanel> with SingleTickerProvider
                 padding: const EdgeInsets.only(left: _pagePadding),
                 child: Opacity(
                   opacity: 1 - _opacityFactor < 0.99 ? 0.0 : 1 - _opacityFactor,
-                  child: _buildHead(_showPrevMonth, 14, const Color(0x4fffffff)),
+                  child: _buildHead(_showPrevMonth, 14, widget.fadedColor),
                 ),
               ),
             ),
@@ -481,12 +503,12 @@ class _CalendarPanelState extends State<CalendarPanel> with SingleTickerProvider
       padding: const EdgeInsets.only(left: _itemSpace, right: _pagePadding),
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: _gridDelegate_4,
-      itemBuilder: (context, i) => const Icon(Icons.brightness_1, color: const Color(0x4fffffff), size: 8,),
+      itemBuilder: (context, i) => Icon(Icons.brightness_1, color: widget.fadedColor, size: 8,),
       itemCount: 4,
     );
   }
 
-  Widget _buildHead(DateTime currentDate, double size, Color color, {FontWeight weight = FontWeight.normal}) {
+  Widget _buildHead(DateTime currentDate, double size, Color color, {FontWeight weight = FontWeight.w700}) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.baseline,
       textBaseline: TextBaseline.alphabetic,

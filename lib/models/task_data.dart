@@ -140,7 +140,7 @@ Future<List<TaskPack>> getTaskList(Object args) async {
     var item = await getTaskData(list[i]);
     result.add(item);
   }
-  await Future.delayed(Duration(milliseconds: 200));
+  await Future.delayed(Duration(milliseconds: 300));
   return result;
 }
 

@@ -1,10 +1,14 @@
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+
+import 'package:yide/components/button_group.dart';
 import 'package:yide/models/date_tools.dart';
 import 'package:yide/models/task_data.dart';
 import 'package:yide/components/panel_switcher.dart';
+import 'package:yide/components/datetime_panel/calendar_panel.dart';
 
 const _backgroundColor = const Color(0xff0a3f74);
 
@@ -56,7 +60,8 @@ class DetailScreen extends StatefulWidget {
 class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderStateMixin {
 
   TaskTag _tagData;
-  TaskTag _oldTagData;
+
+  DateTime _taskDate;
 
   IconData _floatingButtomIcon = Icons.check;
   VoidCallback _floatingButtomAction = () {};
@@ -65,10 +70,13 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
 
   PanelSwitcherController _panelSwitcherController;
 
+  CalendarController _calendarController;
+
   @override
   void initState() {
     super.initState();
-    _oldTagData = _tagData = widget.dataPack.tag;
+    _tagData = widget.dataPack.tag;
+    _taskDate = widget.dataPack.data.taskTime;
 
     getTagList().then((list) {
       setState(() {
@@ -77,6 +85,34 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
     });
 
     _panelSwitcherController = PanelSwitcherController();
+    _calendarController = CalendarController(
+      onSelect: (date) {
+        _taskDate = date;
+        _switchBack();
+      }
+    );
+  }
+
+  void _switchBack() {
+    var isDatePage = _panelSwitcherController.currentPage == 'date';
+    _panelSwitcherController.switchBack(() {
+      _floatingButtomAction = () {};
+      if (isDatePage) {
+        _calendarController.resetMonth(_taskDate);
+      }
+      setState(() {
+        _floatingButtomIcon = Icons.check;
+      });
+    });
+  }
+
+  void _switchTo(String page) {
+    _floatingButtomAction = _switchBack;
+    _panelSwitcherController.switchTo(page, () {
+      setState(() {
+        _floatingButtomIcon = Icons.keyboard_backspace;
+      });
+    });
   }
 
   @override
@@ -133,9 +169,49 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
                 child: _tagsPanelBuilder(context),
               );
             },
+            'date': (context, animValue) {
+              var boxOffset = lerpDouble(-300, 0, animValue);
+              return DetailPanel(
+                boxOffset: boxOffset,
+                child: _datePanelBuilder(context),
+              );
+            },
           },
         ),
       ),
+    );
+  }
+
+  Widget _datePanelBuilder(BuildContext context) {
+    return Column(
+      children: <Widget>[
+        const SizedBox(height: _headerMargin,),
+        const Text('日期', style: _headerStyle,),
+        const SizedBox(height: _headerMargin,),
+
+        ButtonGroup(
+          color: Colors.blue,
+          textColor: Colors.white,
+          height: 30.0,
+          width: 240.0,
+          dataSet: {
+            '今日': () {},
+            '明天': () {},
+            '下周': () {},
+          },
+        ),
+        const SizedBox(height: _headerMargin,),
+
+        CalendarPanel(
+          baseTime: widget.dataPack.data.taskTime,
+          controller: _calendarController,
+          textColor: Colors.blueGrey[700],
+          selectedColor: Colors.blue,
+          selectedTextColor: Colors.white,
+          fadedColor: Colors.grey,
+          showBottom: false,
+        )
+      ],
     );
   }
 
@@ -177,13 +253,16 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
         Text(widget.dataPack.data.content, style: _headerStyle, textAlign: TextAlign.center,),
 
         const SizedBox(height: _headerMargin,),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Icon(Icons.calendar_today, color: Colors.grey, size: 18,),
-        const SizedBox(width: 5,),
-            Text('${widget.dataPack.data.taskTime.month}月${widget.dataPack.data.taskTime.day}日  ${getWeekNameLong(widget.dataPack.data.taskTime.weekday)}', textAlign: TextAlign.center,),
-          ],
+        GestureDetector(
+          onTap: () => _switchTo('date'),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              const Icon(Icons.calendar_today, color: Colors.grey, size: 18,),
+              const SizedBox(width: 5,),
+              Text('${_taskDate.month}月${_taskDate.day}日  ${getWeekNameLong(_taskDate.weekday)}', textAlign: TextAlign.center,),
+            ],
+          ),
         ),
         const SizedBox(height: _headerMargin,),
 
@@ -196,19 +275,7 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
               color: _tagData.backgroundColor,
               colorBrightness: Brightness.light,
               shape: StadiumBorder(),
-              onPressed: () {
-                _floatingButtomAction = () => _panelSwitcherController.switchBack(() {
-                  _floatingButtomAction = () {};
-                  setState(() {
-                    _floatingButtomIcon = Icons.check;
-                  });
-                });
-                _panelSwitcherController.switchTo('tags', () {
-                  setState(() {
-                    _floatingButtomIcon = Icons.keyboard_backspace;
-                  });
-                });
-              },
+              onPressed: () => _switchTo('tags'),
             ),
           ],
         ),
@@ -216,12 +283,24 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
         const SizedBox(height: _headerMargin,),
         const Text('提醒', style: _headerStyle, textAlign: TextAlign.center,),
         const SizedBox(height: _headerMargin,),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Icon(Icons.add_circle_outline, color: Colors.grey, size: 20,),
-            const Text('点击添加', textAlign: TextAlign.center,),
-          ],
+        GestureDetector(
+          onTap: () => showCupertinoModalPopup(
+            context: context,
+            builder: (context) => Container(
+              height: 150.0,
+              child: CupertinoDatePicker(
+                mode: CupertinoDatePickerMode.dateAndTime,
+                onDateTimeChanged: (date) {},
+              ),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              const Icon(Icons.add_circle_outline, color: Colors.grey, size: 20,),
+              const Text('点击添加', textAlign: TextAlign.center,),
+            ],
+          ),
         ),
 
         const SizedBox(height: _headerMargin,),

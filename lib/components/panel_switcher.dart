@@ -12,6 +12,8 @@ class PanelSwitcherController {
   void switchBack(VoidCallback callback) {
     _state?._reset(callback);
   }
+
+  String get currentPage => _state?._pageName;
 }
 
 class PanelSwitcher extends StatefulWidget {
