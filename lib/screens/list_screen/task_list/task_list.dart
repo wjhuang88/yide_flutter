@@ -127,7 +127,7 @@ class TaskItemContainer extends StatelessWidget {
       child: Row(
         children: <Widget>[
           const SizedBox(width: _taskContentPadding,),
-          dataPack.tag.icon,
+          Icon(dataPack.tag.icon, color: dataPack.tag.iconColor,),
           const SizedBox(width: _taskContentPadding,),
           Expanded(child: Text(dataPack.data.content, style: _taskContentStyle, maxLines: 2, overflow: TextOverflow.ellipsis,)),
           const SizedBox(width: _taskContentPadding,),

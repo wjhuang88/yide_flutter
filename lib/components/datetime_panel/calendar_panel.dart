@@ -1,6 +1,8 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:soundpool/soundpool.dart';
 import 'package:yide/models/date_tools.dart';
 
 const _weekHeaders = ['日', '一', '二', '三', '四', '五', '六'];
@@ -72,10 +74,13 @@ class CalendarPanel extends StatefulWidget {
     this.selectedTextColor = const Color(0xff0a3f74), 
     this.fadedColor = const Color(0x4fffffff),
     this.showBottom = true,
+    this.width,
   }) : super(key: key);
 
   final DateTime baseTime;
   final CalendarController controller;
+
+  final double width;
 
   final Color color;
   final Color textColor;
@@ -131,6 +136,11 @@ class _CalendarPanelState extends State<CalendarPanel> with SingleTickerProvider
   DateTime _showNextMonth;
   DateTime _shuffleMonth;
 
+  Soundpool _soundPool = Soundpool(streamType: StreamType.notification);
+  int _soundId;
+  int _soundPlayingIndex;
+  int _soundStreamId;
+
   @override
   void initState() {
     super.initState();
@@ -181,13 +191,33 @@ class _CalendarPanelState extends State<CalendarPanel> with SingleTickerProvider
       parent: _animController,
       curve: _animCurve,
     ));
+
+    rootBundle.load("assets/sounds/wind_sound.mp3").then((ByteData soundData) {
+      return _soundPool.load(soundData);
+    }).then((id) => _soundId = id);
   }
 
   @override
   void dispose() {
+    _soundPool.release();
+    _soundPool.dispose();
     _pageController.dispose();
     _animController.dispose();
     super.dispose();
+  }
+
+  void _playSound(index) async {
+    if (_soundId == null) return;
+
+    if (_soundPlayingIndex != index) {
+      if (_soundStreamId != null) {
+        await _soundPool.stop(_soundStreamId);
+        await _soundPool.resume(_soundStreamId);
+      } else {
+        _soundStreamId = await _soundPool.play(_soundId);
+      }
+      _soundPlayingIndex = index;
+    }
   }
 
   void refreshShowDate() {
@@ -274,113 +304,118 @@ class _CalendarPanelState extends State<CalendarPanel> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
+    final width = widget.width ?? MediaQuery.of(context).size.width;
+    final blockSizeHigher = (width - _pagePadding * 2) / 7 * 5;
+    final blockSize = (width - _pagePadding * 2) / 7 * 6;
 
-    var blockSizeHigher = (MediaQuery.of(context).size.width - _pagePadding * 2) / 7 * 5;
-    var blockSize = (MediaQuery.of(context).size.width - _pagePadding * 2) / 7 * 6;
-
-    return Column(
-      children: <Widget>[
-        Stack(
-          children: <Widget>[
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => _controller.goPrevMonth(),
-              child: _buildCalendarBar(),
-            ),
-            Offstage(
-              offstage: _opacityFactor < 0.001,
-              child: Opacity(
-                opacity: _opacityFactor,
-                child: SafeArea(
-                  bottom: false,
-                  child: Container(
-                    transform: Matrix4.identity()..translate(0.0, lerpDouble(0.0, 30.0, _anim.value), 0.0),
-                    height: 38,
-                    alignment: Alignment.center,
-                    padding: const EdgeInsets.only(left: _pagePadding),
-                    child: _buildHead(_shuffleMonth, lerpDouble(14.0, 17.0, _anim.value), widget.textColor, weight: FontWeight.w600),
+    return Container(
+      width: width,
+      child: Column(
+        children: <Widget>[
+          Stack(
+            children: <Widget>[
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => _controller.goPrevMonth(),
+                child: _buildCalendarBar(),
+              ),
+              Offstage(
+                offstage: _opacityFactor < 0.001,
+                child: Opacity(
+                  opacity: _opacityFactor,
+                  child: SafeArea(
+                    bottom: false,
+                    child: Container(
+                      transform: Matrix4.identity()..translate(0.0, lerpDouble(0.0, 30.0, _anim.value), 0.0),
+                      height: 38,
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.only(left: _pagePadding),
+                      child: _buildHead(_shuffleMonth, lerpDouble(14.0, 17.0, _anim.value), widget.textColor, weight: FontWeight.w600),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: _pagePadding),
-          child: Opacity(
-            opacity: 1 - _opacityFactor,
-            child: Transform.translate(
-              offset: Offset(0.0, lerpDouble(0.0, 5.0, _opacityFactor)),
-              child: _buildHead(_showCurrentMonth, 17, widget.textColor, weight: FontWeight.w700),
-            ),
+            ],
           ),
-        ),
-        SizedBox(height: 8,),
-        Container(
-          height: 40,
-          child: GridView.builder(
+          Padding(
             padding: const EdgeInsets.symmetric(horizontal: _pagePadding),
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: _gridDelegate_7,
-            itemBuilder: (context, i) => _buildHeaderNode(_weekHeaders[i]),
-            itemCount: _weekHeaders.length,
+            child: Opacity(
+              opacity: 1 - _opacityFactor,
+              child: Transform.translate(
+                offset: Offset(0.0, lerpDouble(0.0, 5.0, _opacityFactor)),
+                child: _buildHead(_showCurrentMonth, 17, widget.textColor, weight: FontWeight.w700),
+              ),
+            ),
           ),
-        ),
-        Container(
-          height: _boxHeight,
-          child: PageView.builder(
-            scrollDirection: Axis.vertical,
-            onPageChanged: (_i) {
-              final index = _i - _aReallyLargeIndex;
-              if (_currentPage == index) return;
-
-              if ((index - _currentPage).abs() > 1000) {
-                _pageController.jumpToPage(_currentPage + _aReallyLargeIndex);
-                return;
-              }
-
-              final itemDate = DateTime(_year, _month + index);
-              if (_controller.onMonthChange != null) {
-                _controller.onMonthChange(itemDate.year, itemDate.month);
-              }
-              setState(() {
-                _boxHeight = _pageLines[index] == 5 ? blockSizeHigher : blockSize;
-              });
-              if (index < _currentPage && !_animBarrier) {
-                _animController.forward(from: 0.01);
-              } else if (index > _currentPage && !_animBarrier) {
-                _animController.reverse(from: 0.99);
-              }
-              _currentPage = index;
-            },
-            controller: _pageController,
-            itemBuilder: (context, _i) {
-              final index = _i - _aReallyLargeIndex;
-              final itemDate = DateTime(_year, _month + index);
-              _initList(itemDate.year, itemDate.month);
-              var count = _prevList.length + _currentList.length + _nextList.length;
-              if (_pageLines[index] == null) {
-                var lines = _pageLines[index] = count ~/ 7;
-                _boxHeight = lines == 5 ? blockSizeHigher : blockSize;
-              } else {
-                _pageLines[index] = count ~/ 7;
-              }
-              return GridView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: _pagePadding),
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: _gridDelegate_7,
-                itemBuilder: (context, i) => _buildItem(_prevList, _currentList, _nextList, i),
-                itemCount: _prevList.length + _currentList.length + _nextList.length,
-              );
-            },
+          SizedBox(height: 8,),
+          Container(
+            height: 40,
+            child: GridView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: _pagePadding),
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: _gridDelegate_7,
+              itemBuilder: (context, i) => _buildHeaderNode(_weekHeaders[i]),
+              itemCount: _weekHeaders.length,
+            ),
           ),
-        ),
-        widget.showBottom ? GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => _controller.goNextMonth(),
-          child: _buildCalendarBottom(),
-        ) : Container(),
-      ],
+          Container(
+            height: _boxHeight,
+            child: PageView.builder(
+              scrollDirection: Axis.vertical,
+              onPageChanged: (_i) {
+                final index = _i - _aReallyLargeIndex;
+                if (_currentPage == index) return;
+
+                if ((index - _currentPage).abs() > 1000) {
+                  _pageController.jumpToPage(_currentPage + _aReallyLargeIndex);
+                  return;
+                }
+
+                _playSound(index);
+
+                final itemDate = DateTime(_year, _month + index);
+                if (_controller.onMonthChange != null) {
+                  _controller.onMonthChange(itemDate.year, itemDate.month);
+                }
+                setState(() {
+                  _boxHeight = _pageLines[index] == 5 ? blockSizeHigher : blockSize;
+                });
+                if (index < _currentPage && !_animBarrier) {
+                  _animController.forward(from: 0.01);
+                } else if (index > _currentPage && !_animBarrier) {
+                  _animController.reverse(from: 0.99);
+                }
+                _currentPage = index;
+              },
+              controller: _pageController,
+              itemBuilder: (context, _i) {
+                final index = _i - _aReallyLargeIndex;
+                final itemDate = DateTime(_year, _month + index);
+                _initList(itemDate.year, itemDate.month);
+                var count = _prevList.length + _currentList.length + _nextList.length;
+                if (_pageLines[index] == null) {
+                  var lines = _pageLines[index] = count ~/ 7;
+                  _boxHeight = lines == 5 ? blockSizeHigher : blockSize;
+                } else {
+                  _pageLines[index] = count ~/ 7;
+                }
+                return GridView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: _pagePadding),
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: _gridDelegate_7,
+                  itemBuilder: (context, i) => _buildItem(_prevList, _currentList, _nextList, i),
+                  itemCount: _prevList.length + _currentList.length + _nextList.length,
+                );
+              },
+            ),
+          ),
+          widget.showBottom ? GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => _controller.goNextMonth(),
+            child: _buildCalendarBottom(),
+          ) : Container(),
+        ],
+      ),
     );
   }
 

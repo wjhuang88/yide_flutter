@@ -19,8 +19,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_slidable: "^0.5.3"
   flutter_spinkit: "^4.0.0"
+  soundpool: "^0.5.3"
+  intl: ^0.16.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -51,6 +52,7 @@ flutter:
    - assets/images/user.jpg
    - assets/images/horizontal-line.png
    - assets/images/bg.jpg
+   - assets/sounds/wind_sound.mp3
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.

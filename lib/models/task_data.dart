@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 
 class TaskTag {
@@ -7,18 +5,21 @@ class TaskTag {
     this.id,
     this.backgroundColor,
     this.icon,
+    this.iconColor,
     this.name,
   });
 
   const TaskTag.defaultNull()
     : id = '-1',
       backgroundColor = Colors.white,
-      icon = const Icon(Icons.label),
+      icon = Icons.label,
+      iconColor = Colors.white,
       name = '载入中';
 
   final String id;
   final Color backgroundColor;
-  final Widget icon;
+  final IconData icon;
+  final Color iconColor;
   final String name;
 }
 
@@ -32,6 +33,7 @@ class TaskData {
     this.content,
     this.remark,
     this.catalog,
+    this.alarmTime,
   });
 
   TaskData.defultNull() 
@@ -42,7 +44,8 @@ class TaskData {
       isFinished = false,
       content = '',
       remark = '',
-      catalog = '';
+      catalog = '',
+      alarmTime = null;
 
   final String id;
   final DateTime createTime;
@@ -52,6 +55,7 @@ class TaskData {
   final String content;
   final String remark;
   final String catalog;
+  final DateTime alarmTime;
 }
 
 class TaskPack {
@@ -144,51 +148,35 @@ Future<List<TaskPack>> getTaskList(Object args) async {
   return result;
 }
 
+const tagMap = const {
+  '0': const TaskTag(
+    id: '0',
+    backgroundColor: const Color(0xffe9f2ff),
+    icon: Icons.work,
+    iconColor: const Color(0xff7978fa),
+    name: '工作',
+  ),
+  '1': const TaskTag(
+    id: '1',
+    backgroundColor: const Color(0xffffedea),
+    icon: Icons.home,
+    iconColor: const Color(0xfffc9b41),
+    name: '生活',
+  ),
+  '2': const TaskTag(
+    id: '2',
+    backgroundColor: const Color(0xfffeeaea),
+    icon: Icons.book,
+    iconColor: const Color(0xffe14265),
+    name: '自我提升',
+  ),
+};
+
 Future<TaskTag> _getTagData(TaskData taskData) async {
   // TODO: 改为读取动态数据
-  var tagList = {
-    '0': const TaskTag(
-      id: '0',
-      backgroundColor: const Color(0xffe9f2ff),
-      icon: const Icon(Icons.work, color: Color(0xff7978fa),),
-      name: '工作',
-    ),
-    '1': const TaskTag(
-      id: '1',
-      backgroundColor: const Color(0xffffedea),
-      icon: const Icon(Icons.home, color: Color(0xfffc9b41),),
-      name: '生活',
-    ),
-    '2': const TaskTag(
-      id: '2',
-      backgroundColor: const Color(0xfffeeaea),
-      icon: const Icon(Icons.book, color: Color(0xffe14265),),
-      name: '自我提升',
-    ),
-  };
-
-  return tagList[taskData.tagId];
+  return tagMap[taskData.tagId];
 }
 
 Future<List<TaskTag>> getTagList() async {
-  return [
-    const TaskTag(
-      id: '0',
-      backgroundColor: const Color(0xffe9f2ff),
-      icon: const Icon(Icons.work, color: Color(0xff7978fa),),
-      name: '工作',
-    ),
-    const TaskTag(
-      id: '1',
-      backgroundColor: const Color(0xffffedea),
-      icon: const Icon(Icons.home, color: Color(0xfffc9b41),),
-      name: '生活',
-    ),
-    const TaskTag(
-      id: '2',
-      backgroundColor: const Color(0xfffeeaea),
-      icon: const Icon(Icons.book, color: Color(0xffe14265),),
-      name: '自我提升',
-    ),
-  ];
+  return tagMap.values.toList();
 }

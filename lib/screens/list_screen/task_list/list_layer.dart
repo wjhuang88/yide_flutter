@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -199,28 +198,39 @@ class _ListLayerState extends State<ListLayer> with SingleTickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
+    final panelStyle = BoxDecoration(
+      color: widget.panelColor,
+      borderRadius: BorderRadius.only(
+        topLeft: Radius.circular(widget.panelRadius),
+        topRight: Radius.circular(widget.panelRadius),
+      ),
+      boxShadow: <BoxShadow>[
+        const BoxShadow(
+          offset: const Offset(0.0, -3.0),
+          blurRadius: 3.0,
+          color: const Color(0x4CBDBDBD),
+        ),
+      ],
+    );
+
     return Align(
       alignment: Alignment.bottomCenter,
       child: SafeArea(
         bottom: false,
-        child: Container(
-          width: double.infinity,
-          margin: EdgeInsets.only(top: _listOffset),
-          decoration: BoxDecoration(
-            color: widget.panelColor,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(widget.panelRadius),
-              topRight: Radius.circular(widget.panelRadius),
-            ),
-            boxShadow: <BoxShadow>[
-              const BoxShadow(
-                offset: const Offset(0.0, -3.0),
-                blurRadius: 3.0,
-                color: const Color(0x4CBDBDBD),
-              ),
-            ],
+        child: Hero(
+          tag: 'panel_background',
+          flightShuttleBuilder: (_, __, ___, ____, _____) {
+            return Container(
+              margin: EdgeInsets.only(top: _listOffset),
+              decoration: panelStyle,
+            );
+          },
+          child: Container(
+            width: double.infinity,
+            margin: EdgeInsets.only(top: _listOffset),
+            decoration: panelStyle,
+            child: _buildListPage(),
           ),
-          child: _buildListPage(),
         ),
       ),
     );
@@ -228,82 +238,79 @@ class _ListLayerState extends State<ListLayer> with SingleTickerProviderStateMix
 
   Widget _buildListPage() {
     double _scrollPixel;
-    return Hero(
-      tag: 'panel_background',
-      child: Column(
-        children: <Widget>[
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                Container(
-                  height: 16,
-                  child: const Image(
-                    image: AssetImage('assets/images/horizontal-line.png'),
-                  ),
+    return Column(
+      children: <Widget>[
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Container(
+                height: 16,
+                child: const Image(
+                  image: AssetImage('assets/images/horizontal-line.png'),
                 ),
-                Text('任务', textAlign: TextAlign.center, style: widget.panelTitleStyle,),
-                const SizedBox(height: 10,),
-              ],
-            ),
-            onVerticalDragUpdate: (detail) {
-              if(_direction == MoveDirection.fold || _direction == MoveDirection.foldHigher) return;
-
-              // if _direction != MoveDirection.fold
-              setState(() {
-                _listMovedOffset = _listOffset = (_listOffset + detail.delta.dy).clamp(widget.topOffsetMin, widget.topOffsetMax);
-              });
-            },
-            onVerticalDragEnd: (detail) {
-              if(_direction == MoveDirection.fold || _direction == MoveDirection.foldHigher) return;
-              
-              // if _direction != MoveDirection.fold
-              var v = detail.velocity.pixelsPerSecond.dy;
-              if (v > 100) {
-                _downFrom(_listMovedOffset);
-                return;
-              } else if (v < -100) {
-                _upFrom(_listMovedOffset);
-                return;
-              }
-              if (_listOffset < (widget.topOffsetMin + widget.topOffsetMax) / 2) {
-                _upFrom(_listMovedOffset);
-              } else {
-                _downFrom(_listMovedOffset);
-              }
-            },
-          ),
-          //const Divider(height: 0,),
-          Expanded(
-            child: NotificationListener(
-              child: TaskList(
-                data: _taskList,
-                onItemTap: (data) {
-                  Navigator.of(context).pushNamed('detail', arguments: data);
-                },
               ),
-              onNotification: (ScrollNotification n) {
-                if (n.metrics.pixels <= n.metrics.minScrollExtent) {
-                  if (_direction == MoveDirection.up) {
-                    _downFrom(widget.topOffsetMin);
-                  }
-                } else if (n.metrics.pixels >= n.metrics.maxScrollExtent) {
-                  if (_direction == MoveDirection.down) {
-                    _upFrom(widget.topOffsetMax);
-                  }
-                } else {
-                  if (_direction == MoveDirection.down && n.metrics.pixels - (_scrollPixel ?? n.metrics.pixels) > 10) {
-                    _upFrom(widget.topOffsetMax);
-                  }
-                  _scrollPixel = n.metrics.pixels;
-                }
-                return true;
+              Text('任务', textAlign: TextAlign.center, style: widget.panelTitleStyle,),
+              const SizedBox(height: 10,),
+            ],
+          ),
+          onVerticalDragUpdate: (detail) {
+            if(_direction == MoveDirection.fold || _direction == MoveDirection.foldHigher) return;
+
+            // if _direction != MoveDirection.fold
+            setState(() {
+              _listMovedOffset = _listOffset = (_listOffset + detail.delta.dy).clamp(widget.topOffsetMin, widget.topOffsetMax);
+            });
+          },
+          onVerticalDragEnd: (detail) {
+            if(_direction == MoveDirection.fold || _direction == MoveDirection.foldHigher) return;
+            
+            // if _direction != MoveDirection.fold
+            var v = detail.velocity.pixelsPerSecond.dy;
+            if (v > 100) {
+              _downFrom(_listMovedOffset);
+              return;
+            } else if (v < -100) {
+              _upFrom(_listMovedOffset);
+              return;
+            }
+            if (_listOffset < (widget.topOffsetMin + widget.topOffsetMax) / 2) {
+              _upFrom(_listMovedOffset);
+            } else {
+              _downFrom(_listMovedOffset);
+            }
+          },
+        ),
+        //const Divider(height: 0,),
+        Expanded(
+          child: NotificationListener(
+            child: TaskList(
+              data: _taskList,
+              onItemTap: (data) {
+                Navigator.of(context).pushNamed('detail', arguments: data);
               },
             ),
-          )
-        ],
-      ),
+            onNotification: (ScrollNotification n) {
+              if (n.metrics.pixels <= n.metrics.minScrollExtent) {
+                if (_direction == MoveDirection.up) {
+                  _downFrom(widget.topOffsetMin);
+                }
+              } else if (n.metrics.pixels >= n.metrics.maxScrollExtent) {
+                if (_direction == MoveDirection.down) {
+                  _upFrom(widget.topOffsetMax);
+                }
+              } else {
+                if (_direction == MoveDirection.down && n.metrics.pixels - (_scrollPixel ?? n.metrics.pixels) > 10) {
+                  _upFrom(widget.topOffsetMax);
+                }
+                _scrollPixel = n.metrics.pixels;
+              }
+              return true;
+            },
+          ),
+        )
+      ],
     );
   }
 }

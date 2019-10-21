@@ -17,12 +17,20 @@ class PanelSwitcherController {
 }
 
 class PanelSwitcher extends StatefulWidget {
-  const PanelSwitcher({Key key, this.pageMap, this.controller, @required this.initPage, @required this.backgroundPage}) : super(key: key);
+  const PanelSwitcher({
+    Key key, 
+    this.pageMap, 
+    this.controller, 
+    @required this.initPage, 
+    @required this.backgroundPage, 
+    this.curve = Curves.easeOutSine
+  }) : super(key: key);
 
   final Map<String, PanelItemBuilder> pageMap;
   final PanelSwitcherController controller;
   final String initPage;
   final String backgroundPage;
+  final Curve curve;
 
   @override
   _PanelSwitcherState createState() => _PanelSwitcherState(controller);
@@ -52,10 +60,10 @@ class _PanelSwitcherState extends State<PanelSwitcher> with SingleTickerProvider
     _lastPage = _pageName = widget.initPage;
     _keepPage = widget.backgroundPage;
 
-    _animController = AnimationController(duration: Duration(milliseconds: 300), vsync: this);
+    _animController = AnimationController(value: 0, duration: Duration(milliseconds: 300), vsync: this);
     _anim = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
       parent: _animController,
-      curve: Curves.easeOutSine,
+      curve: widget.curve,
     ));
     _anim.addListener(() {
       setState(() {
@@ -105,9 +113,13 @@ class _PanelSwitcherState extends State<PanelSwitcher> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     var children = widget.pageMap.map((name, builder) {
+      bool show = (name == _pageName || name == _keepPage || name == _movingPage);
       return MapEntry(name, Offstage(
-        child: builder(context, _anim.value),
-        offstage: !(name == _pageName || name == _keepPage || name == _movingPage),
+        child: Opacity(
+          opacity: name == _keepPage || name == _pageName ? 1 : name == _movingPage ? _anim.value : 0,
+          child: builder(context, _anim.value),
+        ),
+        offstage: !show,
       ));
     }).values.toList();
     return Stack(
