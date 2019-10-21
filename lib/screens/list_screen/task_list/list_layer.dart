@@ -219,6 +219,7 @@ class _ListLayerState extends State<ListLayer> with SingleTickerProviderStateMix
         bottom: false,
         child: Hero(
           tag: 'panel_background',
+          transitionOnUserGestures: true,
           flightShuttleBuilder: (_, __, ___, ____, _____) {
             return Container(
               margin: EdgeInsets.only(top: _listOffset),

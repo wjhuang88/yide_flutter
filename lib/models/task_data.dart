@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:yide/db/db_connector.dart';
 
 class TaskTag {
   const TaskTag({
@@ -65,7 +66,12 @@ class TaskPack {
   TaskPack(this.data, this.tag);
 }
 
+Future<DBConnector> _dbConnector = DBConnector.init('yide_app.db');
+
 Future<TaskPack> getTaskData(String id) async {
+  var db = await _dbConnector;
+  var result = await db.query('task_data');
+  print(result);
   // TODO: 请求远程数据
   var _getList = (String id) async => {
     '0': TaskData(

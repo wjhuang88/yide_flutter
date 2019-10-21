@@ -68,12 +68,22 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
 
   CalendarController _calendarController;
 
+  TextEditingController _titleEditController;
+  TextEditingController _remarkEditController;
+  FocusNode _titleFocusNode;
+  FocusNode _remarkFocusNode;
+
   @override
   void initState() {
     super.initState();
     _tagData = widget.dataPack.tag;
     _taskDate = widget.dataPack.data.taskTime;
     _alarmTime = widget.dataPack.data.alarmTime;
+
+    _titleEditController = TextEditingController(text: widget.dataPack.data.content);
+    _remarkEditController = TextEditingController(text: widget.dataPack.data.remark);
+    _titleFocusNode = FocusNode();
+    _remarkFocusNode = FocusNode();
 
     getTagList().then((list) {
       setState(() {
@@ -91,6 +101,8 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
   }
 
   void _switchBack() {
+    _titleFocusNode.unfocus();
+    _remarkFocusNode.unfocus();
     var isDatePage = _panelSwitcherController.currentPage == 'date';
     _panelSwitcherController.switchBack(() {
       _floatingButtomAction = () {};
@@ -104,6 +116,8 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
   }
 
   void _switchTo(String page) {
+    _titleFocusNode.unfocus();
+    _remarkFocusNode.unfocus();
     _floatingButtomAction = _switchBack;
     _panelSwitcherController.switchTo(page, () {
       setState(() {
@@ -115,98 +129,102 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _backgroundColor,
+      backgroundColor: Colors.white,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.blue,
         child: Icon(_floatingButtomIcon),
         onPressed: _floatingButtomAction,
       ),
-      body: Stack(
-        children: <Widget>[
-          PreferredSize(
-            preferredSize: Size.fromHeight(_appTitleHeight),
-            child: AppBar(
-              backgroundColor: Colors.transparent,
-              brightness: Brightness.dark,
-              elevation: 0.0,
-              leading: IconButton(
-                icon: Icon(Icons.chevron_left, color: Colors.white, size: 28,),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-              actions: <Widget>[
-                IconButton(
-                  icon: Icon(Icons.delete_outline, color: Colors.white, size: 24,),
-                  onPressed: () {},
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Stack(
+          children: <Widget>[
+            PreferredSize(
+              preferredSize: Size.fromHeight(_appTitleHeight),
+              child: AppBar(
+                backgroundColor: _backgroundColor,
+                brightness: Brightness.dark,
+                elevation: 0.0,
+                leading: IconButton(
+                  icon: Icon(Icons.chevron_left, color: Colors.white, size: 28,),
+                  onPressed: () => Navigator.of(context).pop(),
                 ),
-                SizedBox(width: 10.0,),
-              ],
-            ),
-          ),
-          Positioned.fill(
-            child: Hero(
-              tag: 'panel_background',
-              flightShuttleBuilder: (_, __, ___, ____, _____) {
-                return SafeArea(
-                  bottom: false,
-                  child: Container(
-                    decoration: _panelDecoration,
-                    margin: _panelMargin + EdgeInsets.only(top: _appTitleHeight),
+                actions: <Widget>[
+                  IconButton(
+                    icon: Icon(Icons.delete_outline, color: Colors.white, size: 24,),
+                    onPressed: () {},
                   ),
-                );
-              },
-              child: PanelSwitcher(
-                initPage: 'main',
-                backgroundPage: 'main',
-                controller: _panelSwitcherController,
-                pageMap: {
-                  'main': (context, animValue) {
-                    return DetailPanel(
-                      boxOffset: 0,
-                      backgroundOpacity: 0,
-                      height: double.infinity,
-                      child: _mainPanelBuilder(context),
-                      backAction: _switchBack,
-                    );
-                  },
-                  'tags': (context, animValue) {
-                    var boxOffset = lerpDouble(-300, 0, animValue);
-                    var bgOpacity = lerpDouble(0.0, 0.5, animValue);
-                    return DetailPanel(
-                      boxOffset: boxOffset,
-                      backgroundOpacity: bgOpacity,
-                      height: 400.0,
-                      child: _tagsPanelBuilder(context),
-                      backAction: _switchBack,
-                    );
-                  },
-                  'date': (context, animValue) {
-                    var boxOffset = lerpDouble(-300, 0, animValue);
-                    var bgOpacity = lerpDouble(0.0, 0.5, animValue);
-                    return DetailPanel(
-                      boxOffset: boxOffset,
-                      backgroundOpacity: bgOpacity,
-                      height: 500.0,
-                      child: _datePanelBuilder(context),
-                      backAction: _switchBack,
-                    );
-                  },
-                  'alarm': (context, animValue) {
-                    var boxOffset = lerpDouble(-300, 0, animValue);
-                    var bgOpacity = lerpDouble(0.0, 0.5, animValue);
-                    return DetailPanel(
-                      boxOffset: boxOffset,
-                      backgroundOpacity: bgOpacity,
-                      height: 370.0,
-                      child: _alarmPanelBuilder(context),
-                      backAction: _switchBack,
-                    );
-                  }
-                },
+                  SizedBox(width: 10.0,),
+                ],
               ),
             ),
-          ),
-        ],
+            Positioned.fill(
+              child: Hero(
+                tag: 'panel_background',
+                transitionOnUserGestures: true,
+                flightShuttleBuilder: (_, __, ___, ____, _____) {
+                  return SafeArea(
+                    bottom: false,
+                    child: Container(
+                      decoration: _panelDecoration,
+                      margin: _panelMargin + EdgeInsets.only(top: _appTitleHeight),
+                    ),
+                  );
+                },
+                child: PanelSwitcher(
+                  initPage: 'main',
+                  backgroundPage: 'main',
+                  controller: _panelSwitcherController,
+                  pageMap: {
+                    'main': (context, animValue) {
+                      return DetailPanel(
+                        boxOffset: 0,
+                        backgroundOpacity: 0,
+                        height: double.infinity,
+                        child: _mainPanelBuilder(context),
+                        backAction: _switchBack,
+                      );
+                    },
+                    'tags': (context, animValue) {
+                      var boxOffset = lerpDouble(-300, 0, animValue);
+                      var bgOpacity = lerpDouble(0.0, 0.5, animValue);
+                      return DetailPanel(
+                        boxOffset: boxOffset,
+                        backgroundOpacity: bgOpacity,
+                        height: 400.0,
+                        child: _tagsPanelBuilder(context),
+                        backAction: _switchBack,
+                      );
+                    },
+                    'date': (context, animValue) {
+                      var boxOffset = lerpDouble(-300, 0, animValue);
+                      var bgOpacity = lerpDouble(0.0, 0.5, animValue);
+                      return DetailPanel(
+                        boxOffset: boxOffset,
+                        backgroundOpacity: bgOpacity,
+                        height: 500.0,
+                        child: _datePanelBuilder(context),
+                        backAction: _switchBack,
+                      );
+                    },
+                    'alarm': (context, animValue) {
+                      var boxOffset = lerpDouble(-300, 0, animValue);
+                      var bgOpacity = lerpDouble(0.0, 0.5, animValue);
+                      return DetailPanel(
+                        boxOffset: boxOffset,
+                        backgroundOpacity: bgOpacity,
+                        height: 370.0,
+                        child: _alarmPanelBuilder(context),
+                        backAction: _switchBack,
+                      );
+                    }
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -318,6 +336,7 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
     );
   }
 
+  // 构建任务详情主页面
   Widget _mainPanelBuilder(BuildContext context) {
 
     final rowContainer = ({Widget child, double height = 40.0}) => Container(
@@ -353,8 +372,15 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
       padding: const EdgeInsets.fromLTRB(40.0, 40.0, 40.0, 0.0),
       children: <Widget>[
         const SizedBox(height: _headerMargin,),
-        Text(widget.dataPack.data.content, style: _headerStyle, textAlign: TextAlign.left,),
-        const Divider(height: _sectionMargin,),
+        TextField(
+          style: _headerStyle, 
+          controller: _titleEditController,
+          maxLines: null,
+          focusNode: _titleFocusNode,
+          decoration: InputDecoration(
+            border: InputBorder.none
+          ),
+        ),
 
         Row(
           children: <Widget>[
