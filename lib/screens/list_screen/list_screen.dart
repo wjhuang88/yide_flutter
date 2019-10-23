@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'package:yide/models/date_tools.dart';
 import 'package:yide/components/datetime_panel/week_panel.dart';
 import 'package:yide/components/datetime_panel/calendar_panel.dart';
@@ -32,6 +33,10 @@ const _mainPanTitleStyle = const TextStyle(color: const Color(0xff020e2c), fontS
 
 const _panelOffsetBase = 300.0;
 
+final logger = Logger(
+  printer: PrettyPrinter(methodCount: 0, lineLength: 80, printTime: true),
+);
+
 class ListScreen extends StatefulWidget {
   @override
   _ListScreenState createState() => _ListScreenState();
@@ -62,6 +67,7 @@ class _ListScreenState extends State<ListScreen> with SingleTickerProviderStateM
   void initState() {
     super.initState();
 
+    logger.d('Init calendar opacity animation.');
     _panelOpacityController = AnimationController(duration: Duration(milliseconds: 300), vsync: this);
     _panelOpacityAnim = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
       parent: _panelOpacityController,
@@ -94,11 +100,13 @@ class _ListScreenState extends State<ListScreen> with SingleTickerProviderStateM
       }
     });
 
+    logger.d('Init InputLayerController.');
     _inputLayerController = InputLayerController(
       focusNode: FocusNode(),
       onCancel: () => setState(() => _inputIsShow = false),
     );
 
+    logger.d('Init CalendarController.');
     _calendarController = CalendarController(
       onSelect: (date) => _closeCalendar(date),
       onMonthChange: (year, month) {
@@ -112,6 +120,7 @@ class _ListScreenState extends State<ListScreen> with SingleTickerProviderStateM
   }
 
   void _openCalendar() {
+    logger.d('Calendar detail is opening.');
     if (_calendarController.isHigher) {
       _listLayerController.animationToFoldHigher();
     } else {
@@ -121,6 +130,7 @@ class _ListScreenState extends State<ListScreen> with SingleTickerProviderStateM
   }
 
   void _updateCalendar(DateTime forDate) {
+    logger.d('Updating Calendar data.');
     setState(() {
       selectedDateTime = forDate;
     });
@@ -129,6 +139,7 @@ class _ListScreenState extends State<ListScreen> with SingleTickerProviderStateM
   } 
 
   void _closeCalendar(DateTime backDate) {
+    logger.d('Closing Calendar with data update.');
     selectedDateTime = backDate;
     _weekController.update(backDate);
     _listLayerController.animationToNormal();
@@ -137,12 +148,15 @@ class _ListScreenState extends State<ListScreen> with SingleTickerProviderStateM
   }
 
   void _closeCalendarWithNoModify() {
+    logger.d('Closing Calendar without data update.');
     _listLayerController.animationToNormal();
     _panelOpacityController.reverse(from: 1);
   }
 
   @override
   Widget build(BuildContext context) {
+    logger.d('Building ListScreen.');
+    
     var blockSizeHigher = (MediaQuery.of(context).size.width - _canlendarPagePadding * 2) / 7 * 6 + 75 + _appTitleHeight;
     var blockSize = (MediaQuery.of(context).size.width - _canlendarPagePadding * 2) / 7 * 7 + 75 + _appTitleHeight;
 

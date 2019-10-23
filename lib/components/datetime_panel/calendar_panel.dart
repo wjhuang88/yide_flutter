@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:soundpool/soundpool.dart';
+import 'package:logger/logger.dart';
 import 'package:yide/models/date_tools.dart';
 
 const _weekHeaders = ['日', '一', '二', '三', '四', '五', '六'];
@@ -28,6 +29,10 @@ const _animCurve = Curves.easeOutSine;
 const _animDuration = 200;
 
 const _borderRadius = const BorderRadius.all(const Radius.circular(10));
+
+final logger = Logger(
+  printer: PrettyPrinter(methodCount: 0, lineLength: 80, printTime: true),
+);
 
 class CalendarController {
   CalendarController({
@@ -297,7 +302,7 @@ class _CalendarPanelState extends State<CalendarPanel> with SingleTickerProvider
     } else if (index < prev.length + current.length + next.length) {
       return _buildOtherNode(next[index - prev.length - current.length]);
     } else {
-      print('Index out of range: prev.length: ${prev.length}; current.length: ${current.length}; next.length: ${next.length}; index: $index');
+      logger.w('Index out of range: prev.length: ${prev.length}; current.length: ${current.length}; next.length: ${next.length}; index: $index');
       return const SizedBox();
     }
   }

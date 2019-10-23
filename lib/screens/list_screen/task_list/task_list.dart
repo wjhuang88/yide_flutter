@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:logger/logger.dart';
 
 import 'package:yide/models/task_data.dart';
 
@@ -11,32 +11,28 @@ const _taskContentRadius = 20.0;
 const _taskTimeStyle = const TextStyle(color: const Color(0xff020e2c), fontSize: 12, fontWeight: FontWeight.w300);
 const _taskContentStyle = const TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.normal, fontFamily: 'SourceHanSans');
 
+final logger = Logger(
+  printer: PrettyPrinter(methodCount: 0, lineLength: 80, printTime: true),
+);
+
 class TaskList extends StatelessWidget {
   const TaskList({
     Key key,
     @required this.data,
     this.onItemTap,
-  }) : assert(data != null), super(key: key);
+  }) : assert(data != null, 'list data can not be null.'), super(key: key);
 
   final List<TaskPack> data;
   final void Function(TaskPack data) onItemTap;
 
   @override
   Widget build(BuildContext context) {
-    if (data.isEmpty) {
-      return Center(
-        child: SpinKitCircle(
-          color: Colors.blue,
-          size: 70.0,
-        ),
-      );
-    }
-    // data.isNotEmpty
+    logger.d('Building list view in main list page.');
     return ListView.separated(
       itemCount: data.length,
       itemBuilder: (context, index) {
         var item = data[index];
-        assert(item != null);
+        assert(item != null, 'item with index: $index is null.');
         return Task(
           key: ValueKey('task_list_item_${item.data.id}'),
           dataPack: item,
@@ -54,7 +50,7 @@ class Task extends StatelessWidget {
     Key key,
     @required this.dataPack,
     this.onTap,
-  }) : assert(dataPack != null), super(key: key);
+  }) : assert(dataPack != null, 'data pack cannot be null.'), super(key: key);
 
   final TaskPack dataPack;
   final void Function(TaskPack data) onTap;
@@ -127,7 +123,16 @@ class TaskItemContainer extends StatelessWidget {
       child: Row(
         children: <Widget>[
           const SizedBox(width: _taskContentPadding,),
-          Icon(dataPack.tag.icon, color: dataPack.tag.iconColor,),
+          Container(
+            alignment: Alignment.center,
+            height: 40.0,
+            width: 40.0,
+            decoration: BoxDecoration(
+              color: dataPack.tag.iconColor,
+              borderRadius: const BorderRadius.all(Radius.circular(8.0)),
+            ),
+            child: Icon(dataPack.tag.icon, color: Colors.white, size: 18,),
+          ),
           const SizedBox(width: _taskContentPadding,),
           Expanded(child: Text(dataPack.data.content, style: _taskContentStyle, maxLines: 2, overflow: TextOverflow.ellipsis,)),
           const SizedBox(width: _taskContentPadding,),

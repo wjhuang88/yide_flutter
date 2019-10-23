@@ -23,6 +23,7 @@ dependencies:
   soundpool: "^0.5.3"
   intl: ^0.16.0
   sqflite: ^1.1.7+1
+  logger: ^0.7.0+2
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -54,7 +55,11 @@ flutter:
    - assets/images/horizontal-line.png
    - assets/images/bg.jpg
    - assets/sounds/wind_sound.mp3
-   - lib/db/table_create.sql
+   - assets/sql/table_create.sql
+   - assets/sql/query_task_by_id.sql
+   - assets/sql/query_task_by_date.sql
+   - assets/sql/query_task_by_tag.sql
+   - assets/sql/update_task_by_id.sql
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.

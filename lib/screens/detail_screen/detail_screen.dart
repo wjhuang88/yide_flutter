@@ -3,8 +3,10 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:logger/logger.dart';
 
 import 'package:yide/components/button_group.dart';
+import 'package:yide/components/sqlite_fetcher.dart';
 import 'package:yide/models/date_tools.dart';
 import 'package:yide/models/task_data.dart';
 import 'package:yide/components/panel_switcher.dart';
@@ -38,11 +40,17 @@ const _panelDecoration = const BoxDecoration(
 
 const _panelMargin = EdgeInsets.zero;
 
+final logger = Logger(
+  printer: PrettyPrinter(methodCount: 0, lineLength: 80, printTime: true),
+);
+
 class DetailScreen extends StatefulWidget {
   DetailScreen(
     this.dataPack,
     {Key key}
-  ) : super(key: key);
+  ) : assert(dataPack != null, 'Detail data pack cannot be null.'),
+      assert(dataPack.sqliteController != null, 'Sqlite controller must be set.'),
+    super(key: key);
 
   final TaskPack dataPack;
 
@@ -60,7 +68,7 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
   DateTime _alarmTime;
 
   IconData _floatingButtomIcon = Icons.check;
-  VoidCallback _floatingButtomAction = () {};
+  VoidCallback _floatingButtomAction;
 
   List<TaskTag> _tagList = const [];
 
@@ -72,6 +80,8 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
   TextEditingController _remarkEditController;
   FocusNode _titleFocusNode;
   FocusNode _remarkFocusNode;
+
+  SqliteController _sqliteController;
 
   @override
   void initState() {
@@ -85,6 +95,8 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
     _titleFocusNode = FocusNode();
     _remarkFocusNode = FocusNode();
 
+    _sqliteController = widget.dataPack.sqliteController;
+
     getTagList().then((list) {
       setState(() {
         _tagList = list;
@@ -92,12 +104,40 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
     });
 
     _panelSwitcherController = PanelSwitcherController();
+
     _calendarController = CalendarController(
       onSelect: (date) {
         _taskDate = date;
         _switchBack();
       }
     );
+
+    _floatingButtomAction = _confirm;
+  }
+
+  @override
+  void dispose() {
+    _sqliteController.dispose();
+    super.dispose();
+  }
+
+  void _confirm() async {
+    logger.d('Saving data, id: ${widget.dataPack.data.id}');
+    var count = await _sqliteController.update(
+      'assets/sql/update_task_by_id.sql',
+      [
+        DateTime.now().millisecondsSinceEpoch, // create_time
+        _tagData.id, // tag_id
+        _taskDate.millisecondsSinceEpoch, // task_time
+        _titleEditController.value.text, // content
+        false, // is_finished
+        _remarkEditController.value.text, // remark
+        _alarmTime?.millisecondsSinceEpoch ?? 0, // alarm_time
+        widget.dataPack.data.id, // id
+      ]
+    );
+    assert(count == 1, 'Data with id should not have more than one.');
+    Navigator.of(context).pop();
   }
 
   void _switchBack() {
@@ -105,7 +145,7 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
     _remarkFocusNode.unfocus();
     var isDatePage = _panelSwitcherController.currentPage == 'date';
     _panelSwitcherController.switchBack(() {
-      _floatingButtomAction = () {};
+      _floatingButtomAction = _confirm;
       if (isDatePage) {
         _calendarController.resetMonth(_taskDate);
       }
@@ -324,7 +364,7 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
             onPressed: () {
               _tagData = tag;
               _panelSwitcherController.switchBack(() {
-                _floatingButtomAction = () {};
+                _floatingButtomAction = _confirm;
                 setState(() {
                   _floatingButtomIcon = Icons.check;
                 });

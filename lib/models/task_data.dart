@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:yide/db/db_connector.dart';
+import 'package:yide/components/sqlite_fetcher.dart';
 
 class TaskTag {
   const TaskTag({
@@ -62,16 +62,12 @@ class TaskData {
 class TaskPack {
   final TaskData data;
   final TaskTag tag;
+  SqliteController sqliteController;
 
-  TaskPack(this.data, this.tag);
+  TaskPack(this.data, this.tag, [this.sqliteController]);
 }
 
-Future<DBConnector> _dbConnector = DBConnector.init('yide_app.db');
-
 Future<TaskPack> getTaskData(String id) async {
-  var db = await _dbConnector;
-  var result = await db.query('task_data');
-  print(result);
   // TODO: 请求远程数据
   var _getList = (String id) async => {
     '0': TaskData(
@@ -155,22 +151,22 @@ Future<List<TaskPack>> getTaskList(Object args) async {
 }
 
 const tagMap = const {
-  '0': const TaskTag(
-    id: '0',
+  '1': const TaskTag(
+    id: '1',
     backgroundColor: const Color(0xffe9f2ff),
     icon: Icons.work,
     iconColor: const Color(0xff7978fa),
     name: '工作',
   ),
-  '1': const TaskTag(
-    id: '1',
+  '2': const TaskTag(
+    id: '2',
     backgroundColor: const Color(0xffffedea),
     icon: Icons.home,
     iconColor: const Color(0xfffc9b41),
     name: '生活',
   ),
-  '2': const TaskTag(
-    id: '2',
+  '3': const TaskTag(
+    id: '3',
     backgroundColor: const Color(0xfffeeaea),
     icon: Icons.book,
     iconColor: const Color(0xffe14265),
