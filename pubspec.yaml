@@ -60,6 +60,7 @@ flutter:
    - assets/sql/query_task_by_date.sql
    - assets/sql/query_task_by_tag.sql
    - assets/sql/update_task_by_id.sql
+   - assets/sql/insert_task.sql
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.

@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS `task_data`(
-    `id` INTEGER PRIMARY KEY,
+    `id` INTEGER PRIMARY KEY AUTOINCREMENT,
     `create_time` INTEGER,
     `tag_id` INTEGER,
     `task_time` INTEGER,

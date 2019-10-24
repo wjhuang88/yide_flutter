@@ -1,26 +1,30 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:yide/components/sqlite_fetcher.dart';
 
 class InputLayerController {
-  InputLayerController({FocusNode focusNode, void Function() onCancel})
+  InputLayerController({FocusNode focusNode, VoidCallback onCancel, VoidCallback onConfirm})
     : _focusNode = focusNode ?? FocusNode(),
-      _onCancel = onCancel;
+      _onCancel = onCancel,
+      _onConfirm = onConfirm;
 
   _InputLayerState _state;
   BuildContext _context;
   FocusNode _focusNode;
-  void Function() _onCancel;
+  VoidCallback _onCancel;
+  VoidCallback _onConfirm;
 
   void open() {
-    _state._inputIsShow = true;
-    _state._animController.forward(from: 0);
+    _state?._inputIsShow = true;
+    _state?._animController?.forward(from: 0);
     FocusScope.of(_context).requestFocus(_focusNode);
   }
 
   void close() {
     _focusNode.unfocus();
-    _state._animController.reverse(from: 1);
+    _state?._animController?.reverse(from: 1);
+    _state?._contentController?.clear();
   }
 
   void dispose() {
@@ -35,34 +39,43 @@ class InputLayer extends StatefulWidget {
   const InputLayer({
     Key key,
     this.controller,
+    this.sqliteController,
     this.panelColor = Colors.white,
   }) : super(key: key);
 
   final Color panelColor;
   final InputLayerController controller;
+  final SqliteController sqliteController;
 
   @override
-  _InputLayerState createState() => _InputLayerState(controller);
+  _InputLayerState createState() => _InputLayerState(controller, sqliteController);
 }
 
 class _InputLayerState extends State<InputLayer> with SingleTickerProviderStateMixin {
-  _InputLayerState(this._controller);
+  _InputLayerState(this._controller, this._dbController);
 
   AnimationController _animController;
   Animation<double> _anim;
 
   InputLayerController _controller;
+  SqliteController _dbController;
 
   double _inputBackgroundOpacity = 0.0;
   bool _inputIsShow = false;
   double _inputHeightFctor = 0.0;
   double _inputPanelOpacity = 0.0;
 
+  TextEditingController _contentController;
+
+  VoidCallback _completeAction;
+
   @override
   void initState() {
     super.initState();
     if (_controller == null) _controller = InputLayerController();
     _controller._state = this;
+
+    _contentController = TextEditingController();
 
     // 输入面板动画初始化
     _animController = AnimationController(duration: Duration(milliseconds: 200), vsync: this);
@@ -85,8 +98,8 @@ class _InputLayerState extends State<InputLayer> with SingleTickerProviderStateM
         setState(() {
           _inputIsShow = false;
         });
-        if (_controller._onCancel != null) {
-          _controller._onCancel();
+        if (_completeAction != null) {
+          _completeAction();
         }
       }
     });
@@ -117,6 +130,7 @@ class _InputLayerState extends State<InputLayer> with SingleTickerProviderStateM
                   child: GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: () {
+                      _completeAction = _controller._onCancel;
                       _controller.close();
                     },
                     child: Container(),
@@ -135,6 +149,7 @@ class _InputLayerState extends State<InputLayer> with SingleTickerProviderStateM
                     ),
                   ),
                   child: TextField(
+                    controller: _contentController,
                     focusNode: _controller._focusNode,
                     maxLines: null,
                     maxLength: 140,
@@ -143,7 +158,6 @@ class _InputLayerState extends State<InputLayer> with SingleTickerProviderStateM
                       hintText: '输入内容',
                       contentPadding: EdgeInsets.fromLTRB(20.0, 10.0, 20.0, 10.0),
                       border: InputBorder.none,
-                      //focusedBorder: OutlineInputBorder()
                     ),
                   ),
                 ),
@@ -156,7 +170,10 @@ class _InputLayerState extends State<InputLayer> with SingleTickerProviderStateM
                       FlatButton.icon(
                         icon: Icon(Icons.clear),
                         label: Text('取消'),
-                        onPressed: () {},
+                        onPressed: () {
+                          _completeAction = _controller._onCancel;
+                          _controller.close();
+                        },
                       ),
                       _buildVertDivider(),
                       FlatButton.icon(
@@ -168,7 +185,22 @@ class _InputLayerState extends State<InputLayer> with SingleTickerProviderStateM
                       FlatButton.icon(
                         icon: Icon(Icons.check),
                         label: Text('确定'),
-                        onPressed: () {},
+                        onPressed: () async {
+                          await _dbController?.insert(
+                            'assets/sql/insert_task.sql',
+                            [
+                              DateTime.now().millisecondsSinceEpoch, // `create_time`
+                              1, // `tag_id`
+                              DateTime.now().millisecondsSinceEpoch, // `task_time`
+                              _contentController.text, // `content`
+                              false, // `is_finished`
+                              '', // `remark`
+                              0, // `alarm_time`
+                            ],
+                          );
+                          _completeAction = _controller._onConfirm;
+                          _controller.close();
+                        },
                       ),
                     ],
                   ),

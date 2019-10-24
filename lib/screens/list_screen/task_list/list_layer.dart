@@ -89,15 +89,11 @@ class _ListLayerState extends State<ListLayer> with SingleTickerProviderStateMix
   int _queryDateBegin;
   int _queryDateEnd;
 
-  SqliteController _sqliteController;
-
   @override
   void initState() {
     super.initState();
     logger.d('Init list offset.');
     _listMovedOffset = _listOffset = widget.topOffsetMax;
-
-    _sqliteController = SqliteController();
 
     if (_controller == null) _controller = ListLayerController();
     logger.d('Init ListLayerController instance.');
@@ -298,11 +294,23 @@ class _ListLayerState extends State<ListLayer> with SingleTickerProviderStateMix
         //const Divider(height: 0,),
         Expanded(
           child: NotificationListener(
+            onNotification: (ScrollNotification n) {
+              var current = n.metrics.pixels;
+              var max = n.metrics.maxScrollExtent;
+              var min = n.metrics.minScrollExtent;
+              var v = n.metrics.pixels - (_scrollPixel ?? n.metrics.pixels);
+              if (v > 0 && current > max && _direction == MoveDirection.down) {
+                _upFrom(widget.topOffsetMax);
+              } else if (v < 0 && current < min && _direction == MoveDirection.up) {
+                _downFrom(widget.topOffsetMin);
+              }
+              _scrollPixel = n.metrics.pixels;
+              return true;
+            },
             child: SqliteFetcher(
               key: ValueKey('main_list_sql_fetcher'),
               querySqlPath: 'assets/sql/query_task_by_date.sql',
               queryArguments: [_queryDateBegin, _queryDateEnd],
-              controller: _sqliteController,
               builder: (context, taskList, controller, _) {
                 logger.d('Building TaskList from DB.');
                 return TaskList(
@@ -323,7 +331,6 @@ class _ListLayerState extends State<ListLayer> with SingleTickerProviderStateMix
                     return TaskPack(data, tag);
                   }).toList(),
                   onItemTap: (data) async {
-                    data.sqliteController = controller;
                     await Navigator.of(context).pushNamed('detail', arguments: data);
                     logger.d('Back from detail screen.');
                   },
@@ -336,23 +343,6 @@ class _ListLayerState extends State<ListLayer> with SingleTickerProviderStateMix
                 ),
               ),
             ),
-            onNotification: (ScrollNotification n) {
-              if (n.metrics.pixels <= n.metrics.minScrollExtent) {
-                if (_direction == MoveDirection.up) {
-                  _downFrom(widget.topOffsetMin);
-                }
-              } else if (n.metrics.pixels >= n.metrics.maxScrollExtent) {
-                if (_direction == MoveDirection.down) {
-                  _upFrom(widget.topOffsetMax);
-                }
-              } else {
-                if (_direction == MoveDirection.down && n.metrics.pixels - (_scrollPixel ?? n.metrics.pixels) > 10) {
-                  _upFrom(widget.topOffsetMax);
-                }
-                _scrollPixel = n.metrics.pixels;
-              }
-              return true;
-            },
           ),
         )
       ],

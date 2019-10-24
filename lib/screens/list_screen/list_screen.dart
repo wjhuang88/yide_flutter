@@ -2,7 +2,9 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
+
 import 'package:yide/models/date_tools.dart';
+import 'package:yide/components/sqlite_fetcher.dart';
 import 'package:yide/components/datetime_panel/week_panel.dart';
 import 'package:yide/components/datetime_panel/calendar_panel.dart';
 
@@ -104,6 +106,10 @@ class _ListScreenState extends State<ListScreen> with SingleTickerProviderStateM
     _inputLayerController = InputLayerController(
       focusNode: FocusNode(),
       onCancel: () => setState(() => _inputIsShow = false),
+      onConfirm: () {
+        _listLayerController.updateList(selectedDateTime);
+        setState(() => _inputIsShow = false);
+      },
     );
 
     logger.d('Init CalendarController.');
@@ -220,6 +226,7 @@ class _ListScreenState extends State<ListScreen> with SingleTickerProviderStateM
             ),
             InputLayer(
               controller: _inputLayerController,
+              sqliteController: SqliteController.instance,
             ),
           ],
         ),

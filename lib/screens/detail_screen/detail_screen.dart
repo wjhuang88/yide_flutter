@@ -49,7 +49,6 @@ class DetailScreen extends StatefulWidget {
     this.dataPack,
     {Key key}
   ) : assert(dataPack != null, 'Detail data pack cannot be null.'),
-      assert(dataPack.sqliteController != null, 'Sqlite controller must be set.'),
     super(key: key);
 
   final TaskPack dataPack;
@@ -95,7 +94,7 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
     _titleFocusNode = FocusNode();
     _remarkFocusNode = FocusNode();
 
-    _sqliteController = widget.dataPack.sqliteController;
+    _sqliteController = SqliteController.instance;
 
     getTagList().then((list) {
       setState(() {
@@ -129,9 +128,9 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
         DateTime.now().millisecondsSinceEpoch, // create_time
         _tagData.id, // tag_id
         _taskDate.millisecondsSinceEpoch, // task_time
-        _titleEditController.value.text, // content
+        _titleEditController.text, // content
         false, // is_finished
-        _remarkEditController.value.text, // remark
+        _remarkEditController.text, // remark
         _alarmTime?.millisecondsSinceEpoch ?? 0, // alarm_time
         widget.dataPack.data.id, // id
       ]
@@ -506,8 +505,23 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
 
         titledRow(
           title: '备注',
-          child: rowContainer(
-            child: defaultRow,
+          child: Container(
+            padding: EdgeInsets.only(left: 16.0),
+            decoration: BoxDecoration(
+              color: _tagData.backgroundColor,
+              borderRadius: const BorderRadius.all(const Radius.circular(10.0))
+            ),
+            child: TextField(
+              controller: _remarkEditController,
+              style: const TextStyle(fontSize: 14),
+              maxLines: null,
+              focusNode: _remarkFocusNode,
+              decoration: InputDecoration(
+                icon: Icon(Icons.local_offer, size: 16.0, color: Colors.grey,),
+                border: InputBorder.none,
+                hintText: '添加备注',
+              ),
+            ),
           ),
         ),
       ],

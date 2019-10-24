@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'package:yide/models/task_data.dart';
 
 import 'screens/splash_screen/splash_screen.dart';
@@ -11,6 +12,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Logger.level = Level.nothing;
     return MaterialApp(
       title: 'Yide',
       initialRoute: '/',

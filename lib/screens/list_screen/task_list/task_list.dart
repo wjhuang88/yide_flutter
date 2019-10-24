@@ -29,6 +29,7 @@ class TaskList extends StatelessWidget {
   Widget build(BuildContext context) {
     logger.d('Building list view in main list page.');
     return ListView.separated(
+      physics: AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
       itemCount: data.length,
       itemBuilder: (context, index) {
         var item = data[index];

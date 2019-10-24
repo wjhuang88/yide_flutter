@@ -62,9 +62,8 @@ class TaskData {
 class TaskPack {
   final TaskData data;
   final TaskTag tag;
-  SqliteController sqliteController;
 
-  TaskPack(this.data, this.tag, [this.sqliteController]);
+  TaskPack(this.data, this.tag,);
 }
 
 Future<TaskPack> getTaskData(String id) async {
