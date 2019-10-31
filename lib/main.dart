@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Logger.level = Level.nothing;
+    Logger.level = Level.debug;
     return MaterialApp(
       title: 'Yide',
       initialRoute: '/',
@@ -44,7 +44,7 @@ class MyApp extends StatelessWidget {
               transitionDuration: Duration(milliseconds: 300),
               transitionsBuilder: (context, anim1, anim2, child) {
                 return FadeTransition(
-                  opacity: Tween<double>(begin: 0.0, end:1.0).animate(CurvedAnimation(
+                  opacity: Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
                       parent: anim1,
                       curve: Curves.easeOutSine,
                     ),
