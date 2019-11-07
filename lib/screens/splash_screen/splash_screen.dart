@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:yide/screens/detail_screen/edit_main_screen.dart';
 
 class SplashScreen extends StatelessWidget {
 
@@ -16,7 +17,7 @@ class SplashScreen extends StatelessWidget {
       ),
       body: GestureDetector(
         onTap: () {
-          Navigator.pushReplacementNamed(context, 'list');
+          Navigator.pushNamed(context, EditMainScreen.routeName);
         },
         child: Container(
           decoration: BoxDecoration(
