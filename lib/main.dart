@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:logger/logger.dart';
-import 'package:yide/models/task_data.dart';
-import 'package:yide/screens/detail_screen/edit_main_screen.dart';
 
+import 'models/task_data.dart';
+import 'screens/detail_screen/edit_main_screen.dart';
+import 'screens/detail_screen/detail_list_screen.dart';
 import 'screens/splash_screen/splash_screen.dart';
 import 'screens/list_screen/list_screen.dart';
 import 'screens/detail_screen/detail_screen.dart';
@@ -40,6 +41,9 @@ class MyApp extends StatelessWidget {
           }
           case EditMainScreen.routeName: {
             return EditMainScreen.pageRoute;
+          }
+          case DetailListScreen.routeName: {
+            return DetailListScreen.pageRoute;
           }
           default:
             throw FlutterError(
