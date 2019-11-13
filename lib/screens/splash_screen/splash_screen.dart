@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:yide/screens/detail_screen/detail_list_screen.dart';
+import 'package:yide/screens/timeline_list_screen.dart';
 
 class SplashScreen extends StatelessWidget {
 
@@ -17,7 +17,7 @@ class SplashScreen extends StatelessWidget {
       ),
       body: GestureDetector(
         onTap: () {
-          Navigator.pushNamed(context, DetailListScreen.routeName);
+          Navigator.pushNamed(context, TimelineListScreen.routeName);
         },
         child: Container(
           decoration: BoxDecoration(

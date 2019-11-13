@@ -8,11 +8,11 @@ import 'screens/detail_screen/detail_list_screen.dart';
 import 'screens/splash_screen/splash_screen.dart';
 import 'screens/list_screen/list_screen.dart';
 import 'screens/detail_screen/detail_screen.dart';
+import 'screens/timeline_list_screen.dart';
 
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
-
   @override
   Widget build(BuildContext context) {
     Logger.level = Level.debug;
@@ -31,25 +31,22 @@ class MyApp extends StatelessWidget {
       onGenerateRoute: (RouteSettings settings) {
         final String name = settings.name;
         switch (name) {
-          case 'list': {
+          case 'list':
             return _buildRoute(ListScreen());
-          }
-          case 'detail': {
+          case 'detail':
             final args = settings.arguments;
             assert(args is TaskPack);
             return _buildRoute(DetailScreen(args));
-          }
-          case EditMainScreen.routeName: {
+          case EditMainScreen.routeName:
             return EditMainScreen.pageRoute;
-          }
-          case DetailListScreen.routeName: {
+          case DetailListScreen.routeName:
             return DetailListScreen.pageRoute;
-          }
+          case TimelineListScreen.routeName:
+            return TimelineListScreen.pageRoute;
           default:
             throw FlutterError(
-              'The builder for route "${settings.name}" returned null.\n'
-              'Route builders must never return null.'
-            );
+                'The builder for route "${settings.name}" returned null.\n'
+                'Route builders must never return null.');
         }
       },
       routes: {
@@ -69,7 +66,8 @@ class MyApp extends StatelessWidget {
       transitionDuration: Duration(milliseconds: 300),
       transitionsBuilder: (context, anim1, anim2, child) {
         return ScaleTransition(
-          scale: Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(
+          scale: Tween<double>(begin: 0, end: 1).animate(
+            CurvedAnimation(
               parent: anim1,
               curve: Curves.easeOutSine,
             ),
