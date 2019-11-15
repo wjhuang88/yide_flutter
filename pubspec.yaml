@@ -58,6 +58,7 @@ flutter:
    - assets/images/user.jpg
    - assets/images/horizontal-line.png
    - assets/images/bg.jpg
+   - assets/images/cloud.png
    - assets/sounds/wind_sound.mp3
    - assets/sql/table_create.sql
    - assets/sql/query_task_by_id.sql
