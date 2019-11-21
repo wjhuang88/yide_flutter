@@ -1,133 +1,269 @@
+import 'dart:math' as Math;
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:yide/components/tap_animator.dart';
+import 'package:yide/screens/detail_screen/detail_datetime_screen.dart';
+import 'package:yide/screens/detail_screen/edit_main_screen.dart';
 
-class DetailListScreen extends StatelessWidget {
+import 'detail_comments_screen.dart';
 
+class DetailListScreen extends StatefulWidget {
   static const String routeName = 'detail_list';
   static Route get pageRoute => _buildRoute(DetailListScreen());
 
   @override
-  Widget build(BuildContext context) {
-    final subTitleStyle = const TextStyle(
-      color: Color(0xffbdaee8),
-      fontSize: 14.0,
-    );
+  _DetailListScreenState createState() => _DetailListScreenState();
+}
 
-    final contentStyle = const TextStyle(
-      color: Color(0xfff4f3f8),
-    );
+class _DetailListScreenState extends State<DetailListScreen> {
+  @override
+  Widget build(BuildContext context) {
+    final contentStyle =
+        const TextStyle(color: Color(0xFFEDE7FF), fontSize: 14.0);
 
     return Scaffold(
-      backgroundColor: const Color(0xff5a4791),
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         brightness: Brightness.dark,
-        backgroundColor: const Color(0xff5a4791),
+        backgroundColor: Colors.transparent,
         elevation: 0.0,
         leading: IconButton(
-          icon: const Icon(FontAwesomeIcons.arrowAltCircleLeft, color: Color(0xffbdaee8),),
+          icon: const Icon(
+            FontAwesomeIcons.chevronLeft,
+            color: Color(0xFFD7CAFF),
+          ),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
         actions: <Widget>[
-          IconButton(
-            icon: const Icon(FontAwesomeIcons.trashAlt, color: Color(0xffbdaee8), size: 22.0,),
+          FlatButton(
+            child: Text(
+              '完成',
+              style: TextStyle(fontSize: 16.0, color: Color(0xFFEDE7FF)),
+            ),
             onPressed: () {},
           ),
         ],
       ),
-      body: ListView(
+      body: Column(
         children: <Widget>[
-          _buildColumnBlock(
-            color: const Color(0xff5a4791),
-            padding: const EdgeInsets.only(bottom: 30.0),
-            children: <Widget>[
-              Text('2.8.0项目改版', textAlign: TextAlign.center, style: const TextStyle(color: Color(0xfff4f3f8), fontSize: 22.0),),
-              Text('备注', textAlign: TextAlign.center, style: const TextStyle(color: Color(0xffbdaee8)),),
-            ],
+          _HeaderPanel(
+            content: '最新项目会议',
+            dateTime: '10月11日  19:20-17:45',
+            tagName: '工作',
+            tagColor: const Color(0xFF62DADB),
+            onTap: () {
+              Navigator.of(context).pushNamed(EditMainScreen.routeName);
+            },
           ),
-
-          _buildColumnBlock(
-            color: const Color(0xff554389),
-            padding: const EdgeInsets.only(top: 20.0, bottom: 20.0),
-            children: <Widget>[
-              Text('时间', textAlign: TextAlign.center, style: subTitleStyle,),
-              Transform.translate(
-                offset: const Offset(0.0, -5.0),
-                child: const Icon(FontAwesomeIcons.minus, color: Color(0xffefd72d), size: 16.0,),
+          Expanded(
+            child: ListView(
+              children: <Widget>[
+                const SizedBox(
+                  height: 49.5,
+                ),
+                _ListItem(
+                  iconData: FontAwesomeIcons.clock,
+                  child: Text(
+                    '开始提醒&到期时间',
+                    style: contentStyle,
+                  ),
+                  onTap: () {},
+                ),
+                const SizedBox(
+                  height: 10.0,
+                ),
+                _ListItem(
+                  iconData: FontAwesomeIcons.redo,
+                  child: Text(
+                    '每周重复',
+                    style: contentStyle,
+                  ),
+                  onTap: () {},
+                ),
+                const SizedBox(
+                  height: 10.0,
+                ),
+                _ListItem(
+                  iconData: FontAwesomeIcons.mapMarkerAlt,
+                  child: Text(
+                    '人民广场',
+                    style: contentStyle,
+                  ),
+                  onTap: () {},
+                ),
+                const SizedBox(
+                  height: 10.0,
+                ),
+                _ListItem(
+                  iconData: FontAwesomeIcons.folder,
+                  child: Text(
+                    '所属项目',
+                    style: contentStyle,
+                  ),
+                  onTap: () {},
+                ),
+                const SizedBox(
+                  height: 10.0,
+                ),
+                _ListItem(
+                  iconData: FontAwesomeIcons.stickyNote,
+                  child: Text(
+                    '备注',
+                    style: contentStyle,
+                  ),
+                  onTap: () {
+                    Navigator.of(context)
+                        .pushNamed(DetailCommentsScreen.routeName);
+                  },
+                ),
+              ],
+            ),
+          ),
+          SafeArea(
+            top: false,
+            child: IconButton(
+              icon: const Icon(
+                FontAwesomeIcons.trashAlt,
+                color: Color(0x88EDE7FF),
+                size: 21.0,
               ),
-              Text('10/11 9:00 - 10/30 18:00', textAlign: TextAlign.center, style: contentStyle,),
-            ],
+              onPressed: () {},
+            ),
           ),
-
-          _buildColumnBlock(
-            color: const Color(0xff5a4791),
-            padding: const EdgeInsets.only(top: 20.0, bottom: 20.0),
-            children: <Widget>[
-              Text('提醒', textAlign: TextAlign.center, style: subTitleStyle,),
-              Transform.translate(
-                offset: Offset(0.0, -5.0),
-                child: const Icon(FontAwesomeIcons.minus, color: Color(0xffefd72d), size: 16.0,),
-              ),
-              Text('开始提醒', textAlign: TextAlign.center, style: contentStyle,),
-            ],
-          ),
-
-          _buildColumnBlock(
-            color: const Color(0xff554389),
-            padding: const EdgeInsets.only(top: 20.0, bottom: 20.0),
-            children: <Widget>[
-              Text('频次', textAlign: TextAlign.center, style: subTitleStyle,),
-              Transform.translate(
-                offset: Offset(0.0, -5.0),
-                child: const Icon(FontAwesomeIcons.minus, color: Color(0xffefd72d), size: 16.0,),
-              ),
-              Text('每周重复', textAlign: TextAlign.center, style: contentStyle,),
-            ],
-          ),
-
-          _buildColumnBlock(
-            color: const Color(0xff5a4791),
-            padding: const EdgeInsets.only(top: 20.0, bottom: 20.0),
-            children: <Widget>[
-              Text('地点', textAlign: TextAlign.center, style: subTitleStyle,),
-              Transform.translate(
-                offset: Offset(0.0, -5.0),
-                child: const Icon(FontAwesomeIcons.minus, color: Color(0xffefd72d), size: 16.0,),
-              ),
-              Text('人民广场', textAlign: TextAlign.center, style: contentStyle,),
-            ],
-          ),
-
-          _buildColumnBlock(
-            color: const Color(0xff554389),
-            padding: const EdgeInsets.only(top: 20.0, bottom: 20.0),
-            children: <Widget>[
-              Text('项目', textAlign: TextAlign.center, style: subTitleStyle,),
-              Transform.translate(
-                offset: Offset(0.0, -5.0),
-                child: const Icon(FontAwesomeIcons.minus, color: Color(0xffefd72d), size: 16.0,),
-              ),
-              Text('所属项目', textAlign: TextAlign.center, style: contentStyle,),
-            ],
-          ),
-
         ],
       ),
     );
   }
+}
 
-  Widget _buildColumnBlock({
-    List<Widget> children,
-    Color color,
-    EdgeInsets margin = EdgeInsets.zero,
-    EdgeInsets padding = EdgeInsets.zero,
-  }) {
-    return Container(
-      color: color,
-      margin: margin,
-      padding: padding,
-      child: Column(
-        children: children,
+class _HeaderPanel extends StatelessWidget {
+  const _HeaderPanel({
+    Key key,
+    @required this.onTap,
+    @required this.content,
+    @required this.dateTime,
+    @required this.tagName,
+    @required this.tagColor,
+  }) : super(key: key);
+
+  final VoidCallback onTap;
+  final String content;
+  final String dateTime;
+  final String tagName;
+  final Color tagColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return TapAnimator(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        onTap();
+      },
+      builder: (_factor) => Transform(
+        alignment: Alignment.center,
+        transform: Matrix4.identity()
+          ..setEntry(3, 2, 0.002)
+          ..rotateY(-_factor * Math.pi / 24)
+          ..rotateX(_factor * Math.pi / 36),
+        child: Column(
+          children: <Widget>[
+            const SizedBox(
+              height: 30.0,
+            ),
+            Text(
+              dateTime,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 22.0, color: Color(0xFFEDE7FF)),
+            ),
+            const SizedBox(
+              height: 25.5,
+            ),
+            Text(
+              content,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 20.0, color: Color(0xFFEDE7FF)),
+            ),
+            const SizedBox(
+              height: 17.0,
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Icon(
+                  FontAwesomeIcons.solidCircle,
+                  color: tagColor,
+                  size: 8.0,
+                ),
+                const SizedBox(
+                  width: 5.0,
+                ),
+                Text(
+                  tagName,
+                  style: TextStyle(color: tagColor, fontSize: 12.0),
+                )
+              ],
+            ),
+          ],
+        ),
       ),
+    );
+  }
+}
+
+class _ListItem extends StatelessWidget {
+
+  _ListItem({
+    @required this.iconData,
+    @required this.child,
+    @required this.onTap,
+  });
+
+  final IconData iconData;
+  final Widget child;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return TapAnimator(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        onTap();
+      },
+      builder: (animValue) {
+        final _factor = 1 - animValue * 0.2;
+        return Transform(
+          alignment: Alignment.center,
+          transform: Matrix4.identity()
+            ..setEntry(3, 2, 0.005)
+            ..rotateY(-(1 - _factor) * Math.pi / 24)
+            ..rotateX((1 - _factor) * Math.pi / 24),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 15.0),
+            height: 60.0,
+            decoration: const BoxDecoration(
+              color: Color(0x12FFFFFF),
+              borderRadius: BorderRadius.all(Radius.circular(10.0)),
+            ),
+            child: Row(
+              children: <Widget>[
+                const SizedBox(
+                  width: 20.0,
+                ),
+                Icon(
+                  iconData,
+                  size: 20.0,
+                  color: Color(0x88EDE7FF),
+                ),
+                const SizedBox(
+                  width: 20.0,
+                ),
+                child
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -135,15 +271,21 @@ class DetailListScreen extends StatelessWidget {
 _buildRoute(Widget child) {
   return PageRouteBuilder(
     pageBuilder: (context, anim1, anim2) => child,
-    transitionDuration: Duration(milliseconds: 500),
+    transitionDuration: Duration(milliseconds: 400),
     transitionsBuilder: (context, anim1, anim2, child) {
-      return ScaleTransition(
-        scale: Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
-            parent: anim1,
-            curve: Cubic(0,1,.55,1),
-          ),
+      final anim1Curved = Tween<double>(begin: 0.0, end: 1.0).animate(
+        CurvedAnimation(
+          parent: anim1,
+          curve: Curves.easeOutCubic,
         ),
-        child: child,
+      );
+      return Transform(
+        alignment: Alignment.center,
+        transform: Matrix4.identity()..scale(anim1Curved.value),
+        child: Opacity(
+          opacity: anim1Curved.value - anim2.value,
+          child: child,
+        ),
       );
     },
   );

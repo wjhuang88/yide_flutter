@@ -28,6 +28,7 @@ dependencies:
   sqflite: ^1.1.7+1
   logger: ^0.7.0+2
   font_awesome_flutter: ^8.5.0
+  dotted_border: ^1.0.3
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -59,6 +60,7 @@ flutter:
    - assets/images/horizontal-line.png
    - assets/images/bg.jpg
    - assets/images/cloud.png
+   - assets/images/dash_border.png
    - assets/sounds/wind_sound.mp3
    - assets/sql/table_create.sql
    - assets/sql/query_task_by_id.sql

@@ -1,8 +1,11 @@
 import 'dart:ui';
+import 'dart:math' as Math;
 
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:yide/components/tap_animator.dart';
 import 'package:yide/notification.dart';
+import 'package:yide/screens/detail_screen/detail_list_screen.dart';
 import 'package:yide/screens/detail_screen/edit_main_screen.dart';
 
 class TimelineListScreen extends StatefulWidget {
@@ -55,7 +58,6 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
   @override
   Widget build(BuildContext context) {
     final opacity = (transitionFactor).clamp(0.0, 1.0);
-    final scale = 1.0 + (4.0 - 1.0) * (1 - transitionFactor);
     return Scaffold(
       backgroundColor: Colors.transparent,
       floatingActionButton: Offstage(
@@ -78,7 +80,6 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
             SafeArea(
               bottom: false,
               child: Container(
-                transform: Matrix4.identity()..scale(scale),
                 alignment: Alignment.centerLeft,
                 child: IconButton(
                   padding: const EdgeInsets.only(top: 10.0, bottom: 20.0),
@@ -92,43 +93,44 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
                 ),
               ),
             ),
-            Container(
-              transform: Matrix4.translationValues(
-                  0.0, -100.0 * (1 - transitionFactor), 0.0),
-              margin: const EdgeInsets.symmetric(horizontal: 17.0),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20.0, vertical: 18.0),
-              height: 182.0,
-              decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF975ED8), Color(0xFF7352D0)]),
-                  borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                  boxShadow: [
-                    BoxShadow(
-                      offset: Offset(0.0, 6.0),
-                      blurRadius: 23.0,
-                      color: Color(0x8A4F3A8C),
-                    )
-                  ]),
-              child: Stack(
-                children: <Widget>[
-                  _buildHeaderColumn(),
-                  Positioned(
-                    right: 0.0,
-                    top: 0.0,
-                    child: Container(
-                      height: 32.0,
-                      child: Image.asset('assets/images/cloud.png'),
+            FractionalTranslation(
+              translation: Offset(0.0, transitionFactor - 1),
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 17.0),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 20.0, vertical: 18.0),
+                height: 182.0,
+                decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFF975ED8), Color(0xFF7352D0)]),
+                    borderRadius: BorderRadius.all(Radius.circular(10.0)),
+                    boxShadow: [
+                      BoxShadow(
+                        offset: Offset(0.0, 6.0),
+                        blurRadius: 23.0,
+                        color: Color(0x8A4F3A8C),
+                      )
+                    ]),
+                child: Stack(
+                  children: <Widget>[
+                    _buildHeaderColumn(),
+                    Positioned(
+                      right: 0.0,
+                      top: 0.0,
+                      child: Container(
+                        height: 32.0,
+                        child: Image.asset('assets/images/cloud.png'),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             Expanded(
-              child: Transform.scale(
-                scale: scale,
+              child: FractionalTranslation(
+                translation: Offset(transitionFactor - 1, 0.0),
                 child: _buildListView(),
               ),
             ),
@@ -225,62 +227,81 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
                       color: Color(0xFFC9A2F5), fontSize: 12.0, fontFamily: ''),
                 ),
               ),
-              Stack(
-                children: <Widget>[
-                  Container(
-                    padding: const EdgeInsets.only(left: 27.5, bottom: 30.0),
-                    decoration: const BoxDecoration(
-                        border: Border(
-                      left: BorderSide(color: Color(0xFF6F54BC)),
-                    )),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          '早起跑步健身',
-                          style: const TextStyle(
-                              color: Color(0xFFD7CAFF), fontSize: 15.0),
-                        ),
-                        const SizedBox(
-                          height: 8.0,
-                        ),
-                        Text(
-                          '生活',
-                          style: const TextStyle(
-                              color: Color(0xFFF0DC26), fontSize: 12.0),
-                        ),
-                        const SizedBox(
-                          height: 8.0,
-                        ),
-                        Text(
-                          '项目名称',
-                          style: const TextStyle(
-                              color: Color(0xFFC9A2F5), fontSize: 12.0),
-                        ),
-                        const SizedBox(
-                          height: 8.0,
-                        ),
-                        Text(
-                          '备注',
-                          style: const TextStyle(
-                              color: Color(0xFFC9A2F5), fontSize: 12.0),
-                        ),
-                      ],
+              Expanded(
+                child: Stack(
+                  children: <Widget>[
+                    Container(
+                      decoration: const BoxDecoration(
+                          border: Border(
+                        left: BorderSide(color: Color(0xFF6F54BC)),
+                      )),
+                      child: _TimelineItemContent(),
                     ),
-                  ),
-                  Transform.translate(
-                    offset: const Offset(-5, 2.0),
-                    child: const Icon(
-                      FontAwesomeIcons.solidCircle,
-                      color: Color(0xFFF0DC26),
-                      size: 12.0,
+                    Transform.translate(
+                      offset: const Offset(-5, 2.0),
+                      child: const Icon(
+                        FontAwesomeIcons.solidCircle,
+                        color: Color(0xFFF0DC26),
+                        size: 12.0,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           );
         });
+  }
+}
+
+class _TimelineItemContent extends StatelessWidget {
+  
+  @override
+  Widget build(BuildContext context) {
+    return TapAnimator(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        Navigator.of(context).pushNamed(DetailListScreen.routeName);
+      },
+      builder: (_factor) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.only(left: 27.5, bottom: 30.0),
+        transform: Matrix4.identity()
+          ..setEntry(3, 2, 0.002)
+          ..rotateY(-_factor * Math.pi / 24)
+          ..rotateX(-_factor * Math.pi / 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              '早起跑步健身',
+              style: const TextStyle(color: Color(0xFFD7CAFF), fontSize: 15.0),
+            ),
+            const SizedBox(
+              height: 8.0,
+            ),
+            Text(
+              '生活',
+              style: const TextStyle(color: Color(0xFFF0DC26), fontSize: 12.0),
+            ),
+            const SizedBox(
+              height: 8.0,
+            ),
+            Text(
+              '项目名称',
+              style: const TextStyle(color: Color(0xFFC9A2F5), fontSize: 12.0),
+            ),
+            const SizedBox(
+              height: 8.0,
+            ),
+            Text(
+              '备注',
+              style: const TextStyle(color: Color(0xFFC9A2F5), fontSize: 12.0),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -301,14 +322,18 @@ _buildRoute() {
         controller: controller,
       );
     },
-    transitionDuration: Duration(milliseconds: 1000),
+    transitionDuration: Duration(milliseconds: 500),
     transitionsBuilder: (context, anim1, anim2, child) {
-      var curve = Cubic(0, 1, .55, 1);
-      var offset = 1 - curve.transform(anim1.value);
+      final anim1Curved = Curves.easeOutCubic.transform(anim1.value);
       controller
           .updateTransition(1 - Curves.easeOutCubic.transform(anim2.value));
-      return FractionalTranslation(
-          translation: Offset(0.0, offset), child: child);
+      return Opacity(
+        opacity: anim1Curved,
+        child: Transform.scale(
+          scale: 2 - anim1Curved,
+          child: child,
+        ),
+      );
     },
   );
 }

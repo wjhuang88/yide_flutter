@@ -2,41 +2,52 @@ import 'dart:ui';
 import 'dart:math' as Math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:logger/logger.dart';
 
 import 'models/task_data.dart';
 import 'notification.dart';
+import 'screens/detail_screen/detail_comments_screen.dart';
 import 'screens/detail_screen/edit_main_screen.dart';
 import 'screens/detail_screen/detail_list_screen.dart';
-import 'screens/splash_screen/splash_screen.dart';
+import 'screens/feedback_screen.dart';
+import 'screens/splash_screen.dart';
 import 'screens/list_screen/list_screen.dart';
 import 'screens/detail_screen/detail_screen.dart';
 import 'screens/timeline_list_screen.dart';
+import 'screens/detail_screen/detail_datetime_screen.dart';
+import 'screens/detail_screen/detail_tag_screen.dart';
 
 _ScreenContainerController _screenController = _ScreenContainerController();
+NavigatorObserver _navigatorObserver = NavigatorObserver();
 
-void main() => runApp(NotificationListener<AppNotification>(
-      child: MyApp(),
-      onNotification: (AppNotification n) {
-        switch (n.message) {
-          case 'open_menu':
-            _screenController.openMenu();
-            break;
-          case 'close_menu':
-            _screenController.closeMenu();
-            break;
-          default:
-        }
-        return true;
-      },
-    ));
+void main() {
+  runApp(NotificationListener<AppNotification>(
+    child: MyApp(),
+    onNotification: (AppNotification n) {
+      switch (n.message) {
+        case 'open_menu':
+          _screenController.openMenu();
+          break;
+        case 'close_menu':
+          _screenController.closeMenu();
+          break;
+        default:
+      }
+      return true;
+    },
+  ));
+  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
+}
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Logger.level = Level.debug;
     return MaterialApp(
+      color: const Color(0xFF472478),
       home: _ScreenContainer(
         controller: _screenController,
       ),
@@ -52,7 +63,8 @@ class MyApp extends StatelessWidget {
       ],
       theme: ThemeData(
         primaryColor: Colors.white,
-        scaffoldBackgroundColor: Color(0xFF472478),
+        scaffoldBackgroundColor: const Color(0xFF472478),
+        backgroundColor: const Color(0xFF472478),
         fontFamily: 'SourceHanSans',
       ),
     );
@@ -93,6 +105,8 @@ class _ScreenContainerState extends State<_ScreenContainer>
   double _offsetValue = 1.0;
   double _animValue = 0.0;
 
+  bool _menuOpen = false;
+
   @override
   void initState() {
     super.initState();
@@ -110,6 +124,17 @@ class _ScreenContainerState extends State<_ScreenContainer>
         _offsetValue = 1.0 + (0.85 - 1.0) * _animation.value;
       });
     });
+    _animation.addStatusListener((status) {
+      switch (status) {
+        case AnimationStatus.dismissed:
+          _menuOpen = false;
+          break;
+        case AnimationStatus.forward:
+          _menuOpen = true;
+          break;
+        default:
+      }
+    });
   }
 
   @override
@@ -119,11 +144,11 @@ class _ScreenContainerState extends State<_ScreenContainer>
   }
 
   void _openMenu() {
-    _animationController.forward(from: 0.0);
+    _animationController.forward(from: 0.1);
   }
 
   void _closeMenu() {
-    _animationController.reverse(from: 1.0);
+    _animationController.reverse(from: 0.9);
   }
 
   @override
@@ -131,9 +156,12 @@ class _ScreenContainerState extends State<_ScreenContainer>
     return Stack(
       children: <Widget>[
         Material(
-          color: const Color(0xFF483666),
-          child: _MainMenu(
-            transformValue: _animValue,
+          color: const Color(0xFF483667),
+          child: Offstage(
+            offstage: !_menuOpen,
+            child: _MainMenu(
+              transformValue: _animValue,
+            ),
           ),
         ),
         Transform(
@@ -146,28 +174,27 @@ class _ScreenContainerState extends State<_ScreenContainer>
                 Container(
                   padding: EdgeInsets.only(left: 130.0 * _animValue),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Color(0xFF8346C8), Color(0xFF523F88)]),
-                    borderRadius: BorderRadius.circular(25 * _animValue),
-                    boxShadow: [
-                      BoxShadow(
-                        blurRadius: 17.0,
-                        color: Color(0x8A37256D),
-                      ),
-                    ]
-                  ),
+                      gradient: const LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color(0xFF8346C8), Color(0xFF523F88)]),
+                      borderRadius: BorderRadius.circular(25 * _animValue),
+                      boxShadow: [
+                        BoxShadow(
+                          blurRadius: 17.0,
+                          color: Color(0x8A37256D),
+                        ),
+                      ]),
                   child: Opacity(
                     opacity: 1 - _animValue,
                     child: Navigator(
-                      initialRoute: '/',
+                      initialRoute: SplashScreen.routeName,
+                      observers: [_navigatorObserver],
                       onGenerateRoute: (RouteSettings settings) {
                         final String name = settings.name;
                         switch (name) {
-                          case '/':
-                            return MaterialPageRoute(
-                                builder: (context) => SplashScreen());
+                          case SplashScreen.routeName:
+                            return SplashScreen.pageRoute;
                           case 'list':
                             return _buildRoute(ListScreen());
                           case 'detail':
@@ -180,6 +207,14 @@ class _ScreenContainerState extends State<_ScreenContainer>
                             return DetailListScreen.pageRoute;
                           case TimelineListScreen.routeName:
                             return TimelineListScreen.pageRoute;
+                          case DetailDateTimeScreen.routeName:
+                            return DetailDateTimeScreen.pageRoute;
+                          case DetailTagScreen.routeName:
+                            return DetailTagScreen.pageRoute(settings.arguments);
+                          case DetailCommentsScreen.routeName:
+                            return DetailCommentsScreen.pageRoute;
+                          case FeedbackScreen.routeName:
+                            return FeedbackScreen.pageRoute;
                           default:
                             throw FlutterError(
                                 'The builder for route "${settings.name}" returned null.\n'
@@ -193,6 +228,7 @@ class _ScreenContainerState extends State<_ScreenContainer>
                   offstage: !(_offsetValue < 1.0),
                   child: GestureDetector(
                     child: Container(
+                      alignment: Alignment.centerLeft,
                       color: Colors.transparent,
                     ),
                     onTap: () {
@@ -216,49 +252,177 @@ class _MainMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final contentPadding =
-        EdgeInsets.symmetric(horizontal: 45.0, vertical: 0.0);
+        EdgeInsets.symmetric(horizontal: 25.0, vertical: 0.0);
     final angle = (1 - transformValue) * Math.pi / 6;
     return SafeArea(
       child: Transform(
-        transform: Matrix4.rotationY(angle * 2)
-          ..rotateX(angle)
-          ..rotateZ(-angle),
-        alignment: Alignment.bottomRight,
+        transform: Matrix4.identity()
+          ..setEntry(3, 2, 0.002)
+          ..rotateY(angle),
+        alignment: const FractionalOffset(0.0, 0.5),
         child: Opacity(
-          opacity: (transformValue * 3 - 2).clamp(0.0, 1.0),
-          child: ListView(
-            padding: EdgeInsets.symmetric(vertical: 16.0),
-            children: <Widget>[
-              Container(
-                height: 100.0,
-                padding: contentPadding,
-                child: Text(
-                  'App名字',
-                  style: const TextStyle(color: Colors.white, fontSize: 30.0),
+          opacity: transformValue,
+          child: ListTileTheme(
+            iconColor: const Color(0xFFC19EFD),
+            textColor: const Color(0xFFC19EFD),
+            contentPadding: contentPadding,
+            style: ListTileStyle.drawer,
+            child: ListView(
+              padding: EdgeInsets.symmetric(vertical: 16.0),
+              children: <Widget>[
+                Container(
+                  height: 120.0,
+                  padding: contentPadding,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: <Widget>[
+                      Container(
+                        height: 70.0,
+                        width: 70.0,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFE4C8FF),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          FontAwesomeIcons.solidUser,
+                          color: Color(0xFF9A76D1),
+                          size: 35.0,
+                        ),
+                      ),
+                      const SizedBox(
+                        width: 20.0,
+                      ),
+                      const Text(
+                        '点击登录',
+                        style: TextStyle(color: Color(0xFFC19EFD)),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              ListTile(
-                contentPadding: contentPadding,
-                title: Text(
-                  '今天',
-                  style: const TextStyle(color: Colors.white),
+                const Divider(
+                  color: Color(0xFFBF93FF),
+                  thickness: 0.2,
+                  indent: 25.0,
+                  endIndent: 100.0,
                 ),
-              ),
-              ListTile(
-                contentPadding: contentPadding,
-                title: Text(
-                  '收集箱',
-                  style: const TextStyle(color: Colors.white),
+                ListTile(
+                  leading: const Icon(
+                    FontAwesomeIcons.solidStar,
+                    size: 20.0,
+                  ),
+                  title: const Text(
+                    '今天',
+                  ),
+                  onTap: () {},
                 ),
-              ),
-              ListTile(
-                contentPadding: contentPadding,
-                title: Text(
-                  '归档',
-                  style: const TextStyle(color: Colors.white),
+                ListTile(
+                  leading: const Icon(
+                    FontAwesomeIcons.inbox,
+                    size: 20.0,
+                  ),
+                  title: const Text(
+                    '收集箱',
+                  ),
+                  onTap: () {},
                 ),
-              ),
-            ]
+                const Divider(
+                  color: Color(0xFFBF93FF),
+                  thickness: 0.2,
+                  indent: 25.0,
+                  endIndent: 100.0,
+                ),
+                ListTile(
+                  leading: const Icon(
+                    FontAwesomeIcons.plusCircle,
+                    size: 20.0,
+                  ),
+                  title: const Text(
+                    '添加项目',
+                  ),
+                  onTap: () {},
+                ),
+                ListTile(
+                  contentPadding:
+                      contentPadding + const EdgeInsets.only(left: 40.0),
+                  leading: const Icon(
+                    FontAwesomeIcons.minusCircle,
+                    size: 20.0,
+                  ),
+                  title: const Text(
+                    '项目一',
+                  ),
+                  onTap: () {},
+                ),
+                ListTile(
+                  contentPadding:
+                      contentPadding + const EdgeInsets.only(left: 40.0),
+                  leading: const Icon(
+                    FontAwesomeIcons.minusCircle,
+                    size: 20.0,
+                  ),
+                  title: const Text(
+                    '项目二',
+                  ),
+                  onTap: () {},
+                ),
+                const Divider(
+                  color: Color(0xFFBF93FF),
+                  thickness: 0.2,
+                  indent: 25.0,
+                  endIndent: 100.0,
+                ),
+                ListTile(
+                  leading: const Icon(
+                    FontAwesomeIcons.archive,
+                    size: 20.0,
+                  ),
+                  title: const Text(
+                    '归档内容',
+                  ),
+                  onTap: () {},
+                ),
+                ListTile(
+                  leading: const Icon(
+                    FontAwesomeIcons.ellipsisH,
+                    size: 20.0,
+                  ),
+                  title: const Text(
+                    '更多推荐',
+                  ),
+                  onTap: () {},
+                ),
+                ListTile(
+                  leading: const Icon(
+                    FontAwesomeIcons.solidCommentDots,
+                    size: 20.0,
+                  ),
+                  title: const Text(
+                    '建议与反馈',
+                  ),
+                  onTap: () {
+                    _screenController.closeMenu();
+                    _navigatorObserver.navigator
+                        ?.pushNamed(FeedbackScreen.routeName);
+                  },
+                ),
+                const Divider(
+                  color: Color(0xFFBF93FF),
+                  thickness: 0.2,
+                  indent: 25.0,
+                  endIndent: 100.0,
+                ),
+                ListTile(
+                  leading: const Icon(
+                    FontAwesomeIcons.cogs,
+                    size: 20.0,
+                  ),
+                  title: const Text(
+                    '设置',
+                  ),
+                  onTap: () {},
+                ),
+              ],
+            ),
           ),
         ),
       ),
