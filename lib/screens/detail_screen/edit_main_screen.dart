@@ -6,10 +6,11 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:yide/components/fade_in.dart';
 import 'package:yide/components/infinity_page_view.dart';
+import 'package:yide/components/panel_switcher.dart';
 import 'package:yide/components/tap_animator.dart';
 import 'package:yide/models/date_tools.dart';
 import 'package:yide/models/task_data.dart';
-import 'package:yide/screens/detail_screen/detail_tag_screen.dart';
+import 'package:yide/screens/detail_screen/detail_tag_panel.dart';
 
 class EditMainScreen extends StatefulWidget {
   static const String routeName = 'new';
@@ -27,7 +28,8 @@ class EditMainScreen extends StatefulWidget {
 
 enum _DateTimeType { fullday, someday, datetime }
 
-class _EditMainScreenState extends State<EditMainScreen> {
+class _EditMainScreenState extends State<EditMainScreen>
+    with SingleTickerProviderStateMixin {
   _EditMainScreenState(this._controller);
 
   TextEditingController _textEditingController;
@@ -37,6 +39,12 @@ class _EditMainScreenState extends State<EditMainScreen> {
   double transitionFactor;
   EditScreenController _controller;
   FadeInController _fadeInController;
+
+  AnimationController _bottomBarController;
+  Animation _bottomBarAnimation;
+
+  PanelSwitcherController _setupPanelController;
+  String _setupTitle = '设置';
 
   _DateTimeType _dateTimeType;
   DateTime _baseTime;
@@ -74,8 +82,23 @@ class _EditMainScreenState extends State<EditMainScreen> {
       _content = _textEditingController.text;
     });
     _focusNode = FocusNode();
+    _focusNode.addListener(() {
+      if (_focusNode.hasFocus) {
+        _bottomBarController.forward();
+      }
+    });
+
+    _bottomBarController = AnimationController(
+        vsync: this, duration: Duration(milliseconds: 250), value: 0.0);
+    _bottomBarAnimation = CurvedAnimation(
+        parent: _bottomBarController,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic)
+      ..addListener(() => setState(() {}));
 
     _fadeInController = FadeInController();
+
+    _setupPanelController = PanelSwitcherController();
 
     _dateTimeType = _DateTimeType.fullday;
     _dateTime ??= DateTime.now();
@@ -100,9 +123,15 @@ class _EditMainScreenState extends State<EditMainScreen> {
 
   @override
   void dispose() {
+    _bottomBarController.dispose();
     _textEditingController.dispose();
     _focusNode.dispose();
     super.dispose();
+  }
+
+  void _unfocus() {
+    _focusNode.unfocus();
+    _bottomBarController.reverse();
   }
 
   @override
@@ -111,6 +140,10 @@ class _EditMainScreenState extends State<EditMainScreen> {
     if (_keyboardBuildHeight > 0.0) {
       _keyboardRealHeight = _keyboardBuildHeight;
     }
+
+    final _setupOffset = 150.0 * transitionFactor;
+    final _bottomOffset = _setupOffset + (1 - _bottomBarAnimation.value) * 50;
+    final _bottomOpacity = _bottomBarAnimation.value;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -146,13 +179,12 @@ class _EditMainScreenState extends State<EditMainScreen> {
                                   style: const TextStyle(
                                       color: Colors.white, fontSize: 20.0),
                                 ),
-                                const SizedBox(
-                                  height: 12.0,
-                                ),
                                 Text(
                                   DateFormat('MM月dd日').format(timeToRender),
                                   style: const TextStyle(
-                                      color: Color(0xFFBBADE7), fontSize: 14.0),
+                                      color: Color(0xFFBBADE7),
+                                      fontSize: 14.0,
+                                      fontFamily: ''),
                                 ),
                               ],
                             );
@@ -188,19 +220,101 @@ class _EditMainScreenState extends State<EditMainScreen> {
                 ],
               ),
             ),
-            _buildBottomBar(context),
-            _buildSetupPanel(),
+            Opacity(
+              opacity: 1 - transitionFactor,
+              child: Stack(
+                children: <Widget>[
+                  _buildSetupPanel(context, _setupOffset, 1 - _bottomOpacity,
+                      title: _setupTitle),
+                  Offstage(
+                    offstage: _bottomOpacity < 0.01,
+                    child: Opacity(
+                      opacity: _bottomOpacity,
+                      child: _buildBottomBar(context, _bottomOffset),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSetupPanel() {
+  Widget _buildSetupPanel(
+      BuildContext context, double offset, double titleOpacity,
+      {String title = '设置'}) {
     return Container(
-      transform: Matrix4.translationValues(0.0, 150.0 * transitionFactor, 0.0),
-      color: const Color(0xFF472478),
-      height: _keyboardRealHeight ?? 0.0,
+      transform: Matrix4.translationValues(0.0, offset, 0.0),
+      child: Column(
+        children: <Widget>[
+          GestureDetector(
+            onTap: () {
+              _setupPanelController.switchBack().then((v) => _setupTitle = '');
+              FocusScope.of(context).requestFocus(_focusNode);
+            },
+            child: Container(
+              height: 44.0,
+              color: const Color(0xFF472478),
+              child: Opacity(
+                opacity: titleOpacity,
+                child: Stack(
+                  children: <Widget>[
+                    Center(
+                        child: Text(
+                      title,
+                      style: const TextStyle(
+                        color: Color(0xFFBBADE7),
+                      ),
+                    )),
+                    Container(
+                      padding: const EdgeInsets.only(right: 16.0),
+                      alignment: Alignment.centerRight,
+                      child: Icon(
+                        Icons.clear,
+                        color: Color(0xFFBBADE7),
+                        size: 20.0,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const Divider(
+            height: 0.0,
+            color: Color(0xFFBBADE7),
+            thickness: 0.1,
+          ),
+          PanelSwitcher(
+            backgroundPage: 'blank',
+            initPage: 'blank',
+            pageMap: {
+              'blank': (context, factor) => Container(
+                    color: const Color(0xFF472478),
+                    height: (_keyboardRealHeight ?? 0.0),
+                  ),
+              DetailTagPanel.panelName: (context, factor) => Opacity(
+                    opacity: factor,
+                    child: DetailTagPanel(
+                      selectedTag: _tagData,
+                      onChange: (tag) {
+                        if (tag == null ||
+                            (_tagData != null && _tagData.id == tag.id)) {
+                          return;
+                        }
+                        setState(() {
+                          _tagData = tag;
+                        });
+                      },
+                    ),
+                  )
+            },
+            controller: _setupPanelController,
+          ),
+        ],
+      ),
     );
   }
 
@@ -251,8 +365,9 @@ class _EditMainScreenState extends State<EditMainScreen> {
         );
       case _DateTimeType.datetime:
         return Text(
-          DateFormat('hh:mm').format(_dateTime),
-          style: const TextStyle(color: Colors.white, fontSize: 20.0),
+          DateFormat('HH:mm').format(_dateTime),
+          style: const TextStyle(
+              color: Colors.white, fontSize: 20.0, fontFamily: ''),
         );
       default:
         return Text(
@@ -282,50 +397,54 @@ class _EditMainScreenState extends State<EditMainScreen> {
           ]),
       child: Column(
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              Icon(
-                FontAwesomeIcons.solidCircle,
-                color: _tagData.iconColor,
-                size: 10.0,
-              ),
-              SizedBox(
-                width: 11.0,
-              ),
-              TapAnimator(
-                builder: (factor) => Text(
+          TapAnimator(
+            behavior: HitTestBehavior.opaque,
+            builder: (factor) => Row(
+              children: <Widget>[
+                Icon(
+                  FontAwesomeIcons.solidCircle,
+                  color: _tagData.iconColor,
+                  size: 10.0,
+                ),
+                SizedBox(
+                  width: 11.0,
+                ),
+                Text(
                   _tagData.name,
                   style: TextStyle(
                       color: Color.lerp(
                           Colors.white, const Color(0xFFBBADE7), factor),
                       fontSize: 12.0),
                 ),
-                onTap: () async {
-                  final tagResult = await Navigator.of(context)
-                      .pushNamed<TaskTag>(DetailTagScreen.routeName,
-                          arguments: _tagData);
-                  setState(() {
-                    _tagData = tagResult ?? _tagData;
-                  });
-                },
-              ),
-            ],
+              ],
+            ),
+            onTap: () {
+              _unfocus();
+              _setupTitle = '标签';
+              _setupPanelController.switchTo(DetailTagPanel.panelName);
+            },
+          ),
+          const SizedBox(
+            height: 8.0,
           ),
           CupertinoTextField(
             autofocus: true,
             minLines: 3,
             maxLines: 4,
+            cursorWidth: 1.0,
+            cursorColor: const Color(0xFFFAB807),
             controller: _textEditingController,
             focusNode: _focusNode,
             style: TextStyle(color: Colors.white, fontSize: 16.0),
             textAlign: TextAlign.center,
+            textAlignVertical: TextAlignVertical.center,
             keyboardAppearance: Brightness.dark,
             keyboardType: TextInputType.text,
             textInputAction: TextInputAction.done,
             onSubmitted: (value) {
               Navigator.of(context).maybePop();
             },
-            placeholder: '记录你今天的任务',
+            placeholder: '记录你的任务',
             placeholderStyle: const TextStyle(color: Color(0xFF9B7FE9)),
             decoration: const BoxDecoration(color: Colors.transparent),
           ),
@@ -334,81 +453,89 @@ class _EditMainScreenState extends State<EditMainScreen> {
     );
   }
 
-  Widget _buildBottomBar(BuildContext context) {
+  Widget _buildBottomBar(BuildContext context, double offset) {
     return Container(
       color: const Color(0xFF472478),
-      transform: Matrix4.translationValues(0.0, 150.0 * transitionFactor, 0.0),
+      transform: Matrix4.translationValues(0.0, offset, 0.0),
       height: 45.0,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Expanded(
-            child: GestureDetector(
+            child: TapAnimator(
               behavior: HitTestBehavior.opaque,
               onTap: () {
                 Navigator.of(context).maybePop();
               },
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  const Icon(
-                    FontAwesomeIcons.arrowAltCircleLeft,
-                    color: Color(0xFFBBADE7),
-                    size: 16.0,
-                  ),
-                  const SizedBox(
-                    width: 5.5,
-                  ),
-                  const Text(
-                    '返回',
-                    style: const TextStyle(
-                        color: Color(0xFFBBADE7), fontSize: 14.0),
-                  ),
-                ],
-              ),
+              builder: (factor) {
+                final color =
+                    const Color(0xFFBBADE7).withOpacity(1 - factor * 0.5);
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Icon(
+                      FontAwesomeIcons.arrowAltCircleLeft,
+                      color: color,
+                      size: 16.0,
+                    ),
+                    const SizedBox(
+                      width: 5.5,
+                    ),
+                    Text(
+                      '取消',
+                      style: TextStyle(color: color, fontSize: 14.0),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
           const _VerticleDivider(),
           Expanded(
-            child: GestureDetector(
+            child: TapAnimator(
               behavior: HitTestBehavior.opaque,
               onTap: () {
-                _focusNode.unfocus();
+                _unfocus();
               },
-              child: Center(
-                child: const Text(
+              builder: (factor) => Center(
+                child: Text(
                   '更多设置',
                   textAlign: TextAlign.center,
-                  style:
-                      const TextStyle(color: Color(0xFFBBADE7), fontSize: 14.0),
+                  style: TextStyle(
+                      color:
+                          const Color(0xFFBBADE7).withOpacity(1 - factor * 0.5),
+                      fontSize: 14.0),
                 ),
               ),
             ),
           ),
           const _VerticleDivider(),
           Expanded(
-            child: GestureDetector(
+            child: TapAnimator(
               behavior: HitTestBehavior.opaque,
               onTap: () {},
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  const Icon(
-                    FontAwesomeIcons.save,
-                    color: Color(0xFFBBADE7),
-                    size: 16.0,
-                  ),
-                  const SizedBox(
-                    width: 5.5,
-                  ),
-                  const Text(
-                    '保存',
-                    style: const TextStyle(
-                        color: Color(0xFFBBADE7), fontSize: 14.0),
-                  ),
-                ],
-              ),
+              builder: (factor) {
+                final color =
+                    const Color(0xFFBBADE7).withOpacity(1 - factor * 0.5);
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Icon(
+                      FontAwesomeIcons.save,
+                      color: color,
+                      size: 16.0,
+                    ),
+                    const SizedBox(
+                      width: 5.5,
+                    ),
+                    Text(
+                      '保存',
+                      style: TextStyle(color: color, fontSize: 14.0),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ],
@@ -434,10 +561,14 @@ _buildRoute() {
         transitionFactor: 1.0,
       );
     },
-    transitionDuration: Duration(milliseconds: 500),
+    transitionDuration: Duration(milliseconds: 400),
     transitionsBuilder: (context, anim1, anim2, child) {
-      var curve = Curves.easeOutCubic;
-      var offset = 1 - curve.transform(anim1.value);
+      final anim1Curved = CurvedAnimation(
+        parent: anim1,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
+      );
+      final offset = 1 - anim1Curved.value;
       controller.updateTransition(offset);
       return child;
     },

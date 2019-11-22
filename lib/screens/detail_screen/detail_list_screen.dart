@@ -233,11 +233,11 @@ class _ListItem extends StatelessWidget {
       builder: (animValue) {
         final _factor = 1 - animValue * 0.2;
         return Transform(
-          alignment: Alignment.center,
+          alignment: Alignment.bottomCenter,
           transform: Matrix4.identity()
-            ..setEntry(3, 2, 0.005)
-            ..rotateY(-(1 - _factor) * Math.pi / 24)
-            ..rotateX((1 - _factor) * Math.pi / 24),
+            ..setEntry(3, 2, 0.001)
+            //..rotateY(-(1 - _factor) * Math.pi / 6)
+            ..rotateX(-(1 - _factor) * Math.pi / 2),
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 15.0),
             height: 60.0,

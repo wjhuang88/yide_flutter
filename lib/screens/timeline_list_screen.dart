@@ -326,7 +326,7 @@ _buildRoute() {
     transitionsBuilder: (context, anim1, anim2, child) {
       final anim1Curved = Curves.easeOutCubic.transform(anim1.value);
       controller
-          .updateTransition(1 - Curves.easeOutCubic.transform(anim2.value));
+          .updateTransition(1 - anim2.value);
       return Opacity(
         opacity: anim1Curved,
         child: Transform.scale(

@@ -7,18 +7,14 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:logger/logger.dart';
 
-import 'models/task_data.dart';
 import 'notification.dart';
 import 'screens/detail_screen/detail_comments_screen.dart';
 import 'screens/detail_screen/edit_main_screen.dart';
 import 'screens/detail_screen/detail_list_screen.dart';
 import 'screens/feedback_screen.dart';
 import 'screens/splash_screen.dart';
-import 'screens/list_screen/list_screen.dart';
-import 'screens/detail_screen/detail_screen.dart';
 import 'screens/timeline_list_screen.dart';
 import 'screens/detail_screen/detail_datetime_screen.dart';
-import 'screens/detail_screen/detail_tag_screen.dart';
 
 _ScreenContainerController _screenController = _ScreenContainerController();
 NavigatorObserver _navigatorObserver = NavigatorObserver();
@@ -195,12 +191,6 @@ class _ScreenContainerState extends State<_ScreenContainer>
                         switch (name) {
                           case SplashScreen.routeName:
                             return SplashScreen.pageRoute;
-                          case 'list':
-                            return _buildRoute(ListScreen());
-                          case 'detail':
-                            final args = settings.arguments;
-                            assert(args is TaskPack);
-                            return _buildRoute(DetailScreen(args));
                           case EditMainScreen.routeName:
                             return EditMainScreen.pageRoute;
                           case DetailListScreen.routeName:
@@ -209,8 +199,6 @@ class _ScreenContainerState extends State<_ScreenContainer>
                             return TimelineListScreen.pageRoute;
                           case DetailDateTimeScreen.routeName:
                             return DetailDateTimeScreen.pageRoute;
-                          case DetailTagScreen.routeName:
-                            return DetailTagScreen.pageRoute(settings.arguments);
                           case DetailCommentsScreen.routeName:
                             return DetailCommentsScreen.pageRoute;
                           case FeedbackScreen.routeName:
@@ -428,22 +416,4 @@ class _MainMenu extends StatelessWidget {
       ),
     );
   }
-}
-
-_buildRoute(Widget child) {
-  return PageRouteBuilder(
-    pageBuilder: (context, anim1, anim2) => child,
-    transitionDuration: Duration(milliseconds: 300),
-    transitionsBuilder: (context, anim1, anim2, child) {
-      return ScaleTransition(
-        scale: Tween<double>(begin: 0, end: 1).animate(
-          CurvedAnimation(
-            parent: anim1,
-            curve: Curves.easeOutSine,
-          ),
-        ),
-        child: child,
-      );
-    },
-  );
 }

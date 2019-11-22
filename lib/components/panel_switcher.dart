@@ -1,30 +1,33 @@
 import 'package:flutter/material.dart';
 
-typedef PanelItemBuilder = Widget Function(BuildContext context, double animValue, );
+typedef PanelItemBuilder = Widget Function(
+  BuildContext context,
+  double animValue,
+);
 
 class PanelSwitcherController {
   _PanelSwitcherState _state;
 
-  void switchTo(String pageName, VoidCallback callback) {
-    _state?._to(pageName, callback);
+  Future<void> switchTo(String pageName) async {
+    return _state?._to(pageName);
   }
 
-  void switchBack(VoidCallback callback) {
-    _state?._reset(callback);
+  Future<void> switchBack() async {
+    return _state?._reset();
   }
 
   String get currentPage => _state?._pageName;
 }
 
 class PanelSwitcher extends StatefulWidget {
-  const PanelSwitcher({
-    Key key, 
-    this.pageMap, 
-    this.controller, 
-    @required this.initPage, 
-    @required this.backgroundPage, 
-    this.curve = Curves.easeOutSine
-  }) : super(key: key);
+  const PanelSwitcher(
+      {Key key,
+      this.pageMap,
+      this.controller,
+      @required this.initPage,
+      @required this.backgroundPage,
+      this.curve = Curves.easeOutCubic})
+      : super(key: key);
 
   final Map<String, PanelItemBuilder> pageMap;
   final PanelSwitcherController controller;
@@ -36,7 +39,8 @@ class PanelSwitcher extends StatefulWidget {
   _PanelSwitcherState createState() => _PanelSwitcherState(controller);
 }
 
-class _PanelSwitcherState extends State<PanelSwitcher> with SingleTickerProviderStateMixin {
+class _PanelSwitcherState extends State<PanelSwitcher>
+    with SingleTickerProviderStateMixin {
   _PanelSwitcherState(this._controller);
 
   PanelSwitcherController _controller;
@@ -44,9 +48,6 @@ class _PanelSwitcherState extends State<PanelSwitcher> with SingleTickerProvider
   String _keepPage;
   String _lastPage;
   String _movingPage;
-
-  VoidCallback _toCallback;
-  VoidCallback _backCallback;
 
   AnimationController _animController;
   Animation<double> _anim;
@@ -60,33 +61,14 @@ class _PanelSwitcherState extends State<PanelSwitcher> with SingleTickerProvider
     _lastPage = _pageName = widget.initPage;
     _keepPage = widget.backgroundPage;
 
-    _animController = AnimationController(value: 0, duration: Duration(milliseconds: 300), vsync: this);
+    _animController = AnimationController(
+        value: 0, duration: Duration(milliseconds: 300), vsync: this);
     _anim = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
       parent: _animController,
       curve: widget.curve,
     ));
     _anim.addListener(() {
-      setState(() {
-        
-      });
-    });
-    _anim.addStatusListener((status) {
-      switch(status) {
-        case AnimationStatus.forward:
-        case AnimationStatus.reverse: {
-          
-          break;
-        }
-        case AnimationStatus.completed: {
-          _movingPage = null;
-          if (_toCallback != null) _toCallback();
-          break;
-        }
-        case AnimationStatus.dismissed: {
-          _movingPage = null;
-          if (_backCallback != null) _backCallback();
-        }
-      }
+      setState(() {});
     });
   }
 
@@ -96,32 +78,38 @@ class _PanelSwitcherState extends State<PanelSwitcher> with SingleTickerProvider
     super.dispose();
   }
 
-  void _to(String name, VoidCallback callback) {
+  Future<void> _to(String name) async {
     _movingPage = _lastPage = _pageName;
     _pageName = name;
-    _animController.forward(from: 0.01);
-    _toCallback = callback;
+    return _animController.forward(from: 0.01).then((v) => _movingPage = null);
   }
 
-  void _reset(VoidCallback callback) {
+  Future<void> _reset() async {
     _movingPage = _pageName;
     _pageName = _lastPage;
-    _animController.reverse(from: 0.99);
-    _backCallback = callback;
+    return _animController.reverse(from: 0.99).then((v) => _movingPage = null);
   }
 
   @override
   Widget build(BuildContext context) {
-    var children = widget.pageMap.map((name, builder) {
-      bool show = (name == _pageName || name == _keepPage || name == _movingPage);
-      return MapEntry(name, Offstage(
-        child: Opacity(
-          opacity: name == _keepPage || name == _pageName ? 1 : name == _movingPage ? _anim.value : 0,
-          child: builder(context, _anim.value),
-        ),
-        offstage: !show,
-      ));
-    }).values.toList();
+    var children = widget.pageMap
+        .map((name, builder) {
+          bool show =
+              (name == _pageName || name == _keepPage || name == _movingPage);
+          return MapEntry(
+              name,
+              Offstage(
+                child: Opacity(
+                  opacity: name == _keepPage || name == _pageName
+                      ? 1
+                      : name == _movingPage ? _anim.value : 0,
+                  child: builder(context, _anim.value),
+                ),
+                offstage: !show,
+              ));
+        })
+        .values
+        .toList();
     return Stack(
       children: children,
     );

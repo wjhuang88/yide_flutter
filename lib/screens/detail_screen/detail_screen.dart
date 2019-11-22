@@ -143,7 +143,7 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
     _titleFocusNode.unfocus();
     _remarkFocusNode.unfocus();
     var isDatePage = _panelSwitcherController.currentPage == 'date';
-    _panelSwitcherController.switchBack(() {
+    _panelSwitcherController.switchBack().then((v) {
       _floatingButtomAction = _confirm;
       if (isDatePage) {
         _calendarController.resetMonth(_taskDate);
@@ -158,7 +158,7 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
     _titleFocusNode.unfocus();
     _remarkFocusNode.unfocus();
     _floatingButtomAction = _switchBack;
-    _panelSwitcherController.switchTo(page, () {
+    _panelSwitcherController.switchTo(page).then((v) {
       setState(() {
         _floatingButtomIcon = Icons.keyboard_backspace;
       });
@@ -362,7 +362,7 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
             shape: StadiumBorder(),
             onPressed: () {
               _tagData = tag;
-              _panelSwitcherController.switchBack(() {
+              _panelSwitcherController.switchBack().then((v) {
                 _floatingButtomAction = _confirm;
                 setState(() {
                   _floatingButtomIcon = Icons.check;

@@ -28,7 +28,7 @@ class _TapAnimatorState extends State<TapAnimator>
     super.initState();
     _factor = 0.0;
     _animationController = AnimationController(
-        vsync: this, duration: Duration(milliseconds: 300), value: 0.0);
+        vsync: this, duration: Duration(milliseconds: 100), value: 0.0);
     _animation = Tween(begin: 0.0, end: 1.0).animate(CurvedAnimation(
         parent: _animationController,
         curve: Curves.easeOutCubic,
@@ -54,12 +54,20 @@ class _TapAnimatorState extends State<TapAnimator>
         _animationController.forward();
       },
       onTapUp: (details) {
-        _animationController.reverse();
+        //_animationController.reverse();
+        _animationController.fling(velocity: -1.0);
       },
       onTapCancel: () {
         _animationController.reverse();
       },
-      onTap: widget.onTap,
+      onTap: () {
+        if (_animationController.value < 0.3) {
+          _animationController.fling(velocity: 5.0).then((v) {
+            _animationController.fling(velocity: -5.0);
+          });
+        }
+        widget.onTap();
+      },
       child: widget.builder(_factor),
     );
   }

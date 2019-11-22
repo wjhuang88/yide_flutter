@@ -47,12 +47,9 @@ _buildRoute() {
     },
     transitionDuration: Duration(milliseconds: 500),
     transitionsBuilder: (context, anim1, anim2, child) {
-      return Transform.scale(
-        scale: 1.0 - anim2.value,
-        child: Opacity(
-          opacity: 1 - anim2.value,
-          child: child,
-        ),
+      return Opacity(
+        opacity: 1 - anim2.value,
+        child: child,
       );
     },
   );
