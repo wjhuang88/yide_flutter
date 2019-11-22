@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'dart:math' as Math;
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -14,7 +15,6 @@ import 'screens/detail_screen/detail_list_screen.dart';
 import 'screens/feedback_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/timeline_list_screen.dart';
-import 'screens/detail_screen/detail_datetime_screen.dart';
 
 _ScreenContainerController _screenController = _ScreenContainerController();
 NavigatorObserver _navigatorObserver = NavigatorObserver();
@@ -42,7 +42,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Logger.level = Level.debug;
-    return MaterialApp(
+    return CupertinoApp(
       color: const Color(0xFF472478),
       home: _ScreenContainer(
         controller: _screenController,
@@ -57,11 +57,10 @@ class MyApp extends StatelessWidget {
       supportedLocales: [
         const Locale.fromSubtags(languageCode: 'zh'),
       ],
-      theme: ThemeData(
+      theme: CupertinoThemeData(
         primaryColor: Colors.white,
         scaffoldBackgroundColor: const Color(0xFF472478),
-        backgroundColor: const Color(0xFF472478),
-        fontFamily: 'SourceHanSans',
+        brightness: Brightness.dark,
       ),
     );
   }
@@ -197,8 +196,6 @@ class _ScreenContainerState extends State<_ScreenContainer>
                             return DetailListScreen.pageRoute;
                           case TimelineListScreen.routeName:
                             return TimelineListScreen.pageRoute;
-                          case DetailDateTimeScreen.routeName:
-                            return DetailDateTimeScreen.pageRoute;
                           case DetailCommentsScreen.routeName:
                             return DetailCommentsScreen.pageRoute;
                           case FeedbackScreen.routeName:

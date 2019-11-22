@@ -31,6 +31,10 @@ class InfinityPageController {
   void jumpToPage(int page) {
     _pageController.jumpToPage(page + _hugePageOffset);
   }
+
+  void dispose() {
+    _pageController.dispose();
+  }
 }
 
 class InfinityPageView extends StatefulWidget {
@@ -70,6 +74,12 @@ class _InfinityPageViewState extends State<InfinityPageView> {
   void initState() {
     super.initState();
     _controller ??= InfinityPageController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override

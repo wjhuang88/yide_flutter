@@ -3,7 +3,6 @@ import 'dart:math' as Math;
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:yide/components/tap_animator.dart';
-import 'package:yide/screens/detail_screen/detail_datetime_screen.dart';
 import 'package:yide/screens/detail_screen/edit_main_screen.dart';
 
 import 'detail_comments_screen.dart';

@@ -16,7 +16,7 @@ class PanelSwitcherController {
     return _state?._reset();
   }
 
-  String get currentPage => _state?._pageName;
+  String get currentPage => _state?._pageInStage;
 }
 
 class PanelSwitcher extends StatefulWidget {
@@ -25,15 +25,19 @@ class PanelSwitcher extends StatefulWidget {
       this.pageMap,
       this.controller,
       @required this.initPage,
-      @required this.backgroundPage,
-      this.curve = Curves.easeOutCubic})
+      this.curve = Curves.easeOutCubic,
+      this.reverseCurve = Curves.easeInCubic,
+      this.duration = const Duration(milliseconds: 300),
+      this.backgroundColor = Colors.transparent})
       : super(key: key);
 
   final Map<String, PanelItemBuilder> pageMap;
   final PanelSwitcherController controller;
   final String initPage;
-  final String backgroundPage;
   final Curve curve;
+  final Curve reverseCurve;
+  final Duration duration;
+  final Color backgroundColor;
 
   @override
   _PanelSwitcherState createState() => _PanelSwitcherState(controller);
@@ -44,13 +48,18 @@ class _PanelSwitcherState extends State<PanelSwitcher>
   _PanelSwitcherState(this._controller);
 
   PanelSwitcherController _controller;
-  String _pageName;
-  String _keepPage;
-  String _lastPage;
-  String _movingPage;
 
   AnimationController _animController;
   Animation<double> _anim;
+
+  String _pageInStage;
+  String _pageInBackground;
+
+  List<PanelItemBuilder> _stages = List(2);
+  int _topStageIndex = 1;
+  PanelItemBuilder get _topStage => _stages[_topStageIndex];
+  set _topStage(PanelItemBuilder value) => _stages[_topStageIndex] = value;
+  PanelItemBuilder get _backgroundStage => _stages[1 - _topStageIndex];
 
   @override
   void initState() {
@@ -58,14 +67,15 @@ class _PanelSwitcherState extends State<PanelSwitcher>
     if (_controller == null) _controller = PanelSwitcherController();
     _controller._state = this;
 
-    _lastPage = _pageName = widget.initPage;
-    _keepPage = widget.backgroundPage;
+    _pageInStage = widget.initPage;
+    _topStage = widget.pageMap[_pageInStage];
 
-    _animController = AnimationController(
-        value: 0, duration: Duration(milliseconds: 300), vsync: this);
+    _animController =
+        AnimationController(value: 0, duration: widget.duration, vsync: this);
     _anim = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
       parent: _animController,
       curve: widget.curve,
+      reverseCurve: widget.reverseCurve,
     ));
     _anim.addListener(() {
       setState(() {});
@@ -78,40 +88,45 @@ class _PanelSwitcherState extends State<PanelSwitcher>
     super.dispose();
   }
 
+  void _flipStage() {
+    _topStageIndex = 1 - _topStageIndex;
+    final tempPage = _pageInBackground;
+    _pageInBackground = _pageInStage;
+    _pageInStage = tempPage;
+  }
+
   Future<void> _to(String name) async {
-    _movingPage = _lastPage = _pageName;
-    _pageName = name;
-    return _animController.forward(from: 0.01).then((v) => _movingPage = null);
+    _flipStage();
+    final builder = widget.pageMap[name];
+    if (builder != null) {
+      _topStage = builder;
+      _pageInStage = name;
+      return _animController.forward(from: 0);
+    }
+    throw FlutterError('Can\'t find a panel named: $name.');
   }
 
   Future<void> _reset() async {
-    _movingPage = _pageName;
-    _pageName = _lastPage;
-    return _animController.reverse(from: 0.99).then((v) => _movingPage = null);
+    if (_backgroundStage == null) {
+      return TickerFuture.complete();
+    }
+    _flipStage();
+    return _animController.reverse(from: 1);
   }
 
   @override
   Widget build(BuildContext context) {
-    var children = widget.pageMap
-        .map((name, builder) {
-          bool show =
-              (name == _pageName || name == _keepPage || name == _movingPage);
-          return MapEntry(
-              name,
-              Offstage(
-                child: Opacity(
-                  opacity: name == _keepPage || name == _pageName
-                      ? 1
-                      : name == _movingPage ? _anim.value : 0,
-                  child: builder(context, _anim.value),
-                ),
-                offstage: !show,
-              ));
-        })
-        .values
-        .toList();
-    return Stack(
-      children: children,
+    final hideBackground = _anim.value == 1.0;
+    return Container(
+      color: widget.backgroundColor,
+      child: _backgroundStage == null || hideBackground
+          ? _topStage(context, 1.0)
+          : Stack(
+              children: <Widget>[
+                _backgroundStage(context, 1.0 - _anim.value),
+                _topStage(context, _anim.value),
+              ],
+            ),
     );
   }
 }

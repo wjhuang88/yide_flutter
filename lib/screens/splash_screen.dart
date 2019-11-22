@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:yide/screens/timeline_list_screen.dart';
@@ -11,9 +12,9 @@ class SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     
-    return Scaffold(
+    return CupertinoPageScaffold(
       backgroundColor: Colors.transparent,
-      body: GestureDetector(
+      child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () {
           Navigator.pushNamed(context, TimelineListScreen.routeName);

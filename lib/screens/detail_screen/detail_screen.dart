@@ -213,7 +213,6 @@ class _DetailScreenState extends State<DetailScreen> with SingleTickerProviderSt
                 },
                 child: PanelSwitcher(
                   initPage: 'main',
-                  backgroundPage: 'main',
                   controller: _panelSwitcherController,
                   pageMap: {
                     'main': (context, animValue) {

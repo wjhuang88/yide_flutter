@@ -10,6 +10,7 @@ import 'package:yide/components/panel_switcher.dart';
 import 'package:yide/components/tap_animator.dart';
 import 'package:yide/models/date_tools.dart';
 import 'package:yide/models/task_data.dart';
+import 'package:yide/screens/detail_screen/detail_datetime_panel.dart';
 import 'package:yide/screens/detail_screen/detail_tag_panel.dart';
 
 class EditMainScreen extends StatefulWidget {
@@ -44,7 +45,9 @@ class _EditMainScreenState extends State<EditMainScreen>
   Animation _bottomBarAnimation;
 
   PanelSwitcherController _setupPanelController;
-  String _setupTitle = '设置';
+  String _setupTitle = '';
+
+  InfinityPageController _datePageController;
 
   _DateTimeType _dateTimeType;
   DateTime _baseTime;
@@ -84,7 +87,8 @@ class _EditMainScreenState extends State<EditMainScreen>
     _focusNode = FocusNode();
     _focusNode.addListener(() {
       if (_focusNode.hasFocus) {
-        _bottomBarController.forward();
+        _bottomBarController.forward().then((v) => _setupTitle = '');
+        _setupPanelController.switchTo('blank');
       }
     });
 
@@ -97,8 +101,8 @@ class _EditMainScreenState extends State<EditMainScreen>
       ..addListener(() => setState(() {}));
 
     _fadeInController = FadeInController();
-
     _setupPanelController = PanelSwitcherController();
+    _datePageController = InfinityPageController();
 
     _dateTimeType = _DateTimeType.fullday;
     _dateTime ??= DateTime.now();
@@ -123,6 +127,7 @@ class _EditMainScreenState extends State<EditMainScreen>
 
   @override
   void dispose() {
+    _datePageController.dispose();
     _bottomBarController.dispose();
     _textEditingController.dispose();
     _focusNode.dispose();
@@ -132,6 +137,22 @@ class _EditMainScreenState extends State<EditMainScreen>
   void _unfocus() {
     _focusNode.unfocus();
     _bottomBarController.reverse();
+  }
+
+  void _focus() {
+    FocusScope.of(context).requestFocus(_focusNode);
+  }
+
+  void _changePanel(String pageName, String title) {
+    if (_setupPanelController.currentPage == pageName) {
+      _focus();
+      return;
+    }
+    _unfocus();
+    _setupPanelController.switchTo(pageName);
+    setState(() {
+      _setupTitle = title;
+    });
   }
 
   @override
@@ -145,10 +166,10 @@ class _EditMainScreenState extends State<EditMainScreen>
     final _bottomOffset = _setupOffset + (1 - _bottomBarAnimation.value) * 50;
     final _bottomOpacity = _bottomBarAnimation.value;
 
-    return Scaffold(
+    return CupertinoPageScaffold(
       backgroundColor: Colors.transparent,
       resizeToAvoidBottomInset: false,
-      body: SafeArea(
+      child: SafeArea(
         bottom: false,
         child: Column(
           children: <Widget>[
@@ -166,32 +187,40 @@ class _EditMainScreenState extends State<EditMainScreen>
                   opacity: 1 - transitionFactor.clamp(0.0, 1.0),
                   child: Column(
                     children: <Widget>[
-                      Container(
-                        height: 80.0,
-                        child: InfinityPageView(
-                          itemBuilder: (context, i) {
-                            final timeToRender =
-                                _baseTime.add(Duration(days: i));
-                            return Column(
-                              children: <Widget>[
-                                Text(
-                                  _getWeekDayName(timeToRender),
-                                  style: const TextStyle(
-                                      color: Colors.white, fontSize: 20.0),
-                                ),
-                                Text(
-                                  DateFormat('MM月dd日').format(timeToRender),
-                                  style: const TextStyle(
-                                      color: Color(0xFFBBADE7),
-                                      fontSize: 14.0,
-                                      fontFamily: ''),
-                                ),
-                              ],
-                            );
-                          },
-                          onPageChanged: (page) {
-                            _dateTime = _baseTime.add(Duration(days: page));
-                          },
+                      GestureDetector(
+                        onTap: () {
+                          _changePanel(DetailDateTimePanel.panelName, '日期');
+                        },
+                        child: Container(
+                          height: 80.0,
+                          child: InfinityPageView(
+                            controller: _datePageController,
+                            itemBuilder: (context, i) {
+                              final timeToRender =
+                                  _baseTime.add(Duration(days: i));
+                              return Column(
+                                children: <Widget>[
+                                  Text(
+                                    _getWeekDayName(timeToRender),
+                                    style: const TextStyle(
+                                        color: Colors.white, fontSize: 20.0),
+                                  ),
+                                  Text(
+                                    DateFormat('MM月dd日').format(timeToRender),
+                                    style: const TextStyle(
+                                        color: Color(0xFFBBADE7),
+                                        fontSize: 14.0,
+                                        fontFamily: ''),
+                                  ),
+                                ],
+                              );
+                            },
+                            onPageChanged: (page) {
+                              setState(() {
+                                _dateTime = _baseTime.add(Duration(days: page));
+                              });
+                            },
+                          ),
                         ),
                       ),
                       const SizedBox(
@@ -251,8 +280,7 @@ class _EditMainScreenState extends State<EditMainScreen>
         children: <Widget>[
           GestureDetector(
             onTap: () {
-              _setupPanelController.switchBack().then((v) => _setupTitle = '');
-              FocusScope.of(context).requestFocus(_focusNode);
+              _focus();
             },
             child: Container(
               height: 44.0,
@@ -288,28 +316,60 @@ class _EditMainScreenState extends State<EditMainScreen>
             thickness: 0.1,
           ),
           PanelSwitcher(
-            backgroundPage: 'blank',
             initPage: 'blank',
+            backgroundColor: const Color(0xFF472478),
             pageMap: {
               'blank': (context, factor) => Container(
                     color: const Color(0xFF472478),
-                    height: (_keyboardRealHeight ?? 0.0),
+                    height: _keyboardRealHeight ?? 0.0,
                   ),
               DetailTagPanel.panelName: (context, factor) => Opacity(
                     opacity: factor,
-                    child: DetailTagPanel(
-                      selectedTag: _tagData,
-                      onChange: (tag) {
-                        if (tag == null ||
-                            (_tagData != null && _tagData.id == tag.id)) {
+                    child: Container(
+                      height: _keyboardRealHeight ?? 0.0,
+                      child: DetailTagPanel(
+                        selectedTag: _tagData,
+                        onChange: (tag) {
+                          if (tag == null ||
+                              (_tagData != null && _tagData.id == tag.id)) {
+                            return;
+                          }
+                          setState(() {
+                            _tagData = tag;
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+              DetailDateTimePanel.panelName: (context, factor) {
+                return Opacity(
+                  opacity: factor,
+                  child: Container(
+                    height: _keyboardRealHeight ?? 0.0,
+                    alignment: Alignment.center,
+                    child: DetailDateTimePanel(
+                      selectedDate: _dateTime,
+                      onChange: (date) {
+                        if (_dateTime.year == date.year &&
+                            _dateTime.month == date.month &&
+                            _dateTime.day == date.day) {
                           return;
                         }
                         setState(() {
-                          _tagData = tag;
+                          _baseTime = _dateTime = DateTime(
+                              date.year,
+                              date.month,
+                              date.day,
+                              _dateTime.hour,
+                              _dateTime.minute,
+                              _dateTime.second);
+                          _datePageController.jumpToPage(0);
                         });
                       },
                     ),
-                  )
+                  ),
+                );
+              },
             },
             controller: _setupPanelController,
           ),
@@ -419,9 +479,7 @@ class _EditMainScreenState extends State<EditMainScreen>
               ],
             ),
             onTap: () {
-              _unfocus();
-              _setupTitle = '标签';
-              _setupPanelController.switchTo(DetailTagPanel.panelName);
+              _changePanel(DetailTagPanel.panelName, '标签');
             },
           ),
           const SizedBox(
