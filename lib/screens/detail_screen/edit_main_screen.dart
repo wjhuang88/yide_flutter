@@ -12,6 +12,7 @@ import 'package:yide/models/date_tools.dart';
 import 'package:yide/models/task_data.dart';
 import 'package:yide/screens/detail_screen/detail_datetime_panel.dart';
 import 'package:yide/screens/detail_screen/detail_tag_panel.dart';
+import 'package:yide/screens/detail_screen/detail_time_panel.dart';
 
 class EditMainScreen extends StatefulWidget {
   static const String routeName = 'new';
@@ -162,6 +163,8 @@ class _EditMainScreenState extends State<EditMainScreen>
       _keyboardRealHeight = _keyboardBuildHeight;
     }
 
+    final opacity = 1 - transitionFactor.clamp(0.0, 1.0);
+
     final _setupOffset = 150.0 * transitionFactor;
     final _bottomOffset = _setupOffset + (1 - _bottomBarAnimation.value) * 50;
     final _bottomOpacity = _bottomBarAnimation.value;
@@ -171,20 +174,17 @@ class _EditMainScreenState extends State<EditMainScreen>
       resizeToAvoidBottomInset: false,
       child: SafeArea(
         bottom: false,
-        child: Column(
-          children: <Widget>[
-            Opacity(
-              opacity: 1 - transitionFactor.clamp(0.0, 1.0),
-              child: _buildInputPanel(),
-            ),
-            const SizedBox(
-              height: 25.5,
-            ),
-            Expanded(
-              child: Transform.translate(
-                offset: Offset(0.0, 200 * transitionFactor),
-                child: Opacity(
-                  opacity: 1 - transitionFactor.clamp(0.0, 1.0),
+        child: Opacity(
+          opacity: opacity,
+          child: Column(
+            children: <Widget>[
+              _buildInputPanel(),
+              const SizedBox(
+                height: 25.5,
+              ),
+              Expanded(
+                child: Transform.translate(
+                  offset: Offset(0.0, 200 * transitionFactor),
                   child: Column(
                     children: <Widget>[
                       GestureDetector(
@@ -235,23 +235,20 @@ class _EditMainScreenState extends State<EditMainScreen>
                   ),
                 ),
               ),
-            ),
-            Container(
-              transform:
-                  Matrix4.translationValues(0.0, 60.0 * transitionFactor, 0.0),
-              height: 40.0,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  _buildTypeSwitcher('设置时间', _DateTimeType.datetime),
-                  _buildTypeSwitcher('全天', _DateTimeType.fullday),
-                  _buildTypeSwitcher('某天', _DateTimeType.someday),
-                ],
+              Container(
+                transform:
+                    Matrix4.translationValues(0.0, 60.0 * transitionFactor, 0.0),
+                height: 40.0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    _buildTypeSwitcher('设置时间', _DateTimeType.datetime),
+                    _buildTypeSwitcher('全天', _DateTimeType.fullday),
+                    _buildTypeSwitcher('某天', _DateTimeType.someday),
+                  ],
+                ),
               ),
-            ),
-            Opacity(
-              opacity: 1 - transitionFactor,
-              child: Stack(
+              Stack(
                 children: <Widget>[
                   _buildSetupPanel(context, _setupOffset, 1 - _bottomOpacity,
                       title: _setupTitle),
@@ -264,8 +261,8 @@ class _EditMainScreenState extends State<EditMainScreen>
                   ),
                 ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -273,7 +270,7 @@ class _EditMainScreenState extends State<EditMainScreen>
 
   Widget _buildSetupPanel(
       BuildContext context, double offset, double titleOpacity,
-      {String title = '设置'}) {
+      {String title = ''}) {
     return Container(
       transform: Matrix4.translationValues(0.0, offset, 0.0),
       child: Column(
@@ -290,12 +287,14 @@ class _EditMainScreenState extends State<EditMainScreen>
                 child: Stack(
                   children: <Widget>[
                     Center(
-                        child: Text(
-                      title,
-                      style: const TextStyle(
-                        color: Color(0xFFBBADE7),
-                      ),
-                    )),
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          color: Color(0xFFBBADE7),
+                          fontSize: 14.0
+                        ),
+                      )
+                    ),
                     Container(
                       padding: const EdgeInsets.only(right: 16.0),
                       alignment: Alignment.centerRight,
@@ -370,6 +369,32 @@ class _EditMainScreenState extends State<EditMainScreen>
                   ),
                 );
               },
+              DetailTimePanel.panelName: (context, factor) => Opacity(
+                    opacity: factor,
+                    child: Container(
+                      height: _keyboardRealHeight ?? 0.0,
+                      alignment: Alignment.center,
+                      child: DetailTimePanel(
+                        selectedDate: _dateTime,
+                        onChange: (date) {
+                          if (_dateTime.hour == date.hour &&
+                              _dateTime.minute == date.minute &&
+                              _dateTime.second == date.second) {
+                            return;
+                          }
+                          setState(() {
+                            _dateTime = DateTime(
+                                _dateTime.year,
+                                _dateTime.month,
+                                _dateTime.day,
+                                date.hour,
+                                date.minute,
+                                date.second);
+                          });
+                        },
+                      ),
+                    ),
+                  )
             },
             controller: _setupPanelController,
           ),
@@ -390,6 +415,7 @@ class _EditMainScreenState extends State<EditMainScreen>
             _dateTimeType = type;
           });
           _fadeInController.fadeIn();
+          _focus();
         },
         builder: (animValue) {
           final highlightColor = const Color(0xFFFFFFFF);
@@ -424,10 +450,17 @@ class _EditMainScreenState extends State<EditMainScreen>
           style: const TextStyle(color: Colors.white, fontSize: 20.0),
         );
       case _DateTimeType.datetime:
-        return Text(
-          DateFormat('HH:mm').format(_dateTime),
-          style: const TextStyle(
-              color: Colors.white, fontSize: 20.0, fontFamily: ''),
+        return GestureDetector(
+          onTap: () {
+            _changePanel(DetailTimePanel.panelName, '时间');
+          },
+          child: Container(
+            child: Text(
+              DateFormat('HH:mm').format(_dateTime),
+              style: const TextStyle(
+                  color: Colors.white, fontSize: 20.0, fontFamily: ''),
+            ),
+          ),
         );
       default:
         return Text(

@@ -1,11 +1,11 @@
 import 'dart:ui';
-import 'dart:math' as Math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:yide/components/tap_animator.dart';
+import 'package:yide/components/timeline_list.dart';
+import 'package:yide/models/task_data.dart';
 import 'package:yide/notification.dart';
-import 'package:yide/screens/detail_screen/detail_list_screen.dart';
 import 'package:yide/screens/detail_screen/edit_main_screen.dart';
 
 class TimelineListScreen extends StatefulWidget {
@@ -29,6 +29,11 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
 
   double transitionFactor;
   TimelineScreenController _controller;
+  Widget _savedList;
+  Widget _placeholder;
+  Widget _loadingPlaceholder;
+
+  Future<List<TaskPack>> _taskList;
 
   @override
   void initState() {
@@ -37,6 +42,16 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
     if (_controller == null) {
       _controller = TimelineScreenController();
     }
+
+    _savedList = _placeholder = Container();
+    _loadingPlaceholder = Center(
+      child: SpinKitCircle(
+        color: Colors.blue,
+        size: 70.0,
+      ),
+    );
+
+    _taskList = getTaskList(null);
 
     _controller._state = this;
   }
@@ -82,7 +97,7 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
               child: Container(
                 alignment: Alignment.centerLeft,
                 child: IconButton(
-                  padding: const EdgeInsets.only(top: 10.0, bottom: 20.0),
+                  padding: const EdgeInsets.only(top: 15.0, bottom: 15.0),
                   icon: const Icon(
                     FontAwesomeIcons.bars,
                     color: Color(0xFFD7CAFF),
@@ -128,10 +143,87 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
                 ),
               ),
             ),
+            const SizedBox(
+              height: 20.0,
+            ),
             Expanded(
               child: FractionalTranslation(
                 translation: Offset(transitionFactor - 1, 0.0),
-                child: _buildListView(),
+                child: FutureBuilder<List<TaskPack>>(
+                  future: _taskList,
+                  initialData: null,
+                  builder: (context, snapshot) {
+                    switch (snapshot.connectionState) {
+                      case ConnectionState.none:
+                        return _savedList;
+                      case ConnectionState.waiting:
+                        return _loadingPlaceholder;
+                      case ConnectionState.active:
+                      case ConnectionState.done:
+                        final dataList = snapshot.data;
+                        _savedList = TimelineListView.build(
+                          placeholder: _placeholder,
+                          itemCount: dataList.length,
+                          tileBuilder: (context, index) {
+                            final item = dataList[index];
+                            final rows = <Widget>[
+                              Text(
+                                item.data.content,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    color: Color(0xFFD7CAFF), fontSize: 15.0),
+                              ),
+                              const SizedBox(
+                                height: 10.0,
+                              ),
+                              Text(
+                                item.tag.name,
+                                style: TextStyle(
+                                    color: item.tag.iconColor, fontSize: 12.0),
+                              ),
+                            ];
+                            if (item.data.catalog != null &&
+                                item.data.catalog.isNotEmpty) {
+                              rows
+                                ..add(
+                                  const SizedBox(
+                                    height: 10.0,
+                                  ),
+                                )
+                                ..add(Text(
+                                  item.data.catalog,
+                                  style: const TextStyle(
+                                      color: Color(0xFFC9A2F5), fontSize: 12.0),
+                                ));
+                            }
+                            if (item.data.remark != null &&
+                                item.data.remark.isNotEmpty) {
+                              rows
+                                ..add(const SizedBox(height: 10.0))
+                                ..add(Text(
+                                  item.data.remark,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                      color: Color(0xFFC9A2F5), fontSize: 12.0),
+                                ));
+                            }
+                            return TimelineTile(
+                              rows: rows,
+                            );
+                          },
+                          onGenerateTime: (index) =>
+                              dataList[index]?.data?.taskTime,
+                          onGenerateDotColor: (index) =>
+                              dataList[index]?.tag?.iconColor,
+                        );
+                        return _savedList;
+                      default:
+                        return _placeholder;
+                    }
+                  },
+                ),
               ),
             ),
           ],
@@ -209,100 +301,6 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
       ],
     );
   }
-
-  Widget _buildListView() {
-    return ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 17.0, vertical: 40.0),
-        itemCount: 4,
-        itemBuilder: (context, index) {
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Container(
-                alignment: Alignment.topLeft,
-                padding: const EdgeInsets.only(right: 23.5),
-                child: const Text(
-                  '7:00 AM',
-                  style: const TextStyle(
-                      color: Color(0xFFC9A2F5), fontSize: 12.0, fontFamily: ''),
-                ),
-              ),
-              Expanded(
-                child: Stack(
-                  children: <Widget>[
-                    Container(
-                      decoration: const BoxDecoration(
-                          border: Border(
-                        left: BorderSide(color: Color(0xFF6F54BC)),
-                      )),
-                      child: _TimelineItemContent(),
-                    ),
-                    Transform.translate(
-                      offset: const Offset(-5, 2.0),
-                      child: const Icon(
-                        FontAwesomeIcons.solidCircle,
-                        color: Color(0xFFF0DC26),
-                        size: 12.0,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          );
-        });
-  }
-}
-
-class _TimelineItemContent extends StatelessWidget {
-  
-  @override
-  Widget build(BuildContext context) {
-    return TapAnimator(
-      behavior: HitTestBehavior.opaque,
-      onTap: () {
-        Navigator.of(context).pushNamed(DetailListScreen.routeName);
-      },
-      builder: (_factor) => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.only(left: 27.5, bottom: 30.0),
-        transform: Matrix4.identity()
-          ..setEntry(3, 2, 0.002)
-          ..rotateY(-_factor * Math.pi / 24)
-          ..rotateX(-_factor * Math.pi / 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              '早起跑步健身',
-              style: const TextStyle(color: Color(0xFFD7CAFF), fontSize: 15.0),
-            ),
-            const SizedBox(
-              height: 8.0,
-            ),
-            Text(
-              '生活',
-              style: const TextStyle(color: Color(0xFFF0DC26), fontSize: 12.0),
-            ),
-            const SizedBox(
-              height: 8.0,
-            ),
-            Text(
-              '项目名称',
-              style: const TextStyle(color: Color(0xFFC9A2F5), fontSize: 12.0),
-            ),
-            const SizedBox(
-              height: 8.0,
-            ),
-            Text(
-              '备注',
-              style: const TextStyle(color: Color(0xFFC9A2F5), fontSize: 12.0),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class TimelineScreenController {
@@ -325,8 +323,7 @@ _buildRoute() {
     transitionDuration: Duration(milliseconds: 500),
     transitionsBuilder: (context, anim1, anim2, child) {
       final anim1Curved = Curves.easeOutCubic.transform(anim1.value);
-      controller
-          .updateTransition(1 - anim2.value);
+      controller.updateTransition(1 - anim2.value);
       return Opacity(
         opacity: anim1Curved,
         child: Transform.scale(

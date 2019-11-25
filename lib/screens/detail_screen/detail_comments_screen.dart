@@ -67,6 +67,7 @@ _buildRoute(Widget child) {
         CurvedAnimation(
           parent: anim1,
           curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic
         ),
       );
       return FractionalTranslation(

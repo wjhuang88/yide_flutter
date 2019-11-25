@@ -20,21 +20,7 @@ _ScreenContainerController _screenController = _ScreenContainerController();
 NavigatorObserver _navigatorObserver = NavigatorObserver();
 
 void main() {
-  runApp(NotificationListener<AppNotification>(
-    child: MyApp(),
-    onNotification: (AppNotification n) {
-      switch (n.message) {
-        case 'open_menu':
-          _screenController.openMenu();
-          break;
-        case 'close_menu':
-          _screenController.closeMenu();
-          break;
-        default:
-      }
-      return true;
-    },
-  ));
+  runApp(MyApp());
   SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
 }
 
@@ -44,8 +30,22 @@ class MyApp extends StatelessWidget {
     Logger.level = Level.debug;
     return CupertinoApp(
       color: const Color(0xFF472478),
-      home: _ScreenContainer(
-        controller: _screenController,
+      home: NotificationListener<AppNotification>(
+        onNotification: (AppNotification n) {
+          switch (n.message) {
+            case 'open_menu':
+              _screenController.openMenu();
+              break;
+            case 'close_menu':
+              _screenController.closeMenu();
+              break;
+            default:
+          }
+          return true;
+        },
+        child: _ScreenContainer(
+          controller: _screenController,
+        ),
       ),
       title: 'Yide',
       debugShowCheckedModeBanner: false,

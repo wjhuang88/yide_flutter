@@ -33,7 +33,7 @@ class InfinityPageController {
   }
 
   void dispose() {
-    _pageController.dispose();
+    //_pageController.dispose();
   }
 }
 
@@ -78,7 +78,7 @@ class _InfinityPageViewState extends State<InfinityPageView> {
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?._pageController?.dispose();
     super.dispose();
   }
 

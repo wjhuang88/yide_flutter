@@ -1,12 +1,12 @@
 import 'package:flutter/cupertino.dart';
 
-class DetailDateTimePanel extends StatelessWidget {
-  static const panelName = 'detail_datetime';
+class DetailTimePanel extends StatelessWidget {
+  static const panelName = 'detail_time';
 
   final DateTime selectedDate;
   final ValueChanged<DateTime> onChange;
 
-  DetailDateTimePanel({Key key, this.selectedDate, this.onChange})
+  DetailTimePanel({Key key, this.selectedDate, this.onChange})
       : super(key: key);
 
   @override
@@ -18,13 +18,14 @@ class DetailDateTimePanel extends StatelessWidget {
           textTheme: CupertinoTextThemeData(
               dateTimePickerTextStyle: TextStyle(
             color: CupertinoColors.white,
-            fontSize: 16.0,
+            fontSize: 20.0,
           )),
         ),
         child: CupertinoDatePicker(
           initialDateTime: selectedDate,
+          use24hFormat: true,
           backgroundColor: const Color(0xFF472478),
-          mode: CupertinoDatePickerMode.date,
+          mode: CupertinoDatePickerMode.time,
           onDateTimeChanged: (date) {
             if (onChange != null) {
               onChange(date);

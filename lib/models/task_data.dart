@@ -72,13 +72,15 @@ Future<TaskPack> getTaskData(String id) async {
       id: '0',
       tagId: '0',
       taskTime: DateTime.now(),
-      content: '我要做点什么事情，要做一件事！看看,look look, English!'
+      content: '我要做点什么事情，要做一件事！看看,look look, English!',
+      remark: '写点备注呀，来呀，快活呀！！！！！！！'
     ),
     '1': TaskData(
       id: '1',
       tagId: '2',
       taskTime: DateTime.now(),
-      content: '我要做点什么事情，要做一件事！看看,look look, English!再来一个'
+      content: '我要做点什么事情，要做一件事！看看,look look, English!再来一个',
+      remark: '写点备注呀，来呀，快活呀！！！！！！！'
     ),
     '2': TaskData(
       id: '2',
@@ -90,25 +92,31 @@ Future<TaskPack> getTaskData(String id) async {
       id: '3',
       tagId: '1',
       taskTime: DateTime.now(),
-      content: '我要做点什么事情，要做一件事！看看,look look, English!'
+      content: '我要做点什么事情，要做一件事！看看,look look, English!',
+      catalog: '项目一',
+      remark: '写点备注呀，来呀，快活呀！！！！！！！'
     ),
     '4': TaskData(
       id: '4',
       tagId: '2',
       taskTime: DateTime.now(),
-      content: '我要做点什么事情，要做一件事！看看,look look, English!'
+      content: '我要做点什么事情，要做一件事！看看,look look, English!',
+      catalog: '项目一'
     ),
     '5': TaskData(
       id: '5',
       tagId: '0',
       taskTime: DateTime.now(),
-      content: '我要做点什么事情，要做一件事！看看,look look, English!'
+      content: '我要做点什么事情，要做一件事！看看,look look, English!',
+      catalog: '项目一',
+      remark: '写点备注呀，来呀，快活呀！！！！！！！'
     ),
     '6': TaskData(
       id: '6',
       tagId: '1',
       taskTime: DateTime.now(),
-      content: '我要做点什么事情，要做一件事！看看,look look, English!'
+      content: '我要做点什么事情，要做一件事！看看,look look, English!',
+      remark: '写点备注呀，来呀，快活呀！！！！！！！'
     ),
     '7': TaskData(
       id: '7',
@@ -149,27 +157,10 @@ Future<List<TaskPack>> getTaskList(Object args) async {
 }
 
 const tagMap = const {
-  '1': const TaskTag(
-    id: '1',
-    backgroundColor: const Color(0xffe9f2ff),
-    icon: Icons.work,
-    iconColor: const Color(0xff7978fa),
-    name: '工作',
-  ),
-  '2': const TaskTag(
-    id: '2',
-    backgroundColor: const Color(0xffffedea),
-    icon: Icons.home,
-    iconColor: const Color(0xfffc9b41),
-    name: '生活',
-  ),
-  '3': const TaskTag(
-    id: '3',
-    backgroundColor: const Color(0xfffeeaea),
-    icon: Icons.book,
-    iconColor: const Color(0xffe14265),
-    name: '自我提升',
-  ),
+  '0': const TaskTag(id: '0', name: '休息', iconColor: Color(0xFFCFA36F)),
+  '1': const TaskTag(id: '1', name: '生活', iconColor: Color(0xFFAF71F5)),
+  '2': const TaskTag(id: '2', name: '工作', iconColor: Color(0xFF62DADB)),
+  '3': const TaskTag(id: '3', name: '健康', iconColor: Color(0xFFF0DC26)),
 };
 
 Future<TaskTag> _getTagData(TaskData taskData) async {
