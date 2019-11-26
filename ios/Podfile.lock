@@ -1,4 +1,11 @@
 PODS:
+  - AMap3DMap (7.1.0):
+    - AMapFoundation (~> 1.5)
+  - AMapFoundation (1.6.0)
+  - AMapLocation (2.6.3):
+    - AMapFoundation (~> 1.4)
+  - AMapSearch (7.1.0):
+    - AMapFoundation (~> 1.4)
   - Flutter (1.0.0)
   - FMDB (2.7.5):
     - FMDB/standard (= 2.7.5)
@@ -10,12 +17,19 @@ PODS:
     - FMDB (~> 2.7.2)
 
 DEPENDENCIES:
+  - AMap3DMap
+  - AMapLocation
+  - AMapSearch
   - Flutter (from `Flutter`)
   - soundpool (from `.symlinks/plugins/soundpool/ios`)
   - sqflite (from `.symlinks/plugins/sqflite/ios`)
 
 SPEC REPOS:
   trunk:
+    - AMap3DMap
+    - AMapFoundation
+    - AMapLocation
+    - AMapSearch
     - FMDB
 
 EXTERNAL SOURCES:
@@ -27,11 +41,15 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/sqflite/ios"
 
 SPEC CHECKSUMS:
+  AMap3DMap: ef26e2fb120ae9f1635b4b26b28df6d1379a05f0
+  AMapFoundation: bc2f6e077b9279942734ba55f9624222fcf42848
+  AMapLocation: dc2c4fde95d72087d73934338160fadc72104bb7
+  AMapSearch: 6bd6d361c5eb00110e0bffa4acf88b7bb9f7e059
   Flutter: 0e3d915762c693b495b44d77113d4970485de6ec
   FMDB: 2ce00b547f966261cd18927a3ddb07cb6f3db82a
   soundpool: c7f4422ca206e77f8900ed3c4ee6a6ff5a0e38a9
   sqflite: ff1d9da63c06588cc8d1faf7256d741f16989d5a
 
-PODFILE CHECKSUM: 1b66dae606f75376c5f2135a8290850eeb09ae83
+PODFILE CHECKSUM: 05461cf10b817be4cc468bcb4dcd6b9bbdd09bb7
 
 COCOAPODS: 1.8.4

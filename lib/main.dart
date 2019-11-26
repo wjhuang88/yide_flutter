@@ -10,6 +10,7 @@ import 'package:logger/logger.dart';
 
 import 'notification.dart';
 import 'screens/detail_screen/detail_comments_screen.dart';
+import 'screens/detail_screen/detail_map_screen.dart';
 import 'screens/detail_screen/edit_main_screen.dart';
 import 'screens/detail_screen/detail_list_screen.dart';
 import 'screens/feedback_screen.dart';
@@ -200,6 +201,8 @@ class _ScreenContainerState extends State<_ScreenContainer>
                             return DetailCommentsScreen.pageRoute;
                           case FeedbackScreen.routeName:
                             return FeedbackScreen.pageRoute;
+                          case DetailMapScreen.routeName:
+                            return DetailMapScreen.pageRoute;
                           default:
                             throw FlutterError(
                                 'The builder for route "${settings.name}" returned null.\n'

@@ -6,6 +6,7 @@ import 'package:yide/components/tap_animator.dart';
 import 'package:yide/screens/detail_screen/edit_main_screen.dart';
 
 import 'detail_comments_screen.dart';
+import 'detail_map_screen.dart';
 
 class DetailListScreen extends StatefulWidget {
   static const String routeName = 'detail_list';
@@ -89,7 +90,9 @@ class _DetailListScreenState extends State<DetailListScreen> {
                     '人民广场',
                     style: contentStyle,
                   ),
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.of(context).pushNamed(DetailMapScreen.routeName);
+                  },
                 ),
                 const SizedBox(
                   height: 10.0,
@@ -211,7 +214,6 @@ class _HeaderPanel extends StatelessWidget {
 }
 
 class _ListItem extends StatelessWidget {
-
   _ListItem({
     @required this.iconData,
     @required this.child,

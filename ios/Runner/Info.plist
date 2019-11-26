@@ -43,5 +43,12 @@
 	<false/>
 	<key>io.flutter.embedded_views_preview</key>
     <true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>是否允许我们获取定位信息，以帮助您记录事务发生的地点</string>
 </dict>
 </plist>
