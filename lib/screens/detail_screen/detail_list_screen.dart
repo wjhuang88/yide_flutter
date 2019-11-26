@@ -87,7 +87,7 @@ class _DetailListScreenState extends State<DetailListScreen> {
                 _ListItem(
                   iconData: FontAwesomeIcons.mapMarkerAlt,
                   child: Text(
-                    '人民广场',
+                    '地址',
                     style: contentStyle,
                   ),
                   onTap: () {
