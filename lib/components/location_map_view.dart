@@ -1,12 +1,18 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:yide/models/address_data.dart';
 
 class LocationMapController {
   _LocationMapViewState _state;
 
-  void backToUserLocation() {
-    _state?._backToUserLocation();
+  Future<void> backToUserLocation() async {
+    return _state?._backToUserLocation();
+  }
+
+  Future<AddressData> getUserAddress() async {
+    final map = await _state?._getUserAddress();
+    return AddressData.fromMap(map);
   }
 }
 
@@ -20,6 +26,8 @@ class LocationMapView extends StatefulWidget {
   final Offset scaleOffset;
   final bool showsUserLocation;
   final FractionalOffset centerOffset;
+  final void Function(List<AroundData> around, Coordinate coordinate)
+      onRegionChanged;
 
   final LocationMapController controller;
 
@@ -34,7 +42,8 @@ class LocationMapView extends StatefulWidget {
       this.scaleOffset,
       this.showsUserLocation,
       this.centerOffset,
-      this.controller})
+      this.controller,
+      this.onRegionChanged})
       : super(key: key);
 
   @override
@@ -53,10 +62,29 @@ class _LocationMapViewState extends State<LocationMapView> {
     _controller ??= LocationMapController();
     _controller._state = this;
     platform = const MethodChannel("yide_map_view_method");
+
+    if (widget.onRegionChanged != null) {
+      platform.setMethodCallHandler((call) async {
+        if (call.method == 'onRegionChanged' && (call.arguments is Map)) {
+          final args = call.arguments as Map;
+          final coordinateList = args['coordinate'] as List;
+          final aroundMapList = args['around'] as List;
+          final aroundList = aroundMapList.map((map) => AroundData.fromMap(
+              (map as Map).map((k, v) => MapEntry(k as String, v)))).toList();
+          final coordinate = Coordinate.fromList(
+              coordinateList.map((d) => d as double).toList());
+          widget.onRegionChanged(aroundList, coordinate);
+        }
+      });
+    }
   }
 
-  void _backToUserLocation() {
-    platform.invokeMethod('backToUserLocation');
+  Future<void> _backToUserLocation() async {
+    return await platform.invokeMethod<void>('backToUserLocation');
+  }
+
+  Future<Map<String, String>> _getUserAddress() async {
+    return await platform.invokeMapMethod<String, String>('getUserAddress');
   }
 
   @override

@@ -9,13 +9,14 @@ import UIKit
 import Flutter
 import AMapFoundationKit
 
-public class MapView : NSObject, FlutterPlatformView {
+public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, AMapLocationManagerDelegate, MAMapViewDelegate {
     
     let frame: CGRect
     let viewId: Int64
     
     let _view: MAMapView
     let _locationManager: AMapLocationManager
+    let _searchManager: AMapSearchAPI
     let _channel: FlutterMethodChannel
     
     let cameraDegree: CGFloat
@@ -28,15 +29,23 @@ public class MapView : NSObject, FlutterPlatformView {
     let showsScale: Bool
     let centerOffset: CGPoint
     
+    let _reGeoHandler: ReGeoHandler
+    let _poiHandler: POIHandler
+    
+    var _regionCenter: CLLocationCoordinate2D?
+    
     init(_ frame: CGRect, viewId: Int64, methodChannel: FlutterMethodChannel, args: Any?) {
+        
         self.frame = frame
         self.viewId = viewId
         self._channel = methodChannel
         self._locationManager = AMapLocationManager()
+        self._searchManager = AMapSearchAPI()
+        self._view = MAMapView(frame: frame)
+        self._reGeoHandler = ReGeoHandler()
+        self._poiHandler = POIHandler()
         
-        self._locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
-        self._locationManager.locationTimeout = 2
-        self._locationManager.reGeocodeTimeout = 2
+        self._regionCenter = nil
         
         if let map = args as? Dictionary<String, Any> {
             if let cameraDegreeValue = map["cameraDegree"] as? NSNumber {
@@ -123,12 +132,21 @@ public class MapView : NSObject, FlutterPlatformView {
             NSLog("没有找到传入参数，全部使用默认参数")
         }
         
-        let view = MAMapView(frame: frame)
-        view.showsUserLocation = self.showsUserLocation
-        view.userTrackingMode = .follow
-        view.isRotateCameraEnabled = true
-        view.setCameraDegree(cameraDegree, animated: true, duration: 300)
-        view.setZoomLevel(zoomLevel, animated: true)
+        super.init()
+        
+        self._locationManager.delegate = self
+        self._searchManager.delegate = self
+        self._view.delegate = self
+        
+        self._locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
+        self._locationManager.locationTimeout = 2
+        self._locationManager.reGeocodeTimeout = 2
+        
+        self._view.showsUserLocation = self.showsUserLocation
+        self._view.userTrackingMode = .follow
+        self._view.isRotateCameraEnabled = true
+        self._view.setCameraDegree(cameraDegree, animated: true, duration: 300)
+        self._view.setZoomLevel(zoomLevel, animated: true)
         
         let path = Bundle.main.bundlePath
         let stylePath = path + "/style.data"
@@ -138,73 +156,154 @@ public class MapView : NSObject, FlutterPlatformView {
         let options = MAMapCustomStyleOptions.init()
         options.styleData = styleData! as Data
         options.styleExtraData = extraData! as Data
+        self._view.setCustomMapStyleOptions(options)
+        self._view.customMapStyleEnabled = true
         
-        view.setCustomMapStyleOptions(options)
-        view.customMapStyleEnabled = true
+        let srcLogoCenter = self._view.logoCenter
+        self._view.logoCenter = CGPoint(x: srcLogoCenter.x + logoOffset.x, y: srcLogoCenter.y + logoOffset.y)
         
-        let srcLogoCenter = view.logoCenter
-        view.logoCenter = CGPoint(x: srcLogoCenter.x + logoOffset.x, y: srcLogoCenter.y + logoOffset.y)
+        self._view.showsCompass = self.showsCompass
+        let srcCompassOrigin = self._view.compassOrigin
+        self._view.compassOrigin = CGPoint(x: srcCompassOrigin.x + compassOffset.x, y: srcCompassOrigin.y + compassOffset.y)
         
-        view.showsCompass = self.showsCompass
-        let srcCompassOrigin = view.compassOrigin
-        view.compassOrigin = CGPoint(x: srcCompassOrigin.x + compassOffset.x, y: srcCompassOrigin.y + compassOffset.y)
-        
-        view.showsScale = self.showsScale
-        let srcScaleOrigin = view.scaleOrigin
-        view.scaleOrigin = CGPoint(x: srcScaleOrigin.x + scaleOffset.x, y: srcScaleOrigin.y + scaleOffset.y)
+        self._view.showsScale = self.showsScale
+        let srcScaleOrigin = self._view.scaleOrigin
+        self._view.scaleOrigin = CGPoint(x: srcScaleOrigin.x + scaleOffset.x, y: srcScaleOrigin.y + scaleOffset.y)
         
         let r = MAUserLocationRepresentation()
         r.showsAccuracyRing = false
         r.showsHeadingIndicator = false
         r.locationDotFillColor = UIColor(red: 0.98, green: 0.72, blue: 0.03, alpha: 1)
-        view.update(r)
+        self._view.update(r)
         
-        view.screenAnchor = centerOffset
+        self._view.screenAnchor = centerOffset
 
-        _channel.setMethodCallHandler({
-          (call: FlutterMethodCall, result: FlutterResult) -> Void in
+        _channel.setMethodCallHandler({ [self]
+          (call: FlutterMethodCall, result: @escaping FlutterResult) -> Void in
             if("backToUserLocation" == call.method) {
-                view.setCenter(view.userLocation.coordinate, animated: true)
+                self._view.setCenter(self._userLocation.coordinate, animated: true)
+                result(nil)
+            } else if("getUserLocation" == call.method) {
+                var resultMap = Dictionary<String, Double>()
+                let coord = self._userLocation.coordinate
+                resultMap["latitude"] = coord.latitude
+                resultMap["longitude"] = coord.longitude
+                result(resultMap)
+            } else if("getUserAddress" == call.method) {
+                let request = AMapReGeocodeSearchRequest()
+                let coord = self._userLocation.coordinate
+                request.location = AMapGeoPoint.location(withLatitude: CGFloat(coord.latitude), longitude: CGFloat(coord.longitude))
+                request.requireExtension = true
+                let invokeId = request.hash
+                self._reGeoHandler.results[invokeId] = result
+                self._reGeoHandler.handles[invokeId] = {(response, result) -> Void in
+                    if let regeocode = response.regeocode {
+                        result(self.makeDictionaryFromReGeocode(regeocode: regeocode))
+                    } else {
+                        result(Dictionary<String, String>())
+                    }
+                }
+                self._searchManager.aMapReGoecodeSearch(request)
             }
         });
+    }
+    
+    private var _userLocation: MAUserLocation {
+        get {
+            return _view.userLocation
+        }
+    }
+    
+    private func makeDictionaryFromReGeocode(regeocode: AMapReGeocode) -> Dictionary<String, String> {
+        let comp = regeocode.addressComponent
+        return Dictionary<String, String>(
+            dictionaryLiteral:
+                  ("country", comp!.country),
+                  ("province", comp!.province),
+                  ("city", comp!.city),
+                  ("citycode", comp!.citycode),
+                  ("district", comp!.district),
+                  ("adcode", comp!.adcode),
+                  ("township", comp!.township),
+                  ("towncode", comp!.towncode),
+                  ("neighborhood", comp!.neighborhood),
+                  ("building", comp!.building),
+                  ("formattedAddress", regeocode.formattedAddress)
+            )
+    }
+    
+    private func requestPOI(coord: CLLocationCoordinate2D, keyword: String?, result: @escaping FlutterResult) {
+        let request = AMapPOIAroundSearchRequest()
+        request.location = AMapGeoPoint.location(withLatitude: CGFloat(coord.latitude), longitude: CGFloat(coord.longitude))
+        if let keyword = keyword {
+            request.keywords = keyword
+        }
+        request.requireExtension = true
+        let invokeId = request.hash
+        self._poiHandler.results[invokeId] = result
+        self._poiHandler.handles[invokeId] = {(response, result) -> Void in
+            result(response.pois.map { (poi) -> Dictionary<String, Any?> in
+                return Dictionary<String, Any?>(
+                    dictionaryLiteral:
+                    ("name", poi.name),
+                    ("id", poi.uid),
+                    ("distance", poi.distance),
+                    ("address", poi.address),
+                    ("latitude", poi.location.latitude),
+                    ("longitude", poi.location.longitude)
+                )
+            })
+        }
         
-        self._view = view
+        self._searchManager.aMapPOIAroundSearch(request)
+    }
+    
+    public func onReGeocodeSearchDone(_ request: AMapReGeocodeSearchRequest!, response: AMapReGeocodeSearchResponse!) {
+        let _invokeId: Int = request.hash
+        if let handler = self._reGeoHandler.handles[_invokeId] {
+            if let result = self._reGeoHandler.results[_invokeId] {
+                handler(response, result)
+                self._reGeoHandler.handles.removeValue(forKey: _invokeId)
+            }
+        }
+    }
+    
+    public func onPOISearchDone(_ request: AMapPOISearchBaseRequest!, response: AMapPOISearchResponse!) {
+        let _invokeId: Int = request.hash
+        if let handler = self._poiHandler.handles[_invokeId] {
+            if let result = self._poiHandler.results[_invokeId] {
+                handler(response, result)
+                self._poiHandler.handles.removeValue(forKey: _invokeId)
+            }
+        }
+    }
+    
+    public func aMapSearchRequest(_ request: Any!, didFailWithError error: Error!) {
+        print("Error:\(String(describing: error))")
+    }
+    
+    public func mapView(_ mapView: MAMapView!, regionDidChangeAnimated animated: Bool) {
+        let centerCoord = self._view.region.center
+        if let lastCoord = _regionCenter {
+            let dist = MAMetersBetweenMapPoints(MAMapPointForCoordinate(centerCoord), MAMapPointForCoordinate(lastCoord))
+            if dist < 50 {
+                return
+            }
+        }
+        _regionCenter = centerCoord
+        requestPOI(coord: centerCoord, keyword: nil) { (data) in
+            let coordList = Array(arrayLiteral: centerCoord.latitude, centerCoord.longitude)
+            let resultMap = Dictionary<String, Any?>(
+                dictionaryLiteral:
+                ("coordinate", coordList),
+                ("around", data)
+            )
+            self._channel.invokeMethod("onRegionChanged", arguments: resultMap)
+        }
     }
     
     public func view() -> UIView {
         return _view
-    }
-    
-    private func requestLocation(callback: @escaping ((_ location: CLLocation, _ geoString: String) -> Void)) {
-        _locationManager.requestLocation(withReGeocode: true, completionBlock: { (location: CLLocation?, reGeocode: AMapLocationReGeocode?, error: Error?) in
-                    
-            if let error = error {
-                let error = error as NSError
-                
-                if error.code == AMapLocationErrorCode.locateFailed.rawValue {
-                    //定位错误：此时location和regeocode没有返回值，不进行annotation的添加
-                    NSLog("定位错误:{\(error.code) - \(error.localizedDescription)};")
-                    return
-                }
-                else if error.code == AMapLocationErrorCode.reGeocodeFailed.rawValue
-                    || error.code == AMapLocationErrorCode.timeOut.rawValue
-                    || error.code == AMapLocationErrorCode.cannotFindHost.rawValue
-                    || error.code == AMapLocationErrorCode.badURL.rawValue
-                    || error.code == AMapLocationErrorCode.notConnectedToInternet.rawValue
-                    || error.code == AMapLocationErrorCode.cannotConnectToHost.rawValue {
-                    
-                //逆地理错误：在带逆地理的单次定位中，逆地理过程可能发生错误，此时location有返回值，regeocode无返回值，进行annotation的添加
-                    NSLog("逆地理错误:{\(error.code) - \(error.localizedDescription)};")
-                }
-                else {
-                    //没有错误：location有返回值，regeocode是否有返回值取决于是否进行逆地理操作，进行annotation的添加
-                }
-            }
-            
-            if let reGeocode = reGeocode {
-                callback(location!, reGeocode.formattedAddress)
-            }
-        })
     }
     
 }
@@ -231,4 +330,24 @@ public class MapViewFactory : NSObject, FlutterPlatformViewFactory {
         return FlutterStandardMessageCodec.sharedInstance()
     }
     
+}
+
+class ReGeoHandler : NSObject {
+    var handles: Dictionary<Int, ((AMapReGeocodeSearchResponse, FlutterResult) -> Void)>
+    var results: Dictionary<Int, FlutterResult>
+    
+    override init() {
+        self.handles = Dictionary<Int, ((AMapReGeocodeSearchResponse, FlutterResult) -> Void)>()
+        self.results = Dictionary<Int, FlutterResult>()
+    }
+}
+
+class POIHandler : NSObject {
+    var handles: Dictionary<Int, ((AMapPOISearchResponse, FlutterResult) -> Void)>
+    var results: Dictionary<Int, FlutterResult>
+    
+    override init() {
+        self.handles = Dictionary<Int, ((AMapPOISearchResponse, FlutterResult) -> Void)>()
+        self.results = Dictionary<Int, FlutterResult>()
+    }
 }
