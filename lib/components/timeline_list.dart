@@ -39,7 +39,7 @@ class TimelineListView extends StatelessWidget {
     return itemCount > 0
         ? ListView.builder(
             padding:
-                const EdgeInsets.only(left: 17.0, right: 17.0, top: 20.0, bottom: 40.0),
+                const EdgeInsets.only(left: 17.0, right: 50.0, top: 20.0, bottom: 40.0),
             itemCount: itemCount,
             itemBuilder: (context, index) {
               return Row(

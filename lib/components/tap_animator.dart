@@ -1,25 +1,33 @@
+import 'dart:math' as Math;
 import 'package:flutter/widgets.dart';
 
 class TapAnimator extends StatefulWidget {
   final Widget Function(double animValue) builder;
   final VoidCallback onTap;
+  final VoidCallback onComplete;
   final HitTestBehavior behavior;
+  final Duration duration;
 
   const TapAnimator(
       {Key key,
       @required this.builder,
-      @required this.onTap,
+      this.onTap,
+      this.onComplete,
+      this.duration = const Duration(milliseconds: 100),
       this.behavior = HitTestBehavior.deferToChild})
-      : super(key: key);
+      : assert(onTap != null || onComplete != null),
+        super(key: key);
 
   @override
   _TapAnimatorState createState() => _TapAnimatorState();
 }
 
 class _TapAnimatorState extends State<TapAnimator>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   AnimationController _animationController;
+  AnimationController _tapAnimationController;
   Animation _animation;
+  Animation _tapAnimation;
 
   double _factor;
 
@@ -27,12 +35,29 @@ class _TapAnimatorState extends State<TapAnimator>
   void initState() {
     super.initState();
     _factor = 0.0;
-    _animationController = AnimationController(
-        vsync: this, duration: Duration(milliseconds: 100), value: 0.0);
-    _animation = Tween(begin: 0.0, end: 1.0).animate(CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.easeInCubic));
+    _animationController =
+        AnimationController(vsync: this, duration: widget.duration, value: 0.0);
+    _tapAnimationController = AnimationController(
+        vsync: this,
+        duration: Duration(milliseconds: widget.duration.inMilliseconds ~/ 2),
+        value: 0.0);
+    _animation = Tween(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+          parent: _animationController,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic),
+    );
+    _tapAnimation = Tween(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _tapAnimationController,
+        curve: HalfSineCurve(),
+      ),
+    );
+    _tapAnimation.addListener(() {
+      setState(() {
+        _factor = _tapAnimation.value;
+      });
+    });
     _animation.addListener(() {
       setState(() {
         _factor = _animation.value;
@@ -50,25 +75,31 @@ class _TapAnimatorState extends State<TapAnimator>
   Widget build(BuildContext context) {
     return GestureDetector(
       behavior: widget.behavior,
-      onTapDown: (details) {
-        _animationController.forward();
+      onTapDown: (details) async {
+        await _animationController.forward(from: _factor);
       },
-      onTapUp: (details) {
-        //_animationController.reverse();
-        _animationController.fling(velocity: -1.0);
+      onTapCancel: () async {
+        await _animationController.reverse(from: _factor);
       },
-      onTapCancel: () {
-        _animationController.reverse();
-      },
-      onTap: () {
-        if (_animationController.value < 0.3) {
-          _animationController.fling(velocity: 5.0).then((v) {
-            _animationController.fling(velocity: -5.0);
-          });
+      onTap: () async {
+        if (widget.onTap != null) {
+          widget.onTap();
         }
-        widget.onTap();
+        await _tapAnimationController.forward(from: _factor);
+        await _tapAnimationController.reverse(from: _factor);
+        if (widget.onComplete != null) {
+          widget.onComplete();
+        }
       },
       child: widget.builder(_factor),
     );
+  }
+}
+
+class HalfSineCurve extends Curve {
+  @override
+  double transformInternal(double t) {
+    final result = Math.sin(t * Math.pi / 2);
+    return result;
   }
 }

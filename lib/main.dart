@@ -11,6 +11,7 @@ import 'package:logger/logger.dart';
 import 'notification.dart';
 import 'screens/detail_screen/detail_comments_screen.dart';
 import 'screens/detail_screen/detail_map_screen.dart';
+import 'screens/detail_screen/detail_repeat_screen.dart';
 import 'screens/detail_screen/edit_main_screen.dart';
 import 'screens/detail_screen/detail_list_screen.dart';
 import 'screens/feedback_screen.dart';
@@ -109,11 +110,12 @@ class _ScreenContainerState extends State<_ScreenContainer>
     _controller ??= _ScreenContainerController();
     _controller._state = this;
     _animationController = AnimationController(
-        value: 0.0, duration: Duration(milliseconds: 400), vsync: this);
+        value: 0.0, duration: Duration(milliseconds: 500), vsync: this);
     _animation = CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.easeInCubic);
+      parent: _animationController,
+      curve: const ElasticOutCurve(0.9),
+      reverseCurve: const ElasticInCurve(0.9),
+    );
     _animation.addListener(() {
       setState(() {
         _animValue = _animation.value;
@@ -168,7 +170,6 @@ class _ScreenContainerState extends State<_ScreenContainer>
             child: Stack(
               children: <Widget>[
                 Container(
-                  padding: EdgeInsets.only(left: 130.0 * _animValue),
                   decoration: BoxDecoration(
                       gradient: const LinearGradient(
                           begin: Alignment.topCenter,
@@ -182,7 +183,7 @@ class _ScreenContainerState extends State<_ScreenContainer>
                         ),
                       ]),
                   child: Opacity(
-                    opacity: 1 - _animValue,
+                    opacity: 1 - _animValue.clamp(0.0, 1.0),
                     child: Navigator(
                       initialRoute: SplashScreen.routeName,
                       observers: [_navigatorObserver],
@@ -203,6 +204,8 @@ class _ScreenContainerState extends State<_ScreenContainer>
                             return FeedbackScreen.pageRoute;
                           case DetailMapScreen.routeName:
                             return DetailMapScreen.pageRoute;
+                          case DetailRepeatScreen.routeName:
+                            return DetailRepeatScreen.pageRoute;
                           default:
                             throw FlutterError(
                                 'The builder for route "${settings.name}" returned null.\n'
@@ -249,7 +252,7 @@ class _MainMenu extends StatelessWidget {
           ..rotateY(angle),
         alignment: const FractionalOffset(0.0, 0.5),
         child: Opacity(
-          opacity: transformValue,
+          opacity: transformValue.clamp(0.0, 1.0),
           child: ListTileTheme(
             iconColor: const Color(0xFFC19EFD),
             textColor: const Color(0xFFC19EFD),

@@ -7,6 +7,7 @@ import 'package:yide/screens/detail_screen/edit_main_screen.dart';
 
 import 'detail_comments_screen.dart';
 import 'detail_map_screen.dart';
+import 'detail_repeat_screen.dart';
 
 class DetailListScreen extends StatefulWidget {
   static const String routeName = 'detail_list';
@@ -79,7 +80,9 @@ class _DetailListScreenState extends State<DetailListScreen> {
                     '每周重复',
                     style: contentStyle,
                   ),
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.of(context).pushNamed(DetailRepeatScreen.routeName);
+                  },
                 ),
                 const SizedBox(
                   height: 10.0,
