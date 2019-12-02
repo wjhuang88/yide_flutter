@@ -51,7 +51,7 @@ class _DetailListScreenState extends State<DetailListScreen> {
         children: <Widget>[
           _HeaderPanel(
             content: '最新项目会议',
-            dateTime: '10月11日  19:20-17:45',
+            dateTime: '10月11日  19:20',
             tagName: '工作',
             tagColor: const Color(0xFF62DADB),
             onTap: () {
@@ -174,45 +174,48 @@ class _HeaderPanel extends StatelessWidget {
           ..setEntry(3, 2, 0.002)
           ..rotateY(-_factor * Math.pi / 24)
           ..rotateX(_factor * Math.pi / 36),
-        child: Column(
-          children: <Widget>[
-            const SizedBox(
-              height: 30.0,
-            ),
-            Text(
-              dateTime,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 22.0, color: Color(0xFFEDE7FF)),
-            ),
-            const SizedBox(
-              height: 25.5,
-            ),
-            Text(
-              content,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 20.0, color: Color(0xFFEDE7FF)),
-            ),
-            const SizedBox(
-              height: 17.0,
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Icon(
-                  FontAwesomeIcons.solidCircle,
-                  color: tagColor,
-                  size: 8.0,
-                ),
-                const SizedBox(
-                  width: 5.0,
-                ),
-                Text(
-                  tagName,
-                  style: TextStyle(color: tagColor, fontSize: 12.0),
-                )
-              ],
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 15.0),
+          child: Column(
+            children: <Widget>[
+              const SizedBox(
+                height: 30.0,
+              ),
+              Text(
+                content,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 22.0, color: Color(0xFFEDE7FF)),
+              ),
+              const SizedBox(
+                height: 10.0,
+              ),
+              Text(
+                dateTime,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 14.0, color: Color(0x88EDE7FF)),
+              ),
+              const SizedBox(
+                height: 10.0,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Icon(
+                    FontAwesomeIcons.solidCircle,
+                    color: tagColor,
+                    size: 8.0,
+                  ),
+                  const SizedBox(
+                    width: 5.0,
+                  ),
+                  Text(
+                    tagName,
+                    style: TextStyle(color: tagColor, fontSize: 12.0),
+                  )
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
