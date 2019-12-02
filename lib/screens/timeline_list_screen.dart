@@ -1,9 +1,14 @@
+import 'dart:convert';
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:intl/intl.dart';
+import 'package:yide/components/location_methods.dart';
 import 'package:yide/components/timeline_list.dart';
+import 'package:yide/models/date_tools.dart';
 import 'package:yide/models/task_data.dart';
 import 'package:yide/notification.dart';
 import 'package:yide/screens/detail_screen/edit_main_screen.dart';
@@ -35,6 +40,42 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
 
   Future<List<TaskPack>> _taskList;
 
+  String _cityName = '-';
+  String _temp;
+
+  DateTime _dateTime = DateTime.now();
+
+  void _updateLocAndTemp() async {
+    final location = await LocationMethods.getLocation();
+    var city = location.city ?? '-';
+    if (city.endsWith('市')) {
+      city = city.substring(0, city.length - 1);
+    }
+    setState(() {
+      _cityName = city;
+    });
+    final http = HttpClient();
+    final query = {
+      'city': city,
+      'appid': '29473577',
+      'appsecret': '6BKj42FB',
+      'version': 'v6'
+    };
+    final uri = Uri.https('www.tianqiapi.com', '/api', query);
+    final request = await http.getUrl(uri);
+    final response = await request.close();
+    if (response.statusCode == 200) {
+      final responseBody = await response.transform(utf8.decoder).join();
+      print(responseBody);
+      final map = jsonDecode(responseBody) as Map;
+      setState(() {
+        _temp = map['tem'];
+      });
+    } else {
+      print('请求失败');
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -52,6 +93,7 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
     );
 
     _taskList = getTaskList(null);
+    _updateLocAndTemp();
 
     _controller._state = this;
   }
@@ -270,12 +312,12 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  '2019.11.08',
+                  DateFormat('yyyy.MM.dd').format(_dateTime),
                   style: const TextStyle(
                       fontSize: 16.0, color: Color(0xFFDEC0FF), fontFamily: ''),
                 ),
                 Text(
-                  '星期三',
+                  getWeekNameLong(_dateTime.weekday),
                   style:
                       const TextStyle(fontSize: 12.0, color: Color(0xFFDEC0FF)),
                 ),
@@ -285,12 +327,12 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: <Widget>[
                 Text(
-                  '上海',
+                  _cityName,
                   style:
                       const TextStyle(fontSize: 14.0, color: Color(0xFFDEC0FF)),
                 ),
                 Text(
-                  '温度：20℃',
+                  '温度：${_temp ?? "-"}℃',
                   style:
                       const TextStyle(fontSize: 12.0, color: Color(0xFFDEC0FF)),
                 ),

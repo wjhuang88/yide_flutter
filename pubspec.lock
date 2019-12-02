@@ -121,13 +121,6 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.16.0"
-  logger:
-    dependency: "direct main"
-    description:
-      name: logger
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "0.7.0+2"
   matcher:
     dependency: transitive
     description:
@@ -189,13 +182,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.99"
-  soundpool:
-    dependency: "direct main"
-    description:
-      name: soundpool
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "0.5.3"
   source_span:
     dependency: transitive
     description:

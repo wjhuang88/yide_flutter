@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:logger/logger.dart';
 
 import 'notification.dart';
 import 'screens/detail_screen/detail_comments_screen.dart';
@@ -30,7 +29,6 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    Logger.level = Level.debug;
     return CupertinoApp(
       color: const Color(0xFF472478),
       home: NotificationListener<AppNotification>(

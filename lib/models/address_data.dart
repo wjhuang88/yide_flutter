@@ -96,3 +96,41 @@ class AroundData {
     return '{address: $address, coordinate: $coordinate}';
   }
 }
+
+class LocationData {
+  final String country;
+  final String province;
+  final String city;
+  final String citycode;
+  final String district;
+  final String street;
+  final String adcode;
+  final String formattedAddress;
+  final Coordinate coordinate;
+
+  LocationData({
+    this.country,
+    this.province,
+    this.city,
+    this.citycode,
+    this.district,
+    this.street,
+    this.adcode,
+    this.formattedAddress,
+    this.coordinate,
+  });
+
+  LocationData.fromMap(Map<String, dynamic> map)
+      : assert(map != null),
+        this.country = map['country'] as String,
+        this.province = map['province'] as String,
+        this.city = map['city'] as String,
+        this.citycode = map['citycode'] as String,
+        this.district = map['district'] as String,
+        this.street = map['street'] as String,
+        this.adcode = map['adcode'] as String,
+        this.formattedAddress = map['formattedAddress'] as String,
+        this.coordinate = Coordinate(
+            latitude: map['latitude'] as double,
+            longitude: map['longitude'] as double);
+}

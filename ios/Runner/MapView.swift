@@ -34,12 +34,12 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, AMapLo
     
     var _regionCenter: CLLocationCoordinate2D?
     
-    init(_ frame: CGRect, viewId: Int64, methodChannel: FlutterMethodChannel, args: Any?) {
+    init(_ frame: CGRect, viewId: Int64, methodChannel: FlutterMethodChannel, locationManager: AMapLocationManager, args: Any?) {
         
         self.frame = frame
         self.viewId = viewId
         self._channel = methodChannel
-        self._locationManager = AMapLocationManager()
+        self._locationManager = locationManager
         self._searchManager = AMapSearchAPI()
         self._view = MAMapView(frame: frame)
         self._reGeoHandler = ReGeoHandler()
@@ -311,19 +311,19 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, AMapLo
 public class MapViewFactory : NSObject, FlutterPlatformViewFactory {
     
     let _messager: FlutterBinaryMessenger
+    let _locationManager: AMapLocationManager
     public let flutterId = "yide_map_view"
     
-    init(messager: FlutterBinaryMessenger) {
+    init(messager: FlutterBinaryMessenger, locationManager: AMapLocationManager) {
         self._messager = messager
+        self._locationManager = locationManager
         super.init()
     }
     
     public func create(withFrame frame: CGRect, viewIdentifier viewId: Int64, arguments args: Any?) -> FlutterPlatformView {
-        AMapServices.shared().apiKey = "ee7d937c67b8bf8317f712fb2a5e7774"
-        AMapServices.shared().enableHTTPS = true
         
         let channel = FlutterMethodChannel(name: flutterId + "_method", binaryMessenger: _messager)
-        return MapView(frame, viewId: viewId, methodChannel: channel, args: args)
+        return MapView(frame, viewId: viewId, methodChannel: channel, locationManager: _locationManager, args: args)
     }
     
     public func createArgsCodec() -> FlutterMessageCodec & NSObjectProtocol {
