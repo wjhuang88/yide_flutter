@@ -67,7 +67,6 @@ class TimelineListView extends StatelessWidget {
                     child: Stack(
                       children: <Widget>[
                         Container(
-                          padding: const EdgeInsets.only(bottom: 20.0),
                           decoration: BoxDecoration(
                               border: Border(
                             left: index + 1 != itemCount ? BorderSide(color: Color(0xFF6F54BC)) : BorderSide(color: Color(0x00000000)),

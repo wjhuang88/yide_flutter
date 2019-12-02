@@ -236,8 +236,8 @@ class _EditMainScreenState extends State<EditMainScreen>
                 ),
               ),
               Container(
-                transform:
-                    Matrix4.translationValues(0.0, 60.0 * transitionFactor, 0.0),
+                transform: Matrix4.translationValues(
+                    0.0, 60.0 * transitionFactor, 0.0),
                 height: 40.0,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -287,14 +287,11 @@ class _EditMainScreenState extends State<EditMainScreen>
                 child: Stack(
                   children: <Widget>[
                     Center(
-                      child: Text(
-                        title,
-                        style: const TextStyle(
-                          color: Color(0xFFBBADE7),
-                          fontSize: 14.0
-                        ),
-                      )
-                    ),
+                        child: Text(
+                      title,
+                      style: const TextStyle(
+                          color: Color(0xFFBBADE7), fontSize: 14.0),
+                    )),
                     Container(
                       padding: const EdgeInsets.only(right: 16.0),
                       alignment: Alignment.centerRight,
@@ -582,7 +579,7 @@ class _EditMainScreenState extends State<EditMainScreen>
               },
             ),
           ),
-          const _VerticleDivider(),
+          const VerticalDivider(indent: 11.0, endIndent: 11.0, width: 0.0, color: const Color(0xFFE8E8E8),),
           Expanded(
             child: TapAnimator(
               behavior: HitTestBehavior.opaque,
@@ -601,7 +598,7 @@ class _EditMainScreenState extends State<EditMainScreen>
               ),
             ),
           ),
-          const _VerticleDivider(),
+          const VerticalDivider(indent: 11.0, endIndent: 11.0, width: 0.0, color: const Color(0xFFE8E8E8),),
           Expanded(
             child: TapAnimator(
               behavior: HitTestBehavior.opaque,
@@ -664,18 +661,4 @@ _buildRoute() {
       return child;
     },
   );
-}
-
-class _VerticleDivider extends StatelessWidget {
-  const _VerticleDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 11.0),
-      decoration: const BoxDecoration(
-          border:
-              Border(right: BorderSide(color: Color(0xFFE8E8E8), width: 0.5))),
-    );
-  }
 }

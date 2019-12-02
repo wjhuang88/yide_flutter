@@ -11,6 +11,7 @@ import 'package:logger/logger.dart';
 import 'notification.dart';
 import 'screens/detail_screen/detail_comments_screen.dart';
 import 'screens/detail_screen/detail_map_screen.dart';
+import 'screens/detail_screen/detail_reminder_screen.dart';
 import 'screens/detail_screen/detail_repeat_screen.dart';
 import 'screens/detail_screen/edit_main_screen.dart';
 import 'screens/detail_screen/detail_list_screen.dart';
@@ -206,6 +207,8 @@ class _ScreenContainerState extends State<_ScreenContainer>
                             return DetailMapScreen.pageRoute;
                           case DetailRepeatScreen.routeName:
                             return DetailRepeatScreen.pageRoute;
+                          case DetailReminderScreen.routeName:
+                            return DetailReminderScreen.pageRoute;
                           default:
                             throw FlutterError(
                                 'The builder for route "${settings.name}" returned null.\n'
@@ -304,7 +307,9 @@ class _MainMenu extends StatelessWidget {
                   title: const Text(
                     '今天',
                   ),
-                  onTap: () {},
+                  onTap: () {
+                    _screenController.closeMenu();
+                  },
                 ),
                 ListTile(
                   leading: const Icon(

@@ -7,6 +7,7 @@ import 'package:yide/screens/detail_screen/edit_main_screen.dart';
 
 import 'detail_comments_screen.dart';
 import 'detail_map_screen.dart';
+import 'detail_reminder_screen.dart';
 import 'detail_repeat_screen.dart';
 
 class DetailListScreen extends StatefulWidget {
@@ -69,7 +70,9 @@ class _DetailListScreenState extends State<DetailListScreen> {
                     '开始提醒&到期时间',
                     style: contentStyle,
                   ),
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.of(context).pushNamed(DetailReminderScreen.routeName);
+                  },
                 ),
                 const SizedBox(
                   height: 10.0,

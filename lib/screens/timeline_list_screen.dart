@@ -203,7 +203,7 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
                                 ..add(const SizedBox(height: 10.0))
                                 ..add(Text(
                                   item.data.remark,
-                                  maxLines: 2,
+                                  maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                       color: Color(0xFFC9A2F5), fontSize: 12.0),
