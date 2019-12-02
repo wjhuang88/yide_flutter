@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:yide/interfaces/navigatable.dart';
 
-class DetailCommentsScreen extends StatelessWidget {
-
-  static const String routeName = 'detail_comments';
-  static Route get pageRoute => _buildRoute(DetailCommentsScreen());
-
+class DetailCommentsScreen extends StatelessWidget implements Navigatable {
   @override
   Widget build(BuildContext context) {
-    
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
@@ -46,37 +42,35 @@ class DetailCommentsScreen extends StatelessWidget {
           keyboardAppearance: Brightness.dark,
           textInputAction: TextInputAction.done,
           decoration: InputDecoration(
-            contentPadding: EdgeInsets.symmetric(horizontal: 24.0),
-            border: InputBorder.none,
-            hintText: '请输入内容',
-            hintStyle: const TextStyle(color: Color(0xFF9B7FE9))
-          ),
+              contentPadding: EdgeInsets.symmetric(horizontal: 24.0),
+              border: InputBorder.none,
+              hintText: '请输入内容',
+              hintStyle: const TextStyle(color: Color(0xFF9B7FE9))),
         ),
       ),
     );
   }
 
-}
-
-_buildRoute(Widget child) {
-  return PageRouteBuilder(
-    pageBuilder: (context, anim1, anim2) => child,
-    transitionDuration: Duration(milliseconds: 500),
-    transitionsBuilder: (context, anim1, anim2, child) {
-      final anim1Curved = Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(
-          parent: anim1,
-          curve: Curves.easeOutCubic,
-          reverseCurve: Curves.easeInCubic
-        ),
-      );
-      return FractionalTranslation(
-        translation: Offset(0.0, 1 - anim1Curved.value),
-        child: Opacity(
-          opacity: anim1Curved.value,
-          child: child,
-        ),
-      );
-    },
-  );
+  @override
+  Route get route {
+    return PageRouteBuilder(
+      pageBuilder: (context, anim1, anim2) => this,
+      transitionDuration: Duration(milliseconds: 500),
+      transitionsBuilder: (context, anim1, anim2, child) {
+        final anim1Curved = Tween<double>(begin: 0.0, end: 1.0).animate(
+          CurvedAnimation(
+              parent: anim1,
+              curve: Curves.easeOutCubic,
+              reverseCurve: Curves.easeInCubic),
+        );
+        return FractionalTranslation(
+          translation: Offset(0.0, 1 - anim1Curved.value),
+          child: Opacity(
+            opacity: anim1Curved.value,
+            child: child,
+          ),
+        );
+      },
+    );
+  }
 }

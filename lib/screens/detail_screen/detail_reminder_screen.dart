@@ -1,13 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:yide/components/flipping_tile.dart';
+import 'package:yide/interfaces/navigatable.dart';
 
-class DetailReminderScreen extends StatefulWidget {
-  static const String routeName = 'detail_reminder';
-  static Route get pageRoute => _buildRoute(DetailReminderScreen());
-
+class DetailReminderScreen extends StatefulWidget implements Navigatable {
   @override
   _DetailReminderScreenState createState() => _DetailReminderScreenState();
+
+  @override
+  Route get route {
+    return PageRouteBuilder(
+      pageBuilder: (context, anim1, anim2) => this,
+      transitionDuration: Duration(milliseconds: 500),
+      transitionsBuilder: (context, anim1, anim2, child) {
+        final anim1Curved = Tween<double>(begin: 0.0, end: 1.0).animate(
+          CurvedAnimation(
+              parent: anim1,
+              curve: Curves.easeOutCubic,
+              reverseCurve: Curves.easeInCubic),
+        );
+        return FractionalTranslation(
+          translation: Offset(0.0, 1 - anim1Curved.value),
+          child: Opacity(
+            opacity: anim1Curved.value,
+            child: child,
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _DetailReminderScreenState extends State<DetailReminderScreen> {
@@ -353,26 +374,4 @@ class _DetailReminderScreenState extends State<DetailReminderScreen> {
       ),
     );
   }
-}
-
-_buildRoute(Widget child) {
-  return PageRouteBuilder(
-    pageBuilder: (context, anim1, anim2) => child,
-    transitionDuration: Duration(milliseconds: 500),
-    transitionsBuilder: (context, anim1, anim2, child) {
-      final anim1Curved = Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(
-            parent: anim1,
-            curve: Curves.easeOutCubic,
-            reverseCurve: Curves.easeInCubic),
-      );
-      return FractionalTranslation(
-        translation: Offset(0.0, 1 - anim1Curved.value),
-        child: Opacity(
-          opacity: anim1Curved.value,
-          child: child,
-        ),
-      );
-    },
-  );
 }

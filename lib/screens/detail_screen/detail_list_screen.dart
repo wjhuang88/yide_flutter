@@ -3,19 +3,41 @@ import 'dart:math' as Math;
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:yide/components/tap_animator.dart';
-import 'package:yide/screens/detail_screen/edit_main_screen.dart';
+import 'package:yide/interfaces/navigatable.dart';
+import 'package:yide/screens/edit_main_screen.dart';
 
 import 'detail_comments_screen.dart';
 import 'detail_map_screen.dart';
 import 'detail_reminder_screen.dart';
 import 'detail_repeat_screen.dart';
 
-class DetailListScreen extends StatefulWidget {
-  static const String routeName = 'detail_list';
-  static Route get pageRoute => _buildRoute(DetailListScreen());
-
+class DetailListScreen extends StatefulWidget implements Navigatable {
   @override
   _DetailListScreenState createState() => _DetailListScreenState();
+
+  @override
+  Route get route {
+    return PageRouteBuilder(
+      pageBuilder: (context, anim1, anim2) => this,
+      transitionDuration: Duration(milliseconds: 400),
+      transitionsBuilder: (context, anim1, anim2, child) {
+        final anim1Curved = Tween<double>(begin: 0.0, end: 1.0).animate(
+          CurvedAnimation(
+            parent: anim1,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+        return Transform(
+          alignment: Alignment.center,
+          transform: Matrix4.identity()..scale(anim1Curved.value),
+          child: Opacity(
+            opacity: anim1Curved.value - anim2.value,
+            child: child,
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _DetailListScreenState extends State<DetailListScreen> {
@@ -55,14 +77,14 @@ class _DetailListScreenState extends State<DetailListScreen> {
             tagName: '工作',
             tagColor: const Color(0xFF62DADB),
             onTap: () {
-              Navigator.of(context).pushNamed(EditMainScreen.routeName);
+              Navigator.of(context).push(EditMainScreen().route);
             },
           ),
           Expanded(
             child: ListView(
               children: <Widget>[
                 const SizedBox(
-                  height: 49.5,
+                  height: 40.0,
                 ),
                 _ListItem(
                   iconData: FontAwesomeIcons.clock,
@@ -71,7 +93,7 @@ class _DetailListScreenState extends State<DetailListScreen> {
                     style: contentStyle,
                   ),
                   onTap: () {
-                    Navigator.of(context).pushNamed(DetailReminderScreen.routeName);
+                    Navigator.of(context).push(DetailReminderScreen().route);
                   },
                 ),
                 const SizedBox(
@@ -84,7 +106,7 @@ class _DetailListScreenState extends State<DetailListScreen> {
                     style: contentStyle,
                   ),
                   onTap: () {
-                    Navigator.of(context).pushNamed(DetailRepeatScreen.routeName);
+                    Navigator.of(context).push(DetailRepeatScreen().route);
                   },
                 ),
                 const SizedBox(
@@ -97,7 +119,7 @@ class _DetailListScreenState extends State<DetailListScreen> {
                     style: contentStyle,
                   ),
                   onTap: () {
-                    Navigator.of(context).pushNamed(DetailMapScreen.routeName);
+                    Navigator.of(context).push(DetailMapScreen().route);
                   },
                 ),
                 const SizedBox(
@@ -121,8 +143,7 @@ class _DetailListScreenState extends State<DetailListScreen> {
                     style: contentStyle,
                   ),
                   onTap: () {
-                    Navigator.of(context)
-                        .pushNamed(DetailCommentsScreen.routeName);
+                    Navigator.of(context).push(DetailCommentsScreen().route);
                   },
                 ),
               ],
@@ -183,16 +204,16 @@ class _HeaderPanel extends StatelessWidget {
               ),
               Text(
                 content,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 22.0, color: Color(0xFFEDE7FF)),
+                style:
+                    const TextStyle(fontSize: 22.0, color: Color(0xFFEDE7FF)),
               ),
               const SizedBox(
                 height: 10.0,
               ),
               Text(
                 dateTime,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 14.0, color: Color(0x88EDE7FF)),
+                style:
+                    const TextStyle(fontSize: 14.0, color: Color(0x88EDE7FF)),
               ),
               const SizedBox(
                 height: 10.0,
@@ -276,27 +297,4 @@ class _ListItem extends StatelessWidget {
       },
     );
   }
-}
-
-_buildRoute(Widget child) {
-  return PageRouteBuilder(
-    pageBuilder: (context, anim1, anim2) => child,
-    transitionDuration: Duration(milliseconds: 400),
-    transitionsBuilder: (context, anim1, anim2, child) {
-      final anim1Curved = Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(
-          parent: anim1,
-          curve: Curves.easeOutCubic,
-        ),
-      );
-      return Transform(
-        alignment: Alignment.center,
-        transform: Matrix4.identity()..scale(anim1Curved.value),
-        child: Opacity(
-          opacity: anim1Curved.value - anim2.value,
-          child: child,
-        ),
-      );
-    },
-  );
 }

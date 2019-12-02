@@ -2,14 +2,35 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:yide/components/flipping_tile.dart';
 import 'package:yide/components/tap_animator.dart';
+import 'package:yide/interfaces/navigatable.dart';
 import 'package:yide/models/date_tools.dart';
 
-class DetailRepeatScreen extends StatefulWidget {
-  static const String routeName = 'detail_repeat';
-  static Route get pageRoute => _buildRoute(DetailRepeatScreen());
-
+class DetailRepeatScreen extends StatefulWidget implements Navigatable {
   @override
   _DetailRepeatScreenState createState() => _DetailRepeatScreenState();
+
+  @override
+  Route get route {
+    return PageRouteBuilder(
+      pageBuilder: (context, anim1, anim2) => this,
+      transitionDuration: Duration(milliseconds: 500),
+      transitionsBuilder: (context, anim1, anim2, child) {
+        final anim1Curved = Tween<double>(begin: 0.0, end: 1.0).animate(
+          CurvedAnimation(
+              parent: anim1,
+              curve: Curves.easeOutCubic,
+              reverseCurve: Curves.easeInCubic),
+        );
+        return FractionalTranslation(
+          translation: Offset(0.0, 1 - anim1Curved.value),
+          child: Opacity(
+            opacity: anim1Curved.value,
+            child: child,
+          ),
+        );
+      },
+    );
+  }
 }
 
 const _colorList = const [const Color(0xFFE6A800), const Color(0xFFBD8A00)];
@@ -387,26 +408,4 @@ class _DetailRepeatScreenState extends State<DetailRepeatScreen> {
           )),
     );
   }
-}
-
-_buildRoute(Widget child) {
-  return PageRouteBuilder(
-    pageBuilder: (context, anim1, anim2) => child,
-    transitionDuration: Duration(milliseconds: 500),
-    transitionsBuilder: (context, anim1, anim2, child) {
-      final anim1Curved = Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(
-            parent: anim1,
-            curve: Curves.easeOutCubic,
-            reverseCurve: Curves.easeInCubic),
-      );
-      return FractionalTranslation(
-        translation: Offset(0.0, 1 - anim1Curved.value),
-        child: Opacity(
-          opacity: anim1Curved.value,
-          child: child,
-        ),
-      );
-    },
-  );
 }

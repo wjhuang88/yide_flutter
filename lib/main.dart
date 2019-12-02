@@ -8,22 +8,18 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'notification.dart';
-import 'screens/detail_screen/detail_comments_screen.dart';
-import 'screens/detail_screen/detail_map_screen.dart';
-import 'screens/detail_screen/detail_reminder_screen.dart';
-import 'screens/detail_screen/detail_repeat_screen.dart';
-import 'screens/detail_screen/edit_main_screen.dart';
-import 'screens/detail_screen/detail_list_screen.dart';
 import 'screens/feedback_screen.dart';
 import 'screens/splash_screen.dart';
-import 'screens/timeline_list_screen.dart';
 
 _ScreenContainerController _screenController = _ScreenContainerController();
 NavigatorObserver _navigatorObserver = NavigatorObserver();
 
 void main() {
-  runApp(MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setPreferredOrientations(
+      [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -184,33 +180,16 @@ class _ScreenContainerState extends State<_ScreenContainer>
                   child: Opacity(
                     opacity: 1 - _animValue.clamp(0.0, 1.0),
                     child: Navigator(
-                      initialRoute: SplashScreen.routeName,
+                      initialRoute: '/',
                       observers: [_navigatorObserver],
                       onGenerateRoute: (RouteSettings settings) {
                         final String name = settings.name;
-                        switch (name) {
-                          case SplashScreen.routeName:
-                            return SplashScreen.pageRoute;
-                          case EditMainScreen.routeName:
-                            return EditMainScreen.pageRoute;
-                          case DetailListScreen.routeName:
-                            return DetailListScreen.pageRoute;
-                          case TimelineListScreen.routeName:
-                            return TimelineListScreen.pageRoute;
-                          case DetailCommentsScreen.routeName:
-                            return DetailCommentsScreen.pageRoute;
-                          case FeedbackScreen.routeName:
-                            return FeedbackScreen.pageRoute;
-                          case DetailMapScreen.routeName:
-                            return DetailMapScreen.pageRoute;
-                          case DetailRepeatScreen.routeName:
-                            return DetailRepeatScreen.pageRoute;
-                          case DetailReminderScreen.routeName:
-                            return DetailReminderScreen.pageRoute;
-                          default:
-                            throw FlutterError(
-                                'The builder for route "${settings.name}" returned null.\n'
-                                'Route builders must never return null.');
+                        if ('/' == name) {
+                          return SplashScreen().route;
+                        } else {
+                          throw FlutterError(
+                              'The builder for route "${settings.name}" returned null.\n'
+                              'Route builders must never return null.');
                         }
                       },
                     ),
@@ -396,7 +375,7 @@ class _MainMenu extends StatelessWidget {
                   onTap: () {
                     _screenController.closeMenu();
                     _navigatorObserver.navigator
-                        ?.pushNamed(FeedbackScreen.routeName);
+                        ?.push(FeedbackScreen().route);
                   },
                 ),
                 const Divider(

@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:dotted_border/dotted_border.dart';
+import 'package:yide/interfaces/navigatable.dart';
 
-class FeedbackScreen extends StatelessWidget {
-
-  static const String routeName = 'feedback';
-  static Route get pageRoute => _buildRoute();
-
+class FeedbackScreen extends StatelessWidget implements Navigatable {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -41,30 +38,49 @@ class FeedbackScreen extends StatelessWidget {
               autofocus: true,
               maxLines: 8,
               decoration: InputDecoration(
-                contentPadding: EdgeInsets.symmetric(horizontal: 14.5),
-                border: InputBorder.none,
-                hintText: '说说你想反馈的内容吧',
-                hintStyle: const TextStyle(color: Color(0xFF9B7FE9))
-              ),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 14.5),
+                  border: InputBorder.none,
+                  hintText: '说说你想反馈的内容吧',
+                  hintStyle: const TextStyle(color: Color(0xFF9B7FE9))),
             ),
             Container(
               height: 30.0,
               child: Row(
                 children: <Widget>[
-                  SizedBox(width: 14.5,),
+                  SizedBox(
+                    width: 14.5,
+                  ),
                   FlatButton.icon(
-                    icon: const Icon(FontAwesomeIcons.plus, size: 12.0, color: Color(0xFFFAB807),),
-                    label: const Text('问题', style: TextStyle(fontSize: 12.0),),
+                    icon: const Icon(
+                      FontAwesomeIcons.plus,
+                      size: 12.0,
+                      color: Color(0xFFFAB807),
+                    ),
+                    label: const Text(
+                      '问题',
+                      style: TextStyle(fontSize: 12.0),
+                    ),
                     textColor: const Color(0xFFD7C7F3),
-                    shape: const StadiumBorder(side: BorderSide(color: Color(0xFFD7C7F3))),
+                    shape: const StadiumBorder(
+                        side: BorderSide(color: Color(0xFFD7C7F3))),
                     onPressed: () {},
                   ),
-                  SizedBox(width: 14.5,),
+                  SizedBox(
+                    width: 14.5,
+                  ),
                   FlatButton.icon(
-                    icon: Icon(FontAwesomeIcons.plus, size: 12.0, color: Color(0xFFFAB807),),
-                    label: const Text('建议', style: TextStyle(fontSize: 12.0),),
+                    icon: Icon(
+                      FontAwesomeIcons.plus,
+                      size: 12.0,
+                      color: Color(0xFFFAB807),
+                    ),
+                    label: const Text(
+                      '建议',
+                      style: TextStyle(fontSize: 12.0),
+                    ),
                     textColor: const Color(0xFFD7C7F3),
-                    shape: const StadiumBorder(side: BorderSide(color: Color(0xFFD7C7F3))),
+                    shape: const StadiumBorder(
+                        side: BorderSide(color: Color(0xFFD7C7F3))),
                     onPressed: () {},
                   ),
                 ],
@@ -86,10 +102,18 @@ class FeedbackScreen extends StatelessWidget {
                   alignment: Alignment.center,
                   child: Stack(
                     children: <Widget>[
-                      const Icon(FontAwesomeIcons.camera, color: Color(0x99FFFFFF), size: 30.0,),
+                      const Icon(
+                        FontAwesomeIcons.camera,
+                        color: Color(0x99FFFFFF),
+                        size: 30.0,
+                      ),
                       Transform.translate(
                         offset: Offset(20.0, 0.0),
-                        child: const Icon(FontAwesomeIcons.plus, color: Color(0xFFFAB807), size: 13.0,),
+                        child: const Icon(
+                          FontAwesomeIcons.plus,
+                          color: Color(0xFFFAB807),
+                          size: 13.0,
+                        ),
                       )
                     ],
                   ),
@@ -102,34 +126,34 @@ class FeedbackScreen extends StatelessWidget {
     );
   }
 
-}
-
-_buildRoute() {
-  return PageRouteBuilder(
-    pageBuilder: (context, anim1, anim2) {
-      return Container(
-        decoration: const BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF8346C8), Color(0xFF523F88)]),
-        ),
-        child: FeedbackScreen(),
-      );
-    },
-    transitionDuration: Duration(milliseconds: 500),
-    transitionsBuilder: (context, anim1, anim2, child) {
-      final anim1Curved = Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(
-          parent: anim1,
-          curve: Curves.easeOutCubic,
-          reverseCurve: Curves.easeInCubic,
-        ),
-      );
-      return Opacity(
-        opacity: anim1Curved.value,
-        child: child,
-      );
-    },
-  );
+  @override
+  Route get route {
+    return PageRouteBuilder(
+      pageBuilder: (context, anim1, anim2) {
+        return Container(
+          decoration: const BoxDecoration(
+            gradient: const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFF8346C8), Color(0xFF523F88)]),
+          ),
+          child: this,
+        );
+      },
+      transitionDuration: Duration(milliseconds: 500),
+      transitionsBuilder: (context, anim1, anim2, child) {
+        final anim1Curved = Tween<double>(begin: 0.0, end: 1.0).animate(
+          CurvedAnimation(
+            parent: anim1,
+            curve: Curves.easeOutCubic,
+            reverseCurve: Curves.easeInCubic,
+          ),
+        );
+        return Opacity(
+          opacity: anim1Curved.value,
+          child: child,
+        );
+      },
+    );
+  }
 }

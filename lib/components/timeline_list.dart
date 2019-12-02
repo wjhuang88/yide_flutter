@@ -101,7 +101,7 @@ class TimelineTile extends StatelessWidget {
     return TapAnimator(
       behavior: HitTestBehavior.opaque,
       onTap: () {
-        Navigator.of(context).pushNamed(DetailListScreen.routeName);
+        Navigator.of(context).push(DetailListScreen().route);
       },
       builder: (_factor) => Container(
         width: double.infinity,

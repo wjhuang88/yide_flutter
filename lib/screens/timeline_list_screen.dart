@@ -8,25 +8,39 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:yide/components/location_methods.dart';
 import 'package:yide/components/timeline_list.dart';
+import 'package:yide/interfaces/navigatable.dart';
 import 'package:yide/models/date_tools.dart';
 import 'package:yide/models/task_data.dart';
 import 'package:yide/notification.dart';
-import 'package:yide/screens/detail_screen/edit_main_screen.dart';
+import 'package:yide/screens/edit_main_screen.dart';
 
-class TimelineListScreen extends StatefulWidget {
-  static const String routeName = 'timeline_list';
+class TimelineListScreen extends StatefulWidget implements Navigatable {
+  const TimelineListScreen({Key key}) : super(key: key);
 
-  const TimelineListScreen(
-      {Key key, this.transitionFactor = 0.0, this.controller})
-      : super(key: key);
-  static Route get pageRoute => _buildRoute();
-
-  final double transitionFactor;
-  final TimelineScreenController controller;
+  static TimelineScreenController controller = TimelineScreenController();
 
   @override
   _TimelineListScreenState createState() =>
       _TimelineListScreenState(controller);
+
+  @override
+  Route get route {
+    return PageRouteBuilder(
+      pageBuilder: (context, anim1, anim2) => this,
+      transitionDuration: Duration(milliseconds: 500),
+      transitionsBuilder: (context, anim1, anim2, child) {
+        final anim1Curved = Curves.easeOutCubic.transform(anim1.value);
+        controller.updateTransition(1 - anim2.value);
+        return Opacity(
+          opacity: anim1Curved,
+          child: Transform.scale(
+            scale: 2 - anim1Curved,
+            child: child,
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _TimelineListScreenState extends State<TimelineListScreen> {
@@ -66,7 +80,6 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
     final response = await request.close();
     if (response.statusCode == 200) {
       final responseBody = await response.transform(utf8.decoder).join();
-      print(responseBody);
       final map = jsonDecode(responseBody) as Map;
       setState(() {
         _temp = map['tem'];
@@ -79,10 +92,8 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
   @override
   void initState() {
     super.initState();
-    transitionFactor = widget.transitionFactor;
-    if (_controller == null) {
-      _controller = TimelineScreenController();
-    }
+    transitionFactor = 0.0;
+    _controller ??= TimelineScreenController();
 
     _savedList = _placeholder = Container();
     _loadingPlaceholder = Center(
@@ -99,11 +110,9 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
   }
 
   @override
-  void didUpdateWidget(TimelineListScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.transitionFactor != oldWidget.transitionFactor) {
-      transitionFactor = oldWidget.transitionFactor;
-    }
+  void dispose() {
+    _controller._state = null;
+    super.dispose();
   }
 
   void _updateTransition(double value) {
@@ -126,7 +135,7 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
             size: 40.0,
           ),
           onPressed: () {
-            Navigator.pushNamed(context, EditMainScreen.routeName);
+            Navigator.push(context, EditMainScreen().route);
           },
         ),
       ),
@@ -351,28 +360,4 @@ class TimelineScreenController {
   void updateTransition(double value) {
     _state?._updateTransition(value);
   }
-}
-
-_buildRoute() {
-  TimelineScreenController controller = TimelineScreenController();
-  return PageRouteBuilder(
-    pageBuilder: (context, anim1, anim2) {
-      return TimelineListScreen(
-        transitionFactor: anim2.value,
-        controller: controller,
-      );
-    },
-    transitionDuration: Duration(milliseconds: 500),
-    transitionsBuilder: (context, anim1, anim2, child) {
-      final anim1Curved = Curves.easeOutCubic.transform(anim1.value);
-      controller.updateTransition(1 - anim2.value);
-      return Opacity(
-        opacity: anim1Curved,
-        child: Transform.scale(
-          scale: 2 - anim1Curved,
-          child: child,
-        ),
-      );
-    },
-  );
 }

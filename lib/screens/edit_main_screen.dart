@@ -8,24 +8,38 @@ import 'package:yide/components/fade_in.dart';
 import 'package:yide/components/infinity_page_view.dart';
 import 'package:yide/components/panel_switcher.dart';
 import 'package:yide/components/tap_animator.dart';
+import 'package:yide/interfaces/navigatable.dart';
 import 'package:yide/models/date_tools.dart';
 import 'package:yide/models/task_data.dart';
 import 'package:yide/screens/detail_screen/panels/detail_datetime_panel.dart';
 import 'package:yide/screens/detail_screen/panels/detail_tag_panel.dart';
 import 'package:yide/screens/detail_screen/panels/detail_time_panel.dart';
 
-class EditMainScreen extends StatefulWidget {
-  static const String routeName = 'new';
+class EditMainScreen extends StatefulWidget implements Navigatable {
+  const EditMainScreen({Key key}) : super(key: key);
 
-  const EditMainScreen({Key key, this.transitionFactor, this.controller})
-      : super(key: key);
-  static Route get pageRoute => _buildRoute();
-
-  final double transitionFactor;
-  final EditScreenController controller;
+  static EditScreenController controller = EditScreenController();
 
   @override
   _EditMainScreenState createState() => _EditMainScreenState(controller);
+
+  @override
+  Route get route {
+    return PageRouteBuilder(
+      pageBuilder: (context, anim1, anim2) => this,
+      transitionDuration: Duration(milliseconds: 400),
+      transitionsBuilder: (context, anim1, anim2, child) {
+        final anim1Curved = CurvedAnimation(
+          parent: anim1,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        );
+        final offset = 1 - anim1Curved.value;
+        controller.updateTransition(offset);
+        return child;
+      },
+    );
+  }
 }
 
 enum _DateTimeType { fullday, someday, datetime }
@@ -78,7 +92,7 @@ class _EditMainScreenState extends State<EditMainScreen>
   @override
   void initState() {
     super.initState();
-    transitionFactor = widget.transitionFactor;
+    transitionFactor = 1.0;
     _controller ??= EditScreenController();
     _controller._state = this;
     _textEditingController = TextEditingController(text: _content);
@@ -112,14 +126,6 @@ class _EditMainScreenState extends State<EditMainScreen>
         const TaskTag(id: '1', name: '生活', iconColor: Color(0xFFAF71F5));
   }
 
-  @override
-  void didUpdateWidget(EditMainScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.transitionFactor != oldWidget.transitionFactor) {
-      transitionFactor = oldWidget.transitionFactor;
-    }
-  }
-
   void _updateTransition(double value) {
     setState(() {
       this.transitionFactor = value;
@@ -132,6 +138,7 @@ class _EditMainScreenState extends State<EditMainScreen>
     _bottomBarController.dispose();
     _textEditingController.dispose();
     _focusNode.dispose();
+    _controller._state = null;
     super.dispose();
   }
 
@@ -579,7 +586,12 @@ class _EditMainScreenState extends State<EditMainScreen>
               },
             ),
           ),
-          const VerticalDivider(indent: 11.0, endIndent: 11.0, width: 0.0, color: const Color(0xFFE8E8E8),),
+          const VerticalDivider(
+            indent: 11.0,
+            endIndent: 11.0,
+            width: 0.0,
+            color: const Color(0xFFE8E8E8),
+          ),
           Expanded(
             child: TapAnimator(
               behavior: HitTestBehavior.opaque,
@@ -598,7 +610,12 @@ class _EditMainScreenState extends State<EditMainScreen>
               ),
             ),
           ),
-          const VerticalDivider(indent: 11.0, endIndent: 11.0, width: 0.0, color: const Color(0xFFE8E8E8),),
+          const VerticalDivider(
+            indent: 11.0,
+            endIndent: 11.0,
+            width: 0.0,
+            color: const Color(0xFFE8E8E8),
+          ),
           Expanded(
             child: TapAnimator(
               behavior: HitTestBehavior.opaque,
@@ -638,27 +655,4 @@ class EditScreenController {
   void updateTransition(double value) {
     _state?._updateTransition(value);
   }
-}
-
-_buildRoute() {
-  EditScreenController controller = EditScreenController();
-  return PageRouteBuilder(
-    pageBuilder: (context, anim1, anim2) {
-      return EditMainScreen(
-        controller: controller,
-        transitionFactor: 1.0,
-      );
-    },
-    transitionDuration: Duration(milliseconds: 400),
-    transitionsBuilder: (context, anim1, anim2, child) {
-      final anim1Curved = CurvedAnimation(
-        parent: anim1,
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.easeInCubic,
-      );
-      final offset = 1 - anim1Curved.value;
-      controller.updateTransition(offset);
-      return child;
-    },
-  );
 }
