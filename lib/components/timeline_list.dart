@@ -38,8 +38,8 @@ class TimelineListView extends StatelessWidget {
   Widget build(BuildContext context) {
     return itemCount > 0
         ? ListView.builder(
-            padding:
-                const EdgeInsets.only(left: 17.0, right: 50.0, top: 20.0, bottom: 40.0),
+            padding: const EdgeInsets.only(
+                left: 17.0, right: 50.0, top: 20.0, bottom: 40.0),
             itemCount: itemCount,
             itemBuilder: (context, index) {
               return Row(
@@ -69,7 +69,9 @@ class TimelineListView extends StatelessWidget {
                         Container(
                           decoration: BoxDecoration(
                               border: Border(
-                            left: index + 1 != itemCount ? BorderSide(color: Color(0xFF6F54BC)) : BorderSide(color: Color(0x00000000)),
+                            left: index + 1 != itemCount
+                                ? BorderSide(color: Color(0xFF6F54BC))
+                                : BorderSide(color: Color(0x00000000)),
                           )),
                           child: (tileBuilder ?? (c, i) => SizedBox())(
                               context, index),
@@ -78,7 +80,8 @@ class TimelineListView extends StatelessWidget {
                           offset: const Offset(-4.5, 3.0),
                           child: Icon(
                             FontAwesomeIcons.solidCircle,
-                            color: (onGenerateDotColor ?? (i) => const Color(0xFFFFFFFF))(index),
+                            color: (onGenerateDotColor ??
+                                (i) => const Color(0xFFFFFFFF))(index),
                             size: 10.0,
                           ),
                         ),
@@ -94,15 +97,15 @@ class TimelineListView extends StatelessWidget {
 
 class TimelineTile extends StatelessWidget {
   final List<Widget> rows;
+  final VoidCallback onTap;
 
-  const TimelineTile({Key key, @required this.rows}) : super(key: key);
+  const TimelineTile({Key key, @required this.rows, this.onTap})
+      : super(key: key);
   @override
   Widget build(BuildContext context) {
     return TapAnimator(
       behavior: HitTestBehavior.opaque,
-      onTap: () {
-        Navigator.of(context).push(DetailListScreen().route);
-      },
+      onTap: onTap ?? () {},
       builder: (_factor) => Container(
         width: double.infinity,
         padding: const EdgeInsets.only(left: 27.5, bottom: 30.0),

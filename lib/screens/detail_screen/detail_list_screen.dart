@@ -2,8 +2,10 @@ import 'dart:math' as Math;
 
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:intl/intl.dart';
 import 'package:yide/components/tap_animator.dart';
 import 'package:yide/interfaces/navigatable.dart';
+import 'package:yide/models/task_data.dart';
 import 'package:yide/screens/edit_main_screen.dart';
 
 import 'detail_comments_screen.dart';
@@ -12,6 +14,10 @@ import 'detail_reminder_screen.dart';
 import 'detail_repeat_screen.dart';
 
 class DetailListScreen extends StatefulWidget implements Navigatable {
+  final TaskPack taskPack;
+
+  const DetailListScreen({Key key, @required this.taskPack}) : super(key: key);
+
   @override
   _DetailListScreenState createState() => _DetailListScreenState();
 
@@ -41,6 +47,25 @@ class DetailListScreen extends StatefulWidget implements Navigatable {
 }
 
 class _DetailListScreenState extends State<DetailListScreen> {
+  TaskData _data;
+  TaskTag _tag;
+
+  @override
+  void initState() {
+    super.initState();
+    _data = widget.taskPack.data;
+    _tag = widget.taskPack.tag;
+  }
+
+  @override
+  void didUpdateWidget(DetailListScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.taskPack.data.id != oldWidget.taskPack.data.id) {
+      _data = widget.taskPack.data;
+      _tag = widget.taskPack.tag;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final contentStyle =
@@ -72,10 +97,10 @@ class _DetailListScreenState extends State<DetailListScreen> {
       body: Column(
         children: <Widget>[
           _HeaderPanel(
-            content: '最新项目会议',
-            dateTime: '10月11日  19:20',
-            tagName: '工作',
-            tagColor: const Color(0xFF62DADB),
+            content: _data.content,
+            dateTime: DateFormat('MM月dd日  HH:mm').format(_data.taskTime),
+            tagName: _tag.name,
+            tagColor: _tag.iconColor,
             onTap: () {
               Navigator.of(context).push(EditMainScreen().route);
             },
@@ -138,10 +163,10 @@ class _DetailListScreenState extends State<DetailListScreen> {
                 ),
                 _ListItem(
                   iconData: FontAwesomeIcons.stickyNote,
-                  child: Text(
-                    '备注',
+                  child: _data.remark != null && _data.remark.isNotEmpty ? Text(
+                    _data.remark,
                     style: contentStyle,
-                  ),
+                  ) : Text('点击添加备注', style: const TextStyle(color: Color(0x88EDE7FF), fontSize: 14.0)),
                   onTap: () {
                     Navigator.of(context).push(DetailCommentsScreen().route);
                   },
@@ -186,9 +211,7 @@ class _HeaderPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return TapAnimator(
       behavior: HitTestBehavior.opaque,
-      onTap: () {
-        onTap();
-      },
+      onTap: onTap ?? () {},
       builder: (_factor) => Transform(
         alignment: Alignment.center,
         transform: Matrix4.identity()
@@ -204,6 +227,7 @@ class _HeaderPanel extends StatelessWidget {
               ),
               Text(
                 content,
+                textAlign: TextAlign.center,
                 style:
                     const TextStyle(fontSize: 22.0, color: Color(0xFFEDE7FF)),
               ),
@@ -212,6 +236,7 @@ class _HeaderPanel extends StatelessWidget {
               ),
               Text(
                 dateTime,
+                textAlign: TextAlign.center,
                 style:
                     const TextStyle(fontSize: 14.0, color: Color(0x88EDE7FF)),
               ),
@@ -258,16 +283,13 @@ class _ListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return TapAnimator(
       behavior: HitTestBehavior.opaque,
-      onTap: () {
-        onTap();
-      },
+      onTap: onTap ?? () {},
       builder: (animValue) {
         final _factor = 1 - animValue * 0.2;
         return Transform(
           alignment: Alignment.bottomCenter,
           transform: Matrix4.identity()
             ..setEntry(3, 2, 0.001)
-            //..rotateY(-(1 - _factor) * Math.pi / 6)
             ..rotateX(-(1 - _factor) * Math.pi / 2),
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 15.0),

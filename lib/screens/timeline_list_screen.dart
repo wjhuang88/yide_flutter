@@ -12,6 +12,7 @@ import 'package:yide/interfaces/navigatable.dart';
 import 'package:yide/models/date_tools.dart';
 import 'package:yide/models/task_data.dart';
 import 'package:yide/notification.dart';
+import 'package:yide/screens/detail_screen/detail_list_screen.dart';
 import 'package:yide/screens/edit_main_screen.dart';
 
 class TimelineListScreen extends StatefulWidget implements Navigatable {
@@ -262,6 +263,10 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
                             }
                             return TimelineTile(
                               rows: rows,
+                              onTap: () {
+                                Navigator.of(context)
+                                    .push(DetailListScreen(taskPack: item,).route);
+                              },
                             );
                           },
                           onGenerateTime: (index) =>
