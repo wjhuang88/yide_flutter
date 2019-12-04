@@ -43,7 +43,8 @@ class SqliteManager {
               print('Read update sql error, path: assets/sql/v4_to_v5.sql');
             });
             db.execute(updateSql).catchError((e) {
-              print('Update table error, from version $oldVersion to $newVersion');
+              print(
+                  'Update table error, from version $oldVersion to $newVersion');
             });
           }
         },
@@ -57,16 +58,12 @@ class SqliteManager {
 
   Future<Database> _database;
 
-  static bool _dirty = false;
-
   Future<int> update(String sqlPath, List<dynamic> arguments) async {
     var sql = await rootBundle.loadString(sqlPath).catchError((e) {
       print('Read update sql error, update sql path: $sqlPath');
     });
     return (await _database).rawUpdate(sql, arguments).catchError((e) {
       print('DB update error, update sql: $sql, arguments: $arguments');
-    }).whenComplete(() {
-      _dirty = true;
     });
   }
 
@@ -76,23 +73,19 @@ class SqliteManager {
     });
     return (await _database).rawInsert(sql, arguments).catchError((e) {
       print('DB insert error, insert sql: $sql, arguments: $arguments');
-    }).whenComplete(() {
-      _dirty = true;
     });
   }
 
-  query(String sqlPath, List<dynamic> arguments) async {
+  Future<List<Map<String, dynamic>>> query(String sqlPath, List<dynamic> arguments) async {
     final sql = await rootBundle.loadString(sqlPath).catchError((e) {
       print('Read sql file error, query sql path: $sqlPath');
     });
     return (await _database).rawQuery(sql, arguments).catchError((e) {
       print('DB query error, query sql: $sql, arguments: $arguments');
-    }).whenComplete(() {
-      _dirty = false;
     });
   }
 
-  void dispose() {
-    // TODO
+  void dispose() async {
+    (await _database).close();
   }
 }

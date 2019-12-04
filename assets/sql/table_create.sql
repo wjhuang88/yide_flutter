@@ -9,3 +9,12 @@ CREATE TABLE IF NOT EXISTS `task_data`(
     `alarm_time` INTEGER,
     `time_type_code` INTEGER
 );
+CREATE TABLE IF NOT EXISTS `task_detail`(
+    `id` INTEGER PRIMARY KEY,
+    `create_time` INTEGER,
+    `reminder_bitmap` INTEGER,
+    `repeat_bitmap` INTEGER,
+    `address` TEXT,
+    `latitude` REAL,
+    `longitude` REAL
+);
