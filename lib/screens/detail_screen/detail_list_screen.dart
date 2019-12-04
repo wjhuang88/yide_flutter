@@ -5,6 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:yide/components/tap_animator.dart';
 import 'package:yide/interfaces/navigatable.dart';
+import 'package:yide/models/address_data.dart';
 import 'package:yide/models/task_data.dart';
 import 'package:yide/screens/edit_main_screen.dart';
 
@@ -50,11 +51,18 @@ class _DetailListScreenState extends State<DetailListScreen> {
   TaskData _data;
   TaskTag _tag;
 
+  TaskDetail _detail;
+
   @override
   void initState() {
     super.initState();
     _data = widget.taskPack.data;
     _tag = widget.taskPack.tag;
+    getTaskDetail(_data.id).then((value) {
+      setState(() {
+        _detail = value;
+      });
+    });
   }
 
   @override
@@ -63,6 +71,11 @@ class _DetailListScreenState extends State<DetailListScreen> {
     if (widget.taskPack.data.id != oldWidget.taskPack.data.id) {
       _data = widget.taskPack.data;
       _tag = widget.taskPack.tag;
+      getTaskDetail(_data.id).then((value) {
+        setState(() {
+          _detail = value;
+        });
+      });
     }
   }
 
@@ -70,6 +83,8 @@ class _DetailListScreenState extends State<DetailListScreen> {
   Widget build(BuildContext context) {
     final contentStyle =
         const TextStyle(color: Color(0xFFEDE7FF), fontSize: 14.0);
+    final nocontentStyle =
+        const TextStyle(color: Color(0x88EDE7FF), fontSize: 14.0);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -98,11 +113,21 @@ class _DetailListScreenState extends State<DetailListScreen> {
         children: <Widget>[
           _HeaderPanel(
             content: _data.content,
-            dateTime: DateFormat('MM月dd日  HH:mm').format(_data.taskTime),
+            dateTime: _data.taskTime,
+            timeType: _data.timeType,
             tagName: _tag.name,
             tagColor: _tag.iconColor,
-            onTap: () {
-              Navigator.of(context).push(EditMainScreen().route);
+            onTap: () async {
+              final pack =
+                  await Navigator.of(context).push<TaskPack>(EditMainScreen(
+                taskPack: TaskPack(_data, _tag),
+              ).route);
+              if (pack != null) {
+                setState(() {
+                  _data = pack.data;
+                  _tag = pack.tag;
+                });
+              }
             },
           ),
           Expanded(
@@ -113,12 +138,28 @@ class _DetailListScreenState extends State<DetailListScreen> {
                 ),
                 _ListItem(
                   iconData: FontAwesomeIcons.clock,
-                  child: Text(
-                    '开始提醒&到期时间',
-                    style: contentStyle,
-                  ),
-                  onTap: () {
-                    Navigator.of(context).push(DetailReminderScreen().route);
+                  child: _detail?.reminderBitMap != null &&
+                          _detail.reminderBitMap.bitMap != 0
+                      ? Text(
+                          _detail.reminderBitMap.makeLabel(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: contentStyle,
+                        )
+                      : Text(
+                          '点击设置提醒',
+                          style: nocontentStyle,
+                        ),
+                  onTap: () async {
+                    final code = await Navigator.of(context)
+                        .push<int>(DetailReminderScreen(
+                      stateCode: _detail.reminderBitMap?.bitMap ?? 0,
+                    ).route);
+                    if (code != null) {
+                      setState(() {
+                        _detail.reminderBitMap?.bitMap = code;
+                      });
+                    }
                   },
                 ),
                 const SizedBox(
@@ -126,12 +167,30 @@ class _DetailListScreenState extends State<DetailListScreen> {
                 ),
                 _ListItem(
                   iconData: FontAwesomeIcons.redo,
-                  child: Text(
-                    '每周重复',
-                    style: contentStyle,
-                  ),
-                  onTap: () {
-                    Navigator.of(context).push(DetailRepeatScreen().route);
+                  child: _detail?.repeatBitMap != null &&
+                          !(_detail.repeatBitMap.isNoneRepeat)
+                      ? Text(
+                          _detail.repeatBitMap.makeRepeatModeLabel() +
+                              ' : ' +
+                              _detail.repeatBitMap.makeRepeatTimeLabel(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: contentStyle,
+                        )
+                      : Text(
+                          '点击设置重复',
+                          style: nocontentStyle,
+                        ),
+                  onTap: () async {
+                    final code = await Navigator.of(context)
+                        .push<int>(DetailRepeatScreen(
+                      stateCode: _detail.repeatBitMap?.bitMap ?? 0,
+                    ).route);
+                    if (code != null) {
+                      setState(() {
+                        _detail.repeatBitMap?.bitMap = code;
+                      });
+                    }
                   },
                 ),
                 const SizedBox(
@@ -139,12 +198,27 @@ class _DetailListScreenState extends State<DetailListScreen> {
                 ),
                 _ListItem(
                   iconData: FontAwesomeIcons.mapMarkerAlt,
-                  child: Text(
-                    '地址',
-                    style: contentStyle,
-                  ),
-                  onTap: () {
-                    Navigator.of(context).push(DetailMapScreen().route);
+                  child: _detail?.address != null
+                      ? Text(
+                          _detail.address.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: contentStyle,
+                        )
+                      : Text(
+                          '点击添加地址',
+                          style: nocontentStyle,
+                        ),
+                  onTap: () async {
+                    final address = await Navigator.of(context)
+                        .push<AroundData>(DetailMapScreen(
+                      address: _detail.address,
+                    ).route);
+                    if (address != null) {
+                      setState(() {
+                        _detail.address = address;
+                      });
+                    }
                   },
                 ),
                 const SizedBox(
@@ -152,10 +226,17 @@ class _DetailListScreenState extends State<DetailListScreen> {
                 ),
                 _ListItem(
                   iconData: FontAwesomeIcons.folder,
-                  child: Text(
-                    '所属项目',
-                    style: contentStyle,
-                  ),
+                  child: _data.catalog != null && _data.catalog.isNotEmpty
+                      ? Text(
+                          _data.catalog,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: contentStyle,
+                        )
+                      : Text(
+                          '没有所属项目',
+                          style: nocontentStyle,
+                        ),
                   onTap: () {},
                 ),
                 const SizedBox(
@@ -163,12 +244,22 @@ class _DetailListScreenState extends State<DetailListScreen> {
                 ),
                 _ListItem(
                   iconData: FontAwesomeIcons.stickyNote,
-                  child: _data.remark != null && _data.remark.isNotEmpty ? Text(
-                    _data.remark,
-                    style: contentStyle,
-                  ) : Text('点击添加备注', style: const TextStyle(color: Color(0x88EDE7FF), fontSize: 14.0)),
-                  onTap: () {
-                    Navigator.of(context).push(DetailCommentsScreen().route);
+                  child: _data.remark != null && _data.remark.isNotEmpty
+                      ? Text(
+                          _data.remark,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: contentStyle,
+                        )
+                      : Text('点击添加备注', style: nocontentStyle),
+                  onTap: () async {
+                    final value = await Navigator.of(context).push<String>(
+                        DetailCommentsScreen(value: _data.remark).route);
+                    if (value != null) {
+                      setState(() {
+                        _data.remark = value;
+                      });
+                    }
                   },
                 ),
               ],
@@ -197,18 +288,32 @@ class _HeaderPanel extends StatelessWidget {
     @required this.onTap,
     @required this.content,
     @required this.dateTime,
+    @required this.timeType,
     @required this.tagName,
     @required this.tagColor,
   }) : super(key: key);
 
   final VoidCallback onTap;
   final String content;
-  final String dateTime;
+  final DateTime dateTime;
+  final DateTimeType timeType;
   final String tagName;
   final Color tagColor;
 
   @override
   Widget build(BuildContext context) {
+    var dateTimeString;
+    switch (timeType) {
+      case DateTimeType.fullday:
+        dateTimeString = DateFormat('MM月dd日 全天').format(dateTime);
+        break;
+      case DateTimeType.someday:
+        dateTimeString = '某天';
+        break;
+      case DateTimeType.datetime:
+        dateTimeString = DateFormat('MM月dd日 HH:mm').format(dateTime);
+        break;
+    }
     return TapAnimator(
       behavior: HitTestBehavior.opaque,
       onTap: onTap ?? () {},
@@ -235,7 +340,7 @@ class _HeaderPanel extends StatelessWidget {
                 height: 10.0,
               ),
               Text(
-                dateTime,
+                dateTimeString,
                 textAlign: TextAlign.center,
                 style:
                     const TextStyle(fontSize: 14.0, color: Color(0x88EDE7FF)),
@@ -293,6 +398,7 @@ class _ListItem extends StatelessWidget {
             ..rotateX(-(1 - _factor) * Math.pi / 2),
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 15.0),
+            padding: const EdgeInsets.only(right: 20.0),
             height: 60.0,
             decoration: const BoxDecoration(
               color: Color(0x12FFFFFF),
@@ -311,7 +417,7 @@ class _ListItem extends StatelessWidget {
                 const SizedBox(
                   width: 20.0,
                 ),
-                child
+                Expanded(child: child)
               ],
             ),
           ),

@@ -6,5 +6,6 @@ CREATE TABLE IF NOT EXISTS `task_data`(
     `content` TEXT,
     `is_finished` INTEGER,
     `remark` TEXT,
-    `alarm_time` INTEGER
+    `alarm_time` INTEGER,
+    `time_type_code` INTEGER
 );

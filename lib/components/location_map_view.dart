@@ -26,6 +26,7 @@ class LocationMapView extends StatefulWidget {
   final Offset scaleOffset;
   final bool showsUserLocation;
   final FractionalOffset centerOffset;
+  final Coordinate initCenter;
   final void Function(List<AroundData> around, Coordinate coordinate)
       onRegionChanged;
 
@@ -43,7 +44,8 @@ class LocationMapView extends StatefulWidget {
       this.showsUserLocation,
       this.centerOffset,
       this.controller,
-      this.onRegionChanged})
+      this.onRegionChanged,
+      this.initCenter})
       : super(key: key);
 
   @override
@@ -69,8 +71,10 @@ class _LocationMapViewState extends State<LocationMapView> {
           final args = call.arguments as Map;
           final coordinateList = args['coordinate'] as List;
           final aroundMapList = args['around'] as List;
-          final aroundList = aroundMapList.map((map) => AroundData.fromMap(
-              (map as Map).map((k, v) => MapEntry(k as String, v)))).toList();
+          final aroundList = aroundMapList
+              .map((map) => AroundData.fromMap(
+                  (map as Map).map((k, v) => MapEntry(k as String, v))))
+              .toList();
           final coordinate = Coordinate.fromList(
               coordinateList.map((d) => d as double).toList());
           widget.onRegionChanged(aroundList, coordinate);
@@ -112,6 +116,12 @@ class _LocationMapViewState extends State<LocationMapView> {
         widget.centerOffset?.dy ?? 0.0
       ],
     };
+    if (widget.initCenter != null) {
+      params['initCenter'] = [
+        widget.initCenter.latitude,
+        widget.initCenter.longitude
+      ];
+    }
     final codec = const StandardMessageCodec();
 
     if (defaultTargetPlatform == TargetPlatform.android) {

@@ -3,6 +3,12 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:yide/interfaces/navigatable.dart';
 
 class DetailCommentsScreen extends StatelessWidget implements Navigatable {
+  final TextEditingController _controller;
+
+  DetailCommentsScreen({Key key, String value})
+      : _controller = TextEditingController(text: value),
+        super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -28,7 +34,7 @@ class DetailCommentsScreen extends StatelessWidget implements Navigatable {
               '完成',
               style: TextStyle(fontSize: 16.0, color: Color(0xFFEDE7FF)),
             ),
-            onPressed: () {},
+            onPressed: () => Navigator.of(context).maybePop<String>(_controller.text),
           ),
         ],
       ),
@@ -38,6 +44,7 @@ class DetailCommentsScreen extends StatelessWidget implements Navigatable {
           style: const TextStyle(color: Colors.white, fontSize: 14.0),
           autofocus: true,
           maxLines: null,
+          controller: _controller,
           keyboardType: TextInputType.text,
           keyboardAppearance: Brightness.dark,
           textInputAction: TextInputAction.done,
@@ -53,7 +60,7 @@ class DetailCommentsScreen extends StatelessWidget implements Navigatable {
 
   @override
   Route get route {
-    return PageRouteBuilder(
+    return PageRouteBuilder<String>(
       pageBuilder: (context, anim1, anim2) => this,
       transitionDuration: Duration(milliseconds: 500),
       transitionsBuilder: (context, anim1, anim2, child) {

@@ -8,12 +8,15 @@ import 'package:yide/interfaces/navigatable.dart';
 import 'package:yide/models/address_data.dart';
 
 class DetailMapScreen extends StatefulWidget implements Navigatable {
+  final AroundData address;
+
+  const DetailMapScreen({Key key, this.address}) : super(key: key);
   @override
-  _DetailMapScreenState createState() => _DetailMapScreenState();
+  _DetailMapScreenState createState() => _DetailMapScreenState(address);
 
   @override
   Route get route {
-    return PageRouteBuilder(
+    return PageRouteBuilder<AroundData>(
       pageBuilder: (context, anim1, anim2) => this,
       transitionDuration: Duration(milliseconds: 500),
       transitionsBuilder: (context, anim1, anim2, child) {
@@ -37,8 +40,10 @@ class DetailMapScreen extends StatefulWidget implements Navigatable {
 
 class _DetailMapScreenState extends State<DetailMapScreen>
     with SingleTickerProviderStateMixin {
+  _DetailMapScreenState(this._selectedAddress);
   LocationMapController _locationMapController;
 
+  AroundData _selectedAddress;
   List<AroundData> _arounds = List<AroundData>();
 
   AnimationController _pinJumpController;
@@ -76,6 +81,7 @@ class _DetailMapScreenState extends State<DetailMapScreen>
             height: MediaQuery.of(context).size.height,
             child: LocationMapView(
               controller: _locationMapController,
+              initCenter: _selectedAddress?.coordinate,
               cameraDegree: 30.0,
               zoomLevel: 16.0,
               showsCompass: true,
@@ -153,26 +159,29 @@ class _DetailMapScreenState extends State<DetailMapScreen>
                     final dist =
                         data.distance < 50 ? '50m内' : '${data.distance}m';
                     final addr = data.address;
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Text(
-                            data.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                color: Colors.white, fontSize: 18.0),
-                          ),
-                          Text(
-                            '$dist | $addr',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                color: Color(0xFFFAB807), fontSize: 14.0),
-                          )
-                        ],
+                    return GestureDetector(
+                      onTap: () => Navigator.of(context).maybePop<AroundData>(_arounds[i]),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(
+                              data.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 18.0),
+                            ),
+                            Text(
+                              '$dist | $addr',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  color: Color(0xFFFAB807), fontSize: 14.0),
+                            )
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -204,9 +213,7 @@ class _DetailMapScreenState extends State<DetailMapScreen>
                           color: Color(0xFF8346C8),
                           size: 14.0,
                         ),
-                        onPressed: () {
-                          Navigator.of(context).maybePop();
-                        },
+                        onPressed: () => Navigator.of(context).maybePop(),
                       ),
                     ),
                     const Divider(

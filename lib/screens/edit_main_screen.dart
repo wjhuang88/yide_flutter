@@ -16,16 +16,18 @@ import 'package:yide/screens/detail_screen/panels/detail_tag_panel.dart';
 import 'package:yide/screens/detail_screen/panels/detail_time_panel.dart';
 
 class EditMainScreen extends StatefulWidget implements Navigatable {
-  const EditMainScreen({Key key}) : super(key: key);
+  const EditMainScreen({Key key, this.taskPack}) : super(key: key);
 
   static EditScreenController controller = EditScreenController();
+
+  final TaskPack taskPack;
 
   @override
   _EditMainScreenState createState() => _EditMainScreenState(controller);
 
   @override
   Route get route {
-    return PageRouteBuilder(
+    return PageRouteBuilder<TaskPack>(
       pageBuilder: (context, anim1, anim2) => this,
       transitionDuration: Duration(milliseconds: 400),
       transitionsBuilder: (context, anim1, anim2, child) {
@@ -42,10 +44,8 @@ class EditMainScreen extends StatefulWidget implements Navigatable {
   }
 }
 
-enum _DateTimeType { fullday, someday, datetime }
-
 class _EditMainScreenState extends State<EditMainScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   _EditMainScreenState(this._controller);
 
   TextEditingController _textEditingController;
@@ -59,17 +59,18 @@ class _EditMainScreenState extends State<EditMainScreen>
   AnimationController _bottomBarController;
   Animation _bottomBarAnimation;
 
+  AnimationController _dateListController;
+  Animation _dateListAnimation;
+
   PanelSwitcherController _setupPanelController;
   String _setupTitle = '';
 
   InfinityPageController _datePageController;
 
-  _DateTimeType _dateTimeType;
   DateTime _baseTime;
 
-  String _content;
+  TaskData _taskData;
   TaskTag _tagData;
-  DateTime _dateTime;
 
   String _getWeekDayName(DateTime dateTime) {
     final now = DateTime.now();
@@ -92,12 +93,16 @@ class _EditMainScreenState extends State<EditMainScreen>
   @override
   void initState() {
     super.initState();
+
+    _taskData = widget.taskPack?.data ?? TaskData.defultNull();
+    _tagData = widget.taskPack?.tag ?? tagMap.entries.first.value;
+
     transitionFactor = 1.0;
     _controller ??= EditScreenController();
     _controller._state = this;
-    _textEditingController = TextEditingController(text: _content);
+    _textEditingController = TextEditingController(text: _taskData.content);
     _textEditingController.addListener(() {
-      _content = _textEditingController.text;
+      _taskData.content = _textEditingController.text;
     });
     _focusNode = FocusNode();
     _focusNode.addListener(() {
@@ -115,15 +120,36 @@ class _EditMainScreenState extends State<EditMainScreen>
         reverseCurve: Curves.easeInCubic)
       ..addListener(() => setState(() {}));
 
+    _dateListController = AnimationController(
+        vsync: this,
+        duration: Duration(milliseconds: 250),
+        value: _taskData.timeType == DateTimeType.someday ? 1.0 : 0.0);
+    _dateListAnimation = CurvedAnimation(
+        parent: _dateListController,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic)
+      ..addListener(() => setState(() {}));
+
     _fadeInController = FadeInController();
     _setupPanelController = PanelSwitcherController();
     _datePageController = InfinityPageController();
 
-    _dateTimeType = _DateTimeType.fullday;
-    _dateTime ??= DateTime.now();
-    _baseTime = _dateTime;
-    _tagData ??=
-        const TaskTag(id: '1', name: '生活', iconColor: Color(0xFFAF71F5));
+    _baseTime = _taskData.taskTime;
+  }
+
+  @override
+  void didUpdateWidget(EditMainScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.taskPack.data.content != oldWidget.taskPack.data.content) {
+      _taskData.content = widget.taskPack.data.content;
+    }
+    if (widget.taskPack.tag != oldWidget.taskPack.tag) {
+      _tagData = widget.taskPack.tag;
+    }
+    if (widget.taskPack.data.taskTime != oldWidget.taskPack.data.taskTime) {
+      _taskData.taskTime = widget.taskPack.data.taskTime;
+    }
+    _focus();
   }
 
   void _updateTransition(double value) {
@@ -200,43 +226,56 @@ class _EditMainScreenState extends State<EditMainScreen>
                         },
                         child: Container(
                           height: 80.0,
-                          child: InfinityPageView(
-                            controller: _datePageController,
-                            itemBuilder: (context, i) {
-                              final timeToRender =
-                                  _baseTime.add(Duration(days: i));
-                              return Column(
-                                children: <Widget>[
-                                  Text(
-                                    _getWeekDayName(timeToRender),
-                                    style: const TextStyle(
-                                        color: Colors.white, fontSize: 20.0),
-                                  ),
-                                  Text(
-                                    DateFormat('MM月dd日').format(timeToRender),
-                                    style: const TextStyle(
-                                        color: Color(0xFFBBADE7),
-                                        fontSize: 14.0,
-                                        fontFamily: ''),
-                                  ),
-                                ],
-                              );
-                            },
-                            onPageChanged: (page) {
-                              setState(() {
-                                _dateTime = _baseTime.add(Duration(days: page));
-                              });
-                            },
+                          child: FractionalTranslation(
+                            translation:
+                                Offset(0.0, -_dateListAnimation.value * 0.1),
+                            child: Opacity(
+                              opacity: 1 - _dateListAnimation.value,
+                              child: InfinityPageView(
+                                controller: _datePageController,
+                                itemBuilder: (context, i) {
+                                  final timeToRender =
+                                      _baseTime.add(Duration(days: i));
+                                  return Column(
+                                    children: <Widget>[
+                                      Text(
+                                        _getWeekDayName(timeToRender),
+                                        style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 20.0),
+                                      ),
+                                      Text(
+                                        DateFormat('MM月dd日')
+                                            .format(timeToRender),
+                                        style: const TextStyle(
+                                            color: Color(0xFFBBADE7),
+                                            fontSize: 14.0,
+                                            fontFamily: ''),
+                                      ),
+                                    ],
+                                  );
+                                },
+                                onPageChanged: (page) {
+                                  setState(() {
+                                    _taskData.taskTime =
+                                        _baseTime.add(Duration(days: page));
+                                  });
+                                },
+                              ),
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(
                         height: 12.0,
                       ),
-                      FadeIn(
-                        duration: Duration(milliseconds: 250),
-                        controller: _fadeInController,
-                        child: _buildDatetimeField(_dateTimeType),
+                      FractionalTranslation(
+                        translation: Offset(0.0, -_dateListAnimation.value),
+                        child: FadeIn(
+                          duration: Duration(milliseconds: 250),
+                          controller: _fadeInController,
+                          child: _buildDatetimeField(_taskData.timeType),
+                        ),
                       ),
                     ],
                   ),
@@ -249,9 +288,9 @@ class _EditMainScreenState extends State<EditMainScreen>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
-                    _buildTypeSwitcher('设置时间', _DateTimeType.datetime),
-                    _buildTypeSwitcher('全天', _DateTimeType.fullday),
-                    _buildTypeSwitcher('某天', _DateTimeType.someday),
+                    _buildTypeSwitcher('设置时间', DateTimeType.datetime),
+                    _buildTypeSwitcher('全天', DateTimeType.fullday),
+                    _buildTypeSwitcher('某天', DateTimeType.someday),
                   ],
                 ),
               ),
@@ -351,21 +390,21 @@ class _EditMainScreenState extends State<EditMainScreen>
                     height: _keyboardRealHeight ?? 0.0,
                     alignment: Alignment.center,
                     child: DetailDateTimePanel(
-                      selectedDate: _dateTime,
+                      selectedDate: _taskData.taskTime,
                       onChange: (date) {
-                        if (_dateTime.year == date.year &&
-                            _dateTime.month == date.month &&
-                            _dateTime.day == date.day) {
+                        if (_taskData.taskTime.year == date.year &&
+                            _taskData.taskTime.month == date.month &&
+                            _taskData.taskTime.day == date.day) {
                           return;
                         }
                         setState(() {
-                          _baseTime = _dateTime = DateTime(
+                          _baseTime = _taskData.taskTime = DateTime(
                               date.year,
                               date.month,
                               date.day,
-                              _dateTime.hour,
-                              _dateTime.minute,
-                              _dateTime.second);
+                              _taskData.taskTime.hour,
+                              _taskData.taskTime.minute,
+                              _taskData.taskTime.second);
                           _datePageController.jumpToPage(0);
                         });
                       },
@@ -379,18 +418,18 @@ class _EditMainScreenState extends State<EditMainScreen>
                       height: _keyboardRealHeight ?? 0.0,
                       alignment: Alignment.center,
                       child: DetailTimePanel(
-                        selectedDate: _dateTime,
+                        selectedDate: _taskData.taskTime,
                         onChange: (date) {
-                          if (_dateTime.hour == date.hour &&
-                              _dateTime.minute == date.minute &&
-                              _dateTime.second == date.second) {
+                          if (_taskData.taskTime.hour == date.hour &&
+                              _taskData.taskTime.minute == date.minute &&
+                              _taskData.taskTime.second == date.second) {
                             return;
                           }
                           setState(() {
-                            _dateTime = DateTime(
-                                _dateTime.year,
-                                _dateTime.month,
-                                _dateTime.day,
+                            _taskData.taskTime = DateTime(
+                                _taskData.taskTime.year,
+                                _taskData.taskTime.month,
+                                _taskData.taskTime.day,
                                 date.hour,
                                 date.minute,
                                 date.second);
@@ -407,17 +446,22 @@ class _EditMainScreenState extends State<EditMainScreen>
     );
   }
 
-  Widget _buildTypeSwitcher(String label, _DateTimeType type) {
+  Widget _buildTypeSwitcher(String label, DateTimeType type) {
     return Expanded(
       child: TapAnimator(
         behavior: HitTestBehavior.opaque,
         onTap: () {
-          if (_dateTimeType == type) {
+          if (_taskData.timeType == type) {
             return;
           }
           setState(() {
-            _dateTimeType = type;
+            _taskData.timeType = type;
           });
+          if (type == DateTimeType.someday) {
+            _dateListController.forward();
+          } else {
+            _dateListController.reverse();
+          }
           _fadeInController.fadeIn();
           _focus();
         },
@@ -430,7 +474,7 @@ class _EditMainScreenState extends State<EditMainScreen>
               label,
               textAlign: TextAlign.center,
               style: TextStyle(
-                  color: _dateTimeType == type
+                  color: _taskData.timeType == type
                       ? Color.lerp(highlightColor, tapColor, animValue)
                       : Color.lerp(normalColor, tapColor, animValue),
                   fontSize: 14.0),
@@ -441,26 +485,26 @@ class _EditMainScreenState extends State<EditMainScreen>
     );
   }
 
-  Widget _buildDatetimeField(_DateTimeType type) {
+  Widget _buildDatetimeField(DateTimeType type) {
     switch (type) {
-      case _DateTimeType.fullday:
+      case DateTimeType.fullday:
         return Text(
           '全天',
           style: const TextStyle(color: Colors.white, fontSize: 20.0),
         );
-      case _DateTimeType.someday:
+      case DateTimeType.someday:
         return Text(
           '某天',
           style: const TextStyle(color: Colors.white, fontSize: 20.0),
         );
-      case _DateTimeType.datetime:
+      case DateTimeType.datetime:
         return GestureDetector(
           onTap: () {
             _changePanel(DetailTimePanel.panelName, '时间');
           },
           child: Container(
             child: Text(
-              DateFormat('HH:mm').format(_dateTime),
+              DateFormat('HH:mm').format(_taskData.taskTime),
               style: const TextStyle(
                   color: Colors.white, fontSize: 20.0, fontFamily: ''),
             ),
@@ -537,7 +581,8 @@ class _EditMainScreenState extends State<EditMainScreen>
             keyboardType: TextInputType.text,
             textInputAction: TextInputAction.done,
             onSubmitted: (value) {
-              Navigator.of(context).maybePop();
+              final pack = TaskPack(_taskData, _tagData);
+              Navigator.of(context).maybePop<TaskPack>(pack);
             },
             placeholder: '记录你的任务',
             placeholderStyle: const TextStyle(color: Color(0xFF9B7FE9)),
@@ -560,9 +605,7 @@ class _EditMainScreenState extends State<EditMainScreen>
           Expanded(
             child: TapAnimator(
               behavior: HitTestBehavior.opaque,
-              onTap: () {
-                Navigator.of(context).maybePop();
-              },
+              onTap: () => Navigator.of(context).maybePop(),
               builder: (factor) {
                 final color =
                     const Color(0xFFBBADE7).withOpacity(1 - factor * 0.5);
@@ -619,7 +662,10 @@ class _EditMainScreenState extends State<EditMainScreen>
           Expanded(
             child: TapAnimator(
               behavior: HitTestBehavior.opaque,
-              onTap: () {},
+              onTap: () {
+                final pack = TaskPack(_taskData, _tagData);
+                Navigator.of(context).maybePop<TaskPack>(pack);
+              },
               builder: (factor) {
                 final color =
                     const Color(0xFFBBADE7).withOpacity(1 - factor * 0.5);

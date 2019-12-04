@@ -4,14 +4,18 @@ import 'package:yide/components/flipping_tile.dart';
 import 'package:yide/components/tap_animator.dart';
 import 'package:yide/interfaces/navigatable.dart';
 import 'package:yide/models/date_tools.dart';
+import 'package:yide/models/task_data.dart';
 
 class DetailRepeatScreen extends StatefulWidget implements Navigatable {
+  final int stateCode;
+
+  const DetailRepeatScreen({Key key, this.stateCode = 0}) : super(key: key);
   @override
-  _DetailRepeatScreenState createState() => _DetailRepeatScreenState();
+  _DetailRepeatScreenState createState() => _DetailRepeatScreenState(stateCode);
 
   @override
   Route get route {
-    return PageRouteBuilder(
+    return PageRouteBuilder<int>(
       pageBuilder: (context, anim1, anim2) => this,
       transitionDuration: Duration(milliseconds: 500),
       transitionsBuilder: (context, anim1, anim2, child) {
@@ -35,95 +39,13 @@ class DetailRepeatScreen extends StatefulWidget implements Navigatable {
 
 const _colorList = const [const Color(0xFFE6A800), const Color(0xFFBD8A00)];
 
-const _weekdayMask = (1 << 1) + (1 << 2) + (1 << 3) + (1 << 4) + (1 << 5);
-const _weekendMask = (1 << 6) + (1 << 7);
-const _allWeekMask = _weekdayMask + _weekendMask;
-
 class _DetailRepeatScreenState extends State<DetailRepeatScreen> {
-  /// bitmap: 从低位往高位，每一位1表示有效0表示无效，
-  /// 第一位表示是否选中周重复，接下来每一位对应一周中的一天
-  int _selectedWeekDay = 0;
-  int _selectedWeekDayLast = 0;
+  _DetailRepeatScreenState(int _code)
+      : _repeatLastState = RepeatBitMap(bitMap: _code),
+        _repeatState = RepeatBitMap(bitMap: _code);
 
-  bool _isNoneRepeat = true;
-  bool get _isWeekSelected => _selectedWeekDay & 1 != 0;
-  set _isWeekSelected(bool value) =>
-      value ? _selectedWeekDay |= 1 : _selectedWeekDay &= ~1;
-  bool _isMonthSelected = false;
-  bool _isYearSelected = false;
-  bool _isDailySelected = false;
-
-  bool _isNeverEnd = true;
-  bool _isCountEnd = false;
-  int _count = 1;
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  String _makeEndLabel() {
-    if (_isNeverEnd) {
-      return '永不结束';
-    }
-    if (_isCountEnd) {
-      return '$_count 次后';
-    }
-    return '';
-  }
-
-  String _makeLabel() {
-    if (_isNoneRepeat) {
-      return '无重复';
-    }
-    if (_isDailySelected) {
-      return '每日';
-    }
-    if (_isMonthSelected) {
-      return '每月';
-    }
-    if (_isYearSelected) {
-      return '每年';
-    }
-    final buffer = <String>[];
-    if (_selectedWeekDay & _allWeekMask == _allWeekMask) {
-      return '每日';
-    }
-    if (_selectedWeekDay & _weekdayMask == _weekdayMask) {
-      int i = 7;
-      while (i > 5) {
-        if (_selectedWeekDay & (1 << i) != 0) {
-          buffer.add(getWeekName(i));
-        }
-        i--;
-      }
-      buffer.add('工作日');
-      return buffer.reversed.join('、');
-    }
-    if (_selectedWeekDay & _weekendMask == _weekendMask) {
-      buffer.add('周末');
-      int i = 5;
-      while (i > 0) {
-        if (_selectedWeekDay & (1 << i) != 0) {
-          buffer.add(getWeekName(i));
-        }
-        i--;
-      }
-      return buffer.reversed.join('、');
-    }
-    int i = 7;
-    while (i > 0) {
-      if (_selectedWeekDay & (1 << i) != 0) {
-        buffer.add(getWeekName(i));
-      }
-      i--;
-    }
-    if (buffer.length > 0) {
-      return buffer.reversed.join('、');
-    } else {
-      return '';
-    }
-  }
+  RepeatBitMap _repeatState;
+  RepeatBitMap _repeatLastState;
 
   @override
   Widget build(BuildContext context) {
@@ -150,7 +72,7 @@ class _DetailRepeatScreenState extends State<DetailRepeatScreen> {
               '完成',
               style: TextStyle(fontSize: 16.0, color: Color(0xFFEDE7FF)),
             ),
-            onPressed: () {},
+            onPressed: () => Navigator.of(context).maybePop<int>(_repeatState.bitMap),
           ),
         ],
       ),
@@ -180,7 +102,7 @@ class _DetailRepeatScreenState extends State<DetailRepeatScreen> {
                     ],
                   ),
                   Text(
-                    _makeLabel(),
+                    _repeatState.makeRepeatTimeLabel(),
                     style: TextStyle(color: Color(0xFFEDE7FF), fontSize: 15.0),
                   ),
                 ],
@@ -190,14 +112,11 @@ class _DetailRepeatScreenState extends State<DetailRepeatScreen> {
               ),
               FlippingTile(
                 title: "无重复",
-                selected: _isNoneRepeat,
+                selected: _repeatState.isNoneRepeat,
                 onTap: () {
                   setState(() {
-                    _isNoneRepeat = true;
-                    _isWeekSelected = false;
-                    _isMonthSelected = false;
-                    _isYearSelected = false;
-                    _isDailySelected = false;
+                    _repeatState.resetSelect();
+                    _repeatState.reverseNoneRepeat();
                   });
                 },
               ),
@@ -206,14 +125,11 @@ class _DetailRepeatScreenState extends State<DetailRepeatScreen> {
               ),
               FlippingTile(
                 title: "每日",
-                selected: _isDailySelected,
+                selected: _repeatState.isDailySelected,
                 onTap: () {
                   setState(() {
-                    _isNoneRepeat = false;
-                    _isWeekSelected = false;
-                    _isMonthSelected = false;
-                    _isYearSelected = false;
-                    _isDailySelected = true;
+                    _repeatState.resetSelect();
+                    _repeatState.reverseDailySelected();
                   });
                 },
               ),
@@ -222,21 +138,18 @@ class _DetailRepeatScreenState extends State<DetailRepeatScreen> {
               ),
               FlippingTile.extended(
                 title: "每周",
-                selected: _isWeekSelected,
+                selected: _repeatState.isWeekSelected,
                 onTap: () {
                   setState(() {
-                    _isNoneRepeat = false;
-                    _isWeekSelected = true;
-                    _isMonthSelected = false;
-                    _isYearSelected = false;
-                    _isDailySelected = false;
+                    _repeatState.resetSelect();
+                    _repeatState.reverseWeekSelected();
                   });
                 },
                 extend: Row(
                   children: weekMapShort.entries.map((entry) {
-                    final selected = (1 << entry.key) & _selectedWeekDay != 0;
+                    final selected = _repeatState.isSelectedDay(entry.key);
                     final selectedLast =
-                        (1 << entry.key) & _selectedWeekDayLast != 0;
+                        _repeatLastState.isSelectedDay(entry.key);
                     var colorIndex = selectedLast ? 0 : 1;
 
                     return Expanded(
@@ -244,7 +157,7 @@ class _DetailRepeatScreenState extends State<DetailRepeatScreen> {
                         duration: const Duration(milliseconds: 200),
                         builder: (factor) {
                           if (factor == 1.0) {
-                            _selectedWeekDayLast = _selectedWeekDay;
+                            _repeatLastState.bitMap = _repeatState.bitMap;
                             colorIndex = selected ? 0 : 1;
                           }
                           return Container(
@@ -261,12 +174,8 @@ class _DetailRepeatScreenState extends State<DetailRepeatScreen> {
                         },
                         onTap: () {
                           setState(() {
-                            _selectedWeekDayLast = _selectedWeekDay;
-                            if (selected) {
-                              _selectedWeekDay &= ~(1 << entry.key);
-                            } else {
-                              _selectedWeekDay |= (1 << entry.key);
-                            }
+                            _repeatLastState.bitMap = _repeatState.bitMap;
+                            _repeatState.reverseWeekDay(entry.key);
                           });
                         },
                         onComplete: () {
@@ -282,14 +191,11 @@ class _DetailRepeatScreenState extends State<DetailRepeatScreen> {
               ),
               FlippingTile(
                 title: "每月",
-                selected: _isMonthSelected,
+                selected: _repeatState.isMonthSelected,
                 onTap: () {
                   setState(() {
-                    _isNoneRepeat = false;
-                    _isWeekSelected = false;
-                    _isMonthSelected = true;
-                    _isYearSelected = false;
-                    _isDailySelected = false;
+                    _repeatState.resetSelect();
+                    _repeatState.reverseMonthSelected();
                   });
                 },
               ),
@@ -298,14 +204,11 @@ class _DetailRepeatScreenState extends State<DetailRepeatScreen> {
               ),
               FlippingTile(
                 title: "每年",
-                selected: _isYearSelected,
+                selected: _repeatState.isYearSelected,
                 onTap: () {
                   setState(() {
-                    _isNoneRepeat = false;
-                    _isWeekSelected = false;
-                    _isMonthSelected = false;
-                    _isYearSelected = true;
-                    _isDailySelected = false;
+                    _repeatState.resetSelect();
+                    _repeatState.reverseYearSelected();
                   });
                 },
               ),
@@ -333,26 +236,28 @@ class _DetailRepeatScreenState extends State<DetailRepeatScreen> {
                     ],
                   ),
                   Text(
-                    _makeEndLabel(),
+                    _repeatState.makeRepeatModeLabel(),
                     style: TextStyle(color: Color(0xFFEDE7FF), fontSize: 15.0),
                   ),
                 ],
               ),
               const SizedBox(height: 30.0),
               FlippingTile(
-                selected: _isNeverEnd,
+                selected: _repeatState.isNeverEnd,
                 title: '永不结束',
                 onTap: () {
                   setState(() {
-                    _isNeverEnd = true;
-                    _isCountEnd = false;
+                    _repeatState.resetMode();
+                    _repeatState.reverseNeverEnd();
                   });
                 },
               ),
               const SizedBox(height: 10.0),
               FlippingTile.extended(
-                selected: _isCountEnd,
-                title: _isCountEnd ? '重复 $_count 次后' : '一定次数',
+                selected: _repeatState.isCountEnd,
+                title: _repeatState.isCountEnd
+                    ? '重复 ${_repeatState.repeatCount} 次后'
+                    : '一定次数',
                 extend: Container(
                   height: 50.0,
                   color: const Color(0xFFE6A800),
@@ -366,18 +271,16 @@ class _DetailRepeatScreenState extends State<DetailRepeatScreen> {
                           color: Colors.white.withOpacity(1.0 - 0.3 * factor),
                         ),
                         onTap: () {
-                          if (_count > 1) {
-                            setState(() {
-                              _count--;
-                            });
-                          }
+                          setState(() {
+                            _repeatState.decreaseCount();
+                          });
                         },
                       ),
                       const SizedBox(
                         width: 20.0,
                       ),
                       Text(
-                        '$_count 次',
+                        '${_repeatState.repeatCount} 次',
                         style: TextStyle(fontSize: 15.0, color: Colors.white),
                       ),
                       const SizedBox(
@@ -390,7 +293,7 @@ class _DetailRepeatScreenState extends State<DetailRepeatScreen> {
                                 Colors.white.withOpacity(1.0 - 0.3 * factor)),
                         onTap: () {
                           setState(() {
-                            _count++;
+                            _repeatState.increaseCount();
                           });
                         },
                       ),
@@ -399,8 +302,8 @@ class _DetailRepeatScreenState extends State<DetailRepeatScreen> {
                 ),
                 onTap: () {
                   setState(() {
-                    _isNeverEnd = false;
-                    _isCountEnd = true;
+                    _repeatState.resetMode();
+                    _repeatState.reverseCountEnd();
                   });
                 },
               ),

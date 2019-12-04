@@ -1,0 +1,1 @@
+ALTER TABLE `task_data` ADD COLUMN `time_type_code` INTEGER DEFAULT 1;

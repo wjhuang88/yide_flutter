@@ -6,4 +6,4 @@ UPDATE `task_data` SET
     `is_finished` = ?,
     `remark` = ?,
     `alarm_time` = ?
-WHERE `id` = ?
+WHERE `id` = ?;

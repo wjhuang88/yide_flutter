@@ -2,14 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:yide/components/flipping_tile.dart';
 import 'package:yide/interfaces/navigatable.dart';
+import 'package:yide/models/task_data.dart';
 
 class DetailReminderScreen extends StatefulWidget implements Navigatable {
+  DetailReminderScreen({this.stateCode = 0});
+
+  final int stateCode;
+
   @override
-  _DetailReminderScreenState createState() => _DetailReminderScreenState();
+  _DetailReminderScreenState createState() =>
+      _DetailReminderScreenState(stateCode);
 
   @override
   Route get route {
-    return PageRouteBuilder(
+    return PageRouteBuilder<int>(
       pageBuilder: (context, anim1, anim2) => this,
       transitionDuration: Duration(milliseconds: 500),
       transitionsBuilder: (context, anim1, anim2, child) {
@@ -32,34 +38,16 @@ class DetailReminderScreen extends StatefulWidget implements Navigatable {
 }
 
 class _DetailReminderScreenState extends State<DetailReminderScreen> {
-  int bitMap = 0;
+  _DetailReminderScreenState(int _bitMap) : _reminderState = ReminderBitMap(bitMap: _bitMap);
+  ReminderBitMap _reminderState;
 
-  bool get _isRightTime => bitMap & 1 != 0;
-  void _reverseRightTime() => bitMap ^= 1;
-
-  bool get _is5Minites => bitMap & (1 << 1) != 0;
-  void _reverse5Minites() => bitMap ^= 1 << 1;
-
-  bool get _is10Minites => bitMap & (1 << 2) != 0;
-  void _reverse10Minites() => bitMap ^= 1 << 2;
-
-  bool get _is15Minites => bitMap & (1 << 3) != 0;
-  void _reverse15Minites() => bitMap ^= 1 << 3;
-
-  bool get _is30Minites => bitMap & (1 << 4) != 0;
-  void _reverse30Minites() => bitMap ^= 1 << 4;
-
-  bool get _isHour => bitMap & (1 << 5) != 0;
-  void _reverseHour() => bitMap ^= 1 << 5;
-
-  bool get _is2Hour => bitMap & (1 << 6) != 0;
-  void _reverse2Hour() => bitMap ^= 1 << 6;
-
-  bool get _isDay => bitMap & (1 << 7) != 0;
-  void _reverseDay() => bitMap ^= 1 << 7;
-
-  bool get _isWeek => bitMap & (1 << 8) != 0;
-  void _reverseWeek() => bitMap ^= 1 << 8;
+  @override
+  void didUpdateWidget(DetailReminderScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.stateCode != oldWidget.stateCode) {
+      _reminderState.bitMap = widget.stateCode;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +62,7 @@ class _DetailReminderScreenState extends State<DetailReminderScreen> {
             FontAwesomeIcons.times,
             color: Color(0xFFD7CAFF),
           ),
-          onPressed: () => Navigator.of(context).maybePop(),
+          onPressed: () => Navigator.of(context).maybePop<int>(),
         ),
         title: Text(
           '设置提醒',
@@ -86,7 +74,8 @@ class _DetailReminderScreenState extends State<DetailReminderScreen> {
               '完成',
               style: TextStyle(fontSize: 16.0, color: Color(0xFFEDE7FF)),
             ),
-            onPressed: () {},
+            onPressed: () =>
+                Navigator.of(context).maybePop<int>(_reminderState.bitMap),
           ),
         ],
       ),
@@ -116,10 +105,10 @@ class _DetailReminderScreenState extends State<DetailReminderScreen> {
             ),
             FlippingTile(
               title: '活动开始时',
-              selected: _isRightTime,
+              selected: _reminderState.isRightTime,
               onTap: () {
                 setState(() {
-                  _reverseRightTime();
+                  _reminderState.reverseRightTime();
                 });
               },
             ),
@@ -156,9 +145,9 @@ class _DetailReminderScreenState extends State<DetailReminderScreen> {
                             topLeft: Radius.circular(10.0),
                           )),
                       const VerticalDivider(
-                        width: 0.0,
-                        color: const Color(0xFFD7CAFF),
-                        thickness: 0.1,
+                        width: 0.5,
+                        color: const Color(0x00000000),
+                        thickness: 0.5,
                       ),
                       _buildMiniteTile(10,
                           borderRadius: BorderRadius.only(
@@ -168,9 +157,9 @@ class _DetailReminderScreenState extends State<DetailReminderScreen> {
                   ),
                 ),
                 const Divider(
-                  height: 0.0,
-                  color: const Color(0xFFD7CAFF),
-                  thickness: 0.1,
+                  height: 0.5,
+                  color: const Color(0x00000000),
+                  thickness: 0.5,
                 ),
                 Container(
                   height: 60.0,
@@ -181,9 +170,9 @@ class _DetailReminderScreenState extends State<DetailReminderScreen> {
                             bottomLeft: Radius.circular(10.0),
                           )),
                       const VerticalDivider(
-                        width: 0.0,
-                        color: const Color(0xFFD7CAFF),
-                        thickness: 0.1,
+                        width: 0.5,
+                        color: const Color(0x00000000),
+                        thickness: 0.5,
                       ),
                       _buildMiniteTile(30,
                           borderRadius: BorderRadius.only(
@@ -219,7 +208,7 @@ class _DetailReminderScreenState extends State<DetailReminderScreen> {
             Column(
               children: <Widget>[
                 FlippingTile.custom(
-                  selected: _isHour,
+                  selected: _reminderState.isHour,
                   builder: (context, color, textColor) {
                     return Container(
                       height: 60.0,
@@ -238,17 +227,17 @@ class _DetailReminderScreenState extends State<DetailReminderScreen> {
                   },
                   onTap: () {
                     setState(() {
-                      _reverseHour();
+                      _reminderState.reverseHour();
                     });
                   },
                 ),
                 const Divider(
-                  height: 0.0,
-                  color: const Color(0xFFD7CAFF),
+                  height: 0.5,
+                  color: const Color(0x00000000),
                   thickness: 0.1,
                 ),
                 FlippingTile.custom(
-                  selected: _is2Hour,
+                  selected: _reminderState.is2Hour,
                   builder: (context, color, textColor) {
                     return Container(
                       height: 60.0,
@@ -262,17 +251,17 @@ class _DetailReminderScreenState extends State<DetailReminderScreen> {
                   },
                   onTap: () {
                     setState(() {
-                      _reverse2Hour();
+                      _reminderState.reverse2Hour();
                     });
                   },
                 ),
                 const Divider(
-                  height: 0.0,
-                  color: const Color(0xFFD7CAFF),
+                  height: 0.5,
+                  color: const Color(0x00000000),
                   thickness: 0.1,
                 ),
                 FlippingTile.custom(
-                  selected: _isDay,
+                  selected: _reminderState.isDay,
                   builder: (context, color, textColor) {
                     return Container(
                       height: 60.0,
@@ -286,17 +275,17 @@ class _DetailReminderScreenState extends State<DetailReminderScreen> {
                   },
                   onTap: () {
                     setState(() {
-                      _reverseDay();
+                      _reminderState.reverseDay();
                     });
                   },
                 ),
                 const Divider(
-                  height: 0.0,
-                  color: const Color(0xFFD7CAFF),
+                  height: 0.5,
+                  color: const Color(0x00000000),
                   thickness: 0.1,
                 ),
                 FlippingTile.custom(
-                  selected: _isWeek,
+                  selected: _reminderState.isWeek,
                   builder: (context, color, textColor) {
                     return Container(
                       height: 60.0,
@@ -315,7 +304,7 @@ class _DetailReminderScreenState extends State<DetailReminderScreen> {
                   },
                   onTap: () {
                     setState(() {
-                      _reverseWeek();
+                      _reminderState.reverseWeek();
                     });
                   },
                 ),
@@ -332,20 +321,20 @@ class _DetailReminderScreenState extends State<DetailReminderScreen> {
     var callback;
     switch (minites) {
       case 5:
-        selected = _is5Minites;
-        callback = _reverse5Minites;
+        selected = _reminderState.is5Minites;
+        callback = _reminderState.reverse5Minites;
         break;
       case 10:
-        selected = _is10Minites;
-        callback = _reverse10Minites;
+        selected = _reminderState.is10Minites;
+        callback = _reminderState.reverse10Minites;
         break;
       case 15:
-        selected = _is15Minites;
-        callback = _reverse15Minites;
+        selected = _reminderState.is15Minites;
+        callback = _reminderState.reverse15Minites;
         break;
       case 30:
-        selected = _is30Minites;
-        callback = _reverse30Minites;
+        selected = _reminderState.is30Minites;
+        callback = _reminderState.reverse30Minites;
         break;
       default:
         throw FlutterError('Unsupported reminder minits.');

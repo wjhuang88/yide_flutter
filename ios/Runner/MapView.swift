@@ -28,6 +28,7 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, AMapLo
     let showsCompass: Bool
     let showsScale: Bool
     let centerOffset: CGPoint
+    let initCenter: CLLocationCoordinate2D?
     
     let _reGeoHandler: ReGeoHandler
     let _poiHandler: POIHandler
@@ -119,6 +120,14 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, AMapLo
                 self.centerOffset = CGPoint(x: 0, y: 0)
                 NSLog("使用默认的centerOffset：\(self.centerOffset)")
             }
+            
+            if let initCenterList = map["initCenter"] as? Array<NSNumber> {
+                self.initCenter = CLLocationCoordinate2D(latitude: CLLocationDegrees(truncating: initCenterList[0]), longitude: CLLocationDegrees(truncating: initCenterList[1]))
+                NSLog("获取参数initCenter：\(self.initCenter!)")
+            } else {
+                self.initCenter = nil
+                NSLog("使用默认的initCenter：nil")
+            }
         } else {
             self.cameraDegree = 30
             self.zoomLevel = 16
@@ -129,6 +138,7 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, AMapLo
             self.compassOffset = CGPoint(x: 0, y: 0)
             self.scaleOffset = CGPoint(x: 0, y: 0)
             self.centerOffset = CGPoint(x: 0, y: 0)
+            self.initCenter = nil
             NSLog("没有找到传入参数，全部使用默认参数")
         }
         
@@ -177,6 +187,10 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, AMapLo
         self._view.update(r)
         
         self._view.screenAnchor = centerOffset
+        
+        if let initCenter = self.initCenter {
+            self._view.centerCoordinate = initCenter
+        }
 
         _channel.setMethodCallHandler({ [self]
           (call: FlutterMethodCall, result: @escaping FlutterResult) -> Void in
