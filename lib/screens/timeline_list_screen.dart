@@ -10,6 +10,7 @@ import 'package:yide/components/location_methods.dart';
 import 'package:yide/components/timeline_list.dart';
 import 'package:yide/interfaces/navigatable.dart';
 import 'package:yide/models/date_tools.dart';
+import 'package:yide/models/sqlite_manager.dart';
 import 'package:yide/models/task_data.dart';
 import 'package:yide/notification.dart';
 import 'package:yide/screens/detail_screen/detail_list_screen.dart';
@@ -104,7 +105,7 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
       ),
     );
 
-    _taskList = getTaskList(null);
+    _taskList = TaskDBAction.getTaskListByDate(_dateTime);
     _updateLocAndTemp();
 
     _controller._state = this;
@@ -135,8 +136,15 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
             Icons.add,
             size: 40.0,
           ),
-          onPressed: () {
-            Navigator.push(context, EditMainScreen().route);
+          onPressed: () async {
+            final newTask =
+                await Navigator.push<TaskPack>(context, EditMainScreen().route);
+            if (newTask != null) {
+              await TaskDBAction.saveTask(newTask.data);
+              setState(() {
+                _taskList = TaskDBAction.getTaskListByDate(_dateTime);
+              });
+            }
           },
         ),
       ),
@@ -230,7 +238,7 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
                                 height: 10.0,
                               ),
                               Text(
-                                item.tag.name,
+                                item.tag.name ?? '默认',
                                 style: TextStyle(
                                     color: item.tag.iconColor, fontSize: 12.0),
                               ),
@@ -263,9 +271,15 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
                             }
                             return TimelineTile(
                               rows: rows,
-                              onTap: () {
-                                Navigator.of(context)
-                                    .push(DetailListScreen(taskPack: item,).route);
+                              onTap: () async {
+                                await Navigator.of(context)
+                                    .push<TaskPack>(DetailListScreen(
+                                  taskPack: item,
+                                ).route);
+                                setState(() {
+                                  _taskList =
+                                      TaskDBAction.getTaskListByDate(_dateTime);
+                                });
                               },
                             );
                           },

@@ -1,0 +1,1 @@
+SELECT * FROM `task_tag` ORDER BY ID ASC LIMIT 1;

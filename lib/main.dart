@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:yide/models/sqlite_manager.dart';
 
 import 'notification.dart';
 import 'screens/feedback_screen.dart';
@@ -133,6 +134,7 @@ class _ScreenContainerState extends State<_ScreenContainer>
   @override
   void dispose() {
     _animationController.dispose();
+    SqliteManager.instance.dispose();
     super.dispose();
   }
 
@@ -374,8 +376,7 @@ class _MainMenu extends StatelessWidget {
                   ),
                   onTap: () {
                     _screenController.closeMenu();
-                    _navigatorObserver.navigator
-                        ?.push(FeedbackScreen().route);
+                    _navigatorObserver.navigator?.push(FeedbackScreen().route);
                   },
                 ),
                 const Divider(

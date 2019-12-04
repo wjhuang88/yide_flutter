@@ -55,15 +55,8 @@ flutter:
   assets:
    - assets/images/horizontal-line.png
    - assets/images/cloud.png
-   - assets/sql/table_create.sql
-   - assets/sql/query_task_by_id.sql
-   - assets/sql/query_task_by_date.sql
-   - assets/sql/query_task_by_tag.sql
-   - assets/sql/update_task_by_id.sql
-   - assets/sql/insert_task.sql
-   - assets/sql/v3_to_v4.sql
-   - assets/sql/v4_to_v5.sql
-   - assets/sql/v5_to_v6.sql
+
+   - assets/sql/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.

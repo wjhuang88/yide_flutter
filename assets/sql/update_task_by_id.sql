@@ -5,5 +5,6 @@ UPDATE `task_data` SET
     `content` = ?,
     `is_finished` = ?,
     `remark` = ?,
-    `alarm_time` = ?
+    `alarm_time` = ?,
+    `time_type_code` = ?
 WHERE `id` = ?;

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:yide/components/tap_animator.dart';
 import 'package:yide/interfaces/navigatable.dart';
 import 'package:yide/models/address_data.dart';
+import 'package:yide/models/sqlite_manager.dart';
 import 'package:yide/models/task_data.dart';
 import 'package:yide/screens/edit_main_screen.dart';
 
@@ -24,7 +25,7 @@ class DetailListScreen extends StatefulWidget implements Navigatable {
 
   @override
   Route get route {
-    return PageRouteBuilder(
+    return PageRouteBuilder<TaskPack>(
       pageBuilder: (context, anim1, anim2) => this,
       transitionDuration: Duration(milliseconds: 400),
       transitionsBuilder: (context, anim1, anim2, child) {
@@ -51,18 +52,15 @@ class _DetailListScreenState extends State<DetailListScreen> {
   TaskData _data;
   TaskTag _tag;
 
-  TaskDetail _detail;
+  Future<TaskDetail> _detail;
+  static TaskDetail _savedDetail = TaskDetail.nullDetail;
 
   @override
   void initState() {
     super.initState();
     _data = widget.taskPack.data;
     _tag = widget.taskPack.tag;
-    getTaskDetail(_data.id).then((value) {
-      setState(() {
-        _detail = value;
-      });
-    });
+    _detail = TaskDBAction.getTaskDetailById(_data.id);
   }
 
   @override
@@ -71,11 +69,7 @@ class _DetailListScreenState extends State<DetailListScreen> {
     if (widget.taskPack.data.id != oldWidget.taskPack.data.id) {
       _data = widget.taskPack.data;
       _tag = widget.taskPack.tag;
-      getTaskDetail(_data.id).then((value) {
-        setState(() {
-          _detail = value;
-        });
-      });
+      _detail = TaskDBAction.getTaskDetailById(_data.id);
     }
   }
 
@@ -102,10 +96,14 @@ class _DetailListScreenState extends State<DetailListScreen> {
         actions: <Widget>[
           FlatButton(
             child: Text(
-              '完成',
+              '保存',
               style: TextStyle(fontSize: 16.0, color: Color(0xFFEDE7FF)),
             ),
-            onPressed: () {},
+            onPressed: () async {
+              await TaskDBAction.saveTask(_data);
+              await TaskDBAction.saveTaskDetail(_savedDetail);
+              Navigator.of(context).maybePop();
+            },
           ),
         ],
       ),
@@ -126,143 +124,152 @@ class _DetailListScreenState extends State<DetailListScreen> {
                 setState(() {
                   _data = pack.data;
                   _tag = pack.tag;
+                  _data.tagId = _tag.id;
                 });
               }
             },
           ),
           Expanded(
-            child: ListView(
-              children: <Widget>[
-                const SizedBox(
-                  height: 40.0,
-                ),
-                _ListItem(
-                  iconData: FontAwesomeIcons.clock,
-                  child: _detail?.reminderBitMap != null &&
-                          _detail.reminderBitMap.bitMap != 0
-                      ? Text(
-                          _detail.reminderBitMap.makeLabel(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: contentStyle,
-                        )
-                      : Text(
-                          '点击设置提醒',
-                          style: nocontentStyle,
-                        ),
-                  onTap: () async {
-                    final code = await Navigator.of(context)
-                        .push<int>(DetailReminderScreen(
-                      stateCode: _detail.reminderBitMap?.bitMap ?? 0,
-                    ).route);
-                    if (code != null) {
-                      setState(() {
-                        _detail.reminderBitMap?.bitMap = code;
-                      });
-                    }
-                  },
-                ),
-                const SizedBox(
-                  height: 10.0,
-                ),
-                _ListItem(
-                  iconData: FontAwesomeIcons.redo,
-                  child: _detail?.repeatBitMap != null &&
-                          !(_detail.repeatBitMap.isNoneRepeat)
-                      ? Text(
-                          _detail.repeatBitMap.makeRepeatModeLabel() +
-                              ' : ' +
-                              _detail.repeatBitMap.makeRepeatTimeLabel(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: contentStyle,
-                        )
-                      : Text(
-                          '点击设置重复',
-                          style: nocontentStyle,
-                        ),
-                  onTap: () async {
-                    final code = await Navigator.of(context)
-                        .push<int>(DetailRepeatScreen(
-                      stateCode: _detail.repeatBitMap?.bitMap ?? 0,
-                    ).route);
-                    if (code != null) {
-                      setState(() {
-                        _detail.repeatBitMap?.bitMap = code;
-                      });
-                    }
-                  },
-                ),
-                const SizedBox(
-                  height: 10.0,
-                ),
-                _ListItem(
-                  iconData: FontAwesomeIcons.mapMarkerAlt,
-                  child: _detail?.address != null
-                      ? Text(
-                          _detail.address.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: contentStyle,
-                        )
-                      : Text(
-                          '点击添加地址',
-                          style: nocontentStyle,
-                        ),
-                  onTap: () async {
-                    final address = await Navigator.of(context)
-                        .push<AroundData>(DetailMapScreen(
-                      address: _detail.address,
-                    ).route);
-                    if (address != null) {
-                      setState(() {
-                        _detail.address = address;
-                      });
-                    }
-                  },
-                ),
-                const SizedBox(
-                  height: 10.0,
-                ),
-                _ListItem(
-                  iconData: FontAwesomeIcons.folder,
-                  child: _data.catalog != null && _data.catalog.isNotEmpty
-                      ? Text(
-                          _data.catalog,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: contentStyle,
-                        )
-                      : Text(
-                          '没有所属项目',
-                          style: nocontentStyle,
-                        ),
-                  onTap: () {},
-                ),
-                const SizedBox(
-                  height: 10.0,
-                ),
-                _ListItem(
-                  iconData: FontAwesomeIcons.stickyNote,
-                  child: _data.remark != null && _data.remark.isNotEmpty
-                      ? Text(
-                          _data.remark,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: contentStyle,
-                        )
-                      : Text('点击添加备注', style: nocontentStyle),
-                  onTap: () async {
-                    final value = await Navigator.of(context).push<String>(
-                        DetailCommentsScreen(value: _data.remark).route);
-                    if (value != null) {
-                      setState(() {
-                        _data.remark = value;
-                      });
-                    }
-                  },
-                ),
-              ],
+            child: FutureBuilder<TaskDetail>(
+              future: _detail,
+              initialData: _savedDetail,
+              builder: (context, snap) {
+                final detail =
+                    _savedDetail = snap.data ?? TaskDetail.nullDetail;
+                return ListView(
+                  children: <Widget>[
+                    const SizedBox(
+                      height: 40.0,
+                    ),
+                    _ListItem(
+                      iconData: FontAwesomeIcons.clock,
+                      child: detail.reminderBitMap != null &&
+                              detail.reminderBitMap.bitMap != 0
+                          ? Text(
+                              detail.reminderBitMap.makeLabel(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: contentStyle,
+                            )
+                          : Text(
+                              '点击设置提醒',
+                              style: nocontentStyle,
+                            ),
+                      onTap: () async {
+                        final code = await Navigator.of(context)
+                            .push<int>(DetailReminderScreen(
+                          stateCode: detail.reminderBitMap.bitMap ?? 0,
+                        ).route);
+                        if (code != null) {
+                          setState(() {
+                            detail.reminderBitMap.bitMap = code;
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(
+                      height: 10.0,
+                    ),
+                    _ListItem(
+                      iconData: FontAwesomeIcons.redo,
+                      child: detail.repeatBitMap != null &&
+                              !(detail.repeatBitMap.isNoneRepeat)
+                          ? Text(
+                              detail.repeatBitMap.makeRepeatModeLabel() +
+                                  ' : ' +
+                                  detail.repeatBitMap.makeRepeatTimeLabel(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: contentStyle,
+                            )
+                          : Text(
+                              '点击设置重复',
+                              style: nocontentStyle,
+                            ),
+                      onTap: () async {
+                        final code = await Navigator.of(context)
+                            .push<int>(DetailRepeatScreen(
+                          stateCode: detail.repeatBitMap.bitMap ?? 0,
+                        ).route);
+                        if (code != null) {
+                          setState(() {
+                            detail.repeatBitMap.bitMap = code;
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(
+                      height: 10.0,
+                    ),
+                    _ListItem(
+                      iconData: FontAwesomeIcons.mapMarkerAlt,
+                      child: detail.address != null
+                          ? Text(
+                              detail.address.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: contentStyle,
+                            )
+                          : Text(
+                              '点击添加地址',
+                              style: nocontentStyle,
+                            ),
+                      onTap: () async {
+                        final address = await Navigator.of(context)
+                            .push<AroundData>(DetailMapScreen(
+                          address: detail.address,
+                        ).route);
+                        if (address != null) {
+                          setState(() {
+                            detail.address = address;
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(
+                      height: 10.0,
+                    ),
+                    _ListItem(
+                      iconData: FontAwesomeIcons.folder,
+                      child: _data.catalog != null && _data.catalog.isNotEmpty
+                          ? Text(
+                              _data.catalog,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: contentStyle,
+                            )
+                          : Text(
+                              '没有所属项目',
+                              style: nocontentStyle,
+                            ),
+                      onTap: () {},
+                    ),
+                    const SizedBox(
+                      height: 10.0,
+                    ),
+                    _ListItem(
+                      iconData: FontAwesomeIcons.stickyNote,
+                      child: _data.remark != null && _data.remark.isNotEmpty
+                          ? Text(
+                              _data.remark,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: contentStyle,
+                            )
+                          : Text('点击添加备注', style: nocontentStyle),
+                      onTap: () async {
+                        final value = await Navigator.of(context).push<String>(
+                            DetailCommentsScreen(value: _data.remark).route);
+                        if (value != null) {
+                          setState(() {
+                            _data.remark = value;
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                );
+              },
             ),
           ),
           SafeArea(
@@ -360,7 +367,7 @@ class _HeaderPanel extends StatelessWidget {
                     width: 5.0,
                   ),
                   Text(
-                    tagName,
+                    tagName ?? '默认',
                     style: TextStyle(color: tagColor, fontSize: 12.0),
                   )
                 ],

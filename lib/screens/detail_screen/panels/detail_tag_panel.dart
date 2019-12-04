@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:yide/models/sqlite_manager.dart';
 import 'package:yide/models/task_data.dart';
 
 class DetailTagPanel extends StatefulWidget {
@@ -19,27 +20,14 @@ class DetailTagPanel extends StatefulWidget {
 class _DetailTagPanelState extends State<DetailTagPanel> {
   int _selectedIndex;
 
-  List<TaskTag> _tagList = [
-    const TaskTag(id: '0', name: '休息', iconColor: Color(0xFFCFA36F)),
-    const TaskTag(id: '1', name: '生活', iconColor: Color(0xFFAF71F5)),
-    const TaskTag(id: '2', name: '工作', iconColor: Color(0xFF62DADB)),
-    const TaskTag(id: '3', name: '健康', iconColor: Color(0xFFF0DC26)),
-  ];
+  Future<List<TaskTag>> _tagListFuture = TaskDBAction.getAllTaskTag();
+  static List<TaskTag> _initList = [const TaskTag.defaultNull()];
 
   FixedExtentScrollController _wheelController;
 
   @override
   void initState() {
     super.initState();
-    if (widget.selectedTag != null) {
-      final selectedId = widget.selectedTag.id;
-      final foundTag = _tagList.firstWhere((item) => item.id == selectedId,
-          orElse: () => _tagList.first);
-      _selectedIndex = _tagList.indexOf(foundTag);
-    } else {
-      _selectedIndex = 0;
-    }
-    _wheelController = FixedExtentScrollController(initialItem: _selectedIndex);
   }
 
   @override
@@ -50,40 +38,58 @@ class _DetailTagPanelState extends State<DetailTagPanel> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 250.0,
-      child: CupertinoTheme(
-        data: const CupertinoThemeData(
-          textTheme: CupertinoTextThemeData(
-            pickerTextStyle: TextStyle(fontSize: 20.0, color: Colors.white),
+    return FutureBuilder<List<TaskTag>>(
+      future: _tagListFuture,
+      initialData: _initList,
+      builder: (context, snap) {
+        final _tagList = _initList = snap.data;
+        if (widget.selectedTag != null) {
+          final selectedId = widget.selectedTag.id;
+          final foundTag = _tagList.firstWhere((item) => item.id == selectedId,
+              orElse: () => _tagList.first);
+          _selectedIndex = _tagList.indexOf(foundTag);
+        } else {
+          _selectedIndex = 0;
+        }
+        _wheelController =
+            FixedExtentScrollController(initialItem: _selectedIndex);
+
+        return Container(
+          height: 250.0,
+          child: CupertinoTheme(
+            data: const CupertinoThemeData(
+              textTheme: CupertinoTextThemeData(
+                pickerTextStyle: TextStyle(fontSize: 20.0, color: Colors.white),
+              ),
+            ),
+            child: CupertinoPicker.builder(
+              backgroundColor: const Color(0xFF472478),
+              itemExtent: 40.0,
+              useMagnifier: true,
+              magnification: 1.2,
+              scrollController: _wheelController,
+              itemBuilder: (context, index) => _WheelRow(
+                label: _tagList[index].name,
+                color: _tagList[index].iconColor,
+                selected: _selectedIndex == index,
+              ),
+              childCount: _tagList.length,
+              onSelectedItemChanged: (index) {
+                if (_selectedIndex == index) {
+                  return;
+                }
+                final callback = widget.onChange;
+                if (callback != null) {
+                  callback(_tagList[index]);
+                }
+                setState(() {
+                  _selectedIndex = index;
+                });
+              },
+            ),
           ),
-        ),
-        child: CupertinoPicker.builder(
-          backgroundColor: const Color(0xFF472478),
-          itemExtent: 40.0,
-          useMagnifier: true,
-          magnification: 1.2,
-          scrollController: _wheelController,
-          itemBuilder: (context, index) => _WheelRow(
-            label: _tagList[index].name,
-            color: _tagList[index].iconColor,
-            selected: _selectedIndex == index,
-          ),
-          childCount: _tagList.length,
-          onSelectedItemChanged: (index) {
-            if (_selectedIndex == index) {
-              return;
-            }
-            final callback = widget.onChange;
-            if (callback != null) {
-              callback(_tagList[index]);
-            }
-            setState(() {
-              _selectedIndex = index;
-            });
-          },
-        ),
-      ),
+        );
+      },
     );
   }
 }

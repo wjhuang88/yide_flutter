@@ -10,6 +10,7 @@ import 'package:yide/components/panel_switcher.dart';
 import 'package:yide/components/tap_animator.dart';
 import 'package:yide/interfaces/navigatable.dart';
 import 'package:yide/models/date_tools.dart';
+import 'package:yide/models/sqlite_manager.dart';
 import 'package:yide/models/task_data.dart';
 import 'package:yide/screens/detail_screen/panels/detail_datetime_panel.dart';
 import 'package:yide/screens/detail_screen/panels/detail_tag_panel.dart';
@@ -95,7 +96,17 @@ class _EditMainScreenState extends State<EditMainScreen>
     super.initState();
 
     _taskData = widget.taskPack?.data ?? TaskData.defultNull();
-    _tagData = widget.taskPack?.tag ?? tagMap.entries.first.value;
+    _tagData = widget.taskPack?.tag;
+    if (_tagData == null) {
+      TaskDBAction.getFirstTag().then((tag) {
+        setState(() {
+          _tagData = tag;
+          _taskData.tagId = tag.id;
+        });
+      });
+    } else {
+      _taskData.tagId = _tagData.id;
+    }
 
     transitionFactor = 1.0;
     _controller ??= EditScreenController();
@@ -544,14 +555,14 @@ class _EditMainScreenState extends State<EditMainScreen>
               children: <Widget>[
                 Icon(
                   FontAwesomeIcons.solidCircle,
-                  color: _tagData.iconColor,
+                  color: _tagData?.iconColor ?? Colors.white,
                   size: 10.0,
                 ),
                 SizedBox(
                   width: 11.0,
                 ),
                 Text(
-                  _tagData.name,
+                  _tagData?.name ?? '默认',
                   style: TextStyle(
                       color: Color.lerp(
                           Colors.white, const Color(0xFFBBADE7), factor),
