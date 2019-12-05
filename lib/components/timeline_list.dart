@@ -3,7 +3,6 @@ import 'dart:math' as Math;
 import 'package:flutter/widgets.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:yide/screens/detail_screen/detail_list_screen.dart';
 
 import 'tap_animator.dart';
 
@@ -11,7 +10,7 @@ class TimelineListView extends StatelessWidget {
   const TimelineListView._()
       : showTime = true,
         tileBuilder = null,
-        onGenerateTime = null,
+        onGenerateLabel = null,
         onGenerateDotColor = null,
         itemCount = 0,
         placeholder = null;
@@ -20,16 +19,16 @@ class TimelineListView extends StatelessWidget {
       {Key key,
       this.showTime = true,
       @required this.tileBuilder,
-      this.onGenerateTime,
+      this.onGenerateLabel,
       this.onGenerateDotColor,
       @required this.itemCount,
       this.placeholder = const SizedBox()})
-      : assert(!showTime || onGenerateTime != null),
+      : assert(!showTime || onGenerateLabel != null),
         super(key: key);
 
   final bool showTime;
   final IndexedWidgetBuilder tileBuilder;
-  final DateTime Function(int index) onGenerateTime;
+  final String Function(int index) onGenerateLabel;
   final Color Function(int index) onGenerateDotColor;
   final int itemCount;
   final Widget placeholder;
@@ -47,15 +46,11 @@ class TimelineListView extends StatelessWidget {
                 children: <Widget>[
                   showTime
                       ? Container(
+                          width: 80.0,
                           alignment: Alignment.topLeft,
                           padding: const EdgeInsets.only(right: 23.5),
                           child: Text(
-                            ((DateTime date) {
-                              return date == null ||
-                                      date.millisecondsSinceEpoch == 0
-                                  ? '-'
-                                  : DateFormat('h:mm a').format(date);
-                            })(onGenerateTime(index)),
+                            onGenerateLabel(index),
                             style: const TextStyle(
                                 color: Color(0xFFC9A2F5),
                                 fontSize: 12.0,

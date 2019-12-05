@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:yide/models/address_data.dart';
+import 'package:yide/models/geo_data.dart';
 
 class LocationMapController {
   _LocationMapViewState _state;

@@ -9,7 +9,7 @@ import UIKit
 import Flutter
 import AMapFoundationKit
 
-public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, AMapLocationManagerDelegate, MAMapViewDelegate {
+public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, MAMapViewDelegate {
     
     let frame: CGRect
     let viewId: Int64
@@ -144,7 +144,6 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, AMapLo
         
         super.init()
         
-        self._locationManager.delegate = self
         self._searchManager.delegate = self
         self._view.delegate = self
         

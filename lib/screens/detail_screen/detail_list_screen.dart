@@ -5,7 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:yide/components/tap_animator.dart';
 import 'package:yide/interfaces/navigatable.dart';
-import 'package:yide/models/address_data.dart';
+import 'package:yide/models/geo_data.dart';
 import 'package:yide/models/sqlite_manager.dart';
 import 'package:yide/models/task_data.dart';
 import 'package:yide/screens/edit_main_screen.dart';
@@ -176,7 +176,7 @@ class _DetailListScreenState extends State<DetailListScreen> {
                               !(detail.repeatBitMap.isNoneRepeat)
                           ? Text(
                               detail.repeatBitMap.makeRepeatModeLabel() +
-                                  ' : ' +
+                                  ' - ' +
                                   detail.repeatBitMap.makeRepeatTimeLabel(),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,

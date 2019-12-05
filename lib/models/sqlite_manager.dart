@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:yide/models/address_data.dart';
+import 'package:yide/models/geo_data.dart';
 
 import 'task_data.dart';
 

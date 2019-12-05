@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:yide/models/address_data.dart';
+import 'package:yide/models/geo_data.dart';
 
 import 'date_tools.dart';
 

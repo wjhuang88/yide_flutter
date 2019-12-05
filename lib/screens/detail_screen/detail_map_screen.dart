@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:yide/components/location_map_view.dart';
 import 'package:yide/interfaces/navigatable.dart';
-import 'package:yide/models/address_data.dart';
+import 'package:yide/models/geo_data.dart';
 
 class DetailMapScreen extends StatefulWidget implements Navigatable {
   final AroundData address;

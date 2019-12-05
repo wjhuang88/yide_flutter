@@ -56,39 +56,19 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
 
   Future<List<TaskPack>> _taskList;
 
-  String _cityName = '-';
-  String _temp;
+  String _cityName = ' - ';
+  String _temp = ' - ';
 
   DateTime _dateTime = DateTime.now();
 
   void _updateLocAndTemp() async {
     final location = await LocationMethods.getLocation();
-    var city = location.city ?? '-';
-    if (city.endsWith('市')) {
-      city = city.substring(0, city.length - 1);
-    }
+    final weather = await LocationMethods.getWeather(location.adcode);
+    print(weather);
     setState(() {
-      _cityName = city;
+      _cityName = weather.city ?? ' - ';
+      _temp = weather.temperature ?? ' - ';
     });
-    final http = HttpClient();
-    final query = {
-      'city': city,
-      'appid': '29473577',
-      'appsecret': '6BKj42FB',
-      'version': 'v6'
-    };
-    final uri = Uri.https('www.tianqiapi.com', '/api', query);
-    final request = await http.getUrl(uri);
-    final response = await request.close();
-    if (response.statusCode == 200) {
-      final responseBody = await response.transform(utf8.decoder).join();
-      final map = jsonDecode(responseBody) as Map;
-      setState(() {
-        _temp = map['tem'];
-      });
-    } else {
-      print('请求失败');
-    }
   }
 
   @override
@@ -121,6 +101,22 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
     setState(() {
       this.transitionFactor = value;
     });
+  }
+
+  String _makeTimeLabel(TaskData data) {
+    switch (data?.timeType) {
+      case DateTimeType.fullday:
+        return '全天';
+      case DateTimeType.someday:
+        return '某天';
+      case DateTimeType.datetime:
+        final date = data?.taskTime;
+        return date == null || date.millisecondsSinceEpoch == 0
+            ? ' - '
+            : DateFormat('h:mm a').format(date);
+      default:
+        return ' - ';
+    }
   }
 
   @override
@@ -283,8 +279,8 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
                               },
                             );
                           },
-                          onGenerateTime: (index) =>
-                              dataList[index]?.data?.taskTime,
+                          onGenerateLabel: (index) =>
+                              _makeTimeLabel(dataList[index]?.data),
                           onGenerateDotColor: (index) =>
                               dataList[index]?.tag?.iconColor,
                         );
@@ -360,7 +356,7 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
                       const TextStyle(fontSize: 14.0, color: Color(0xFFDEC0FF)),
                 ),
                 Text(
-                  '温度：${_temp ?? "-"}℃',
+                  '气温：$_temp℃',
                   style:
                       const TextStyle(fontSize: 12.0, color: Color(0xFFDEC0FF)),
                 ),
