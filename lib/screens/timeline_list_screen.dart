@@ -1,7 +1,6 @@
-import 'dart:convert';
-import 'dart:io';
 import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -10,6 +9,7 @@ import 'package:yide/components/location_methods.dart';
 import 'package:yide/components/timeline_list.dart';
 import 'package:yide/interfaces/navigatable.dart';
 import 'package:yide/models/date_tools.dart';
+import 'package:yide/models/geo_data.dart';
 import 'package:yide/models/sqlite_manager.dart';
 import 'package:yide/models/task_data.dart';
 import 'package:yide/notification.dart';
@@ -58,16 +58,17 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
 
   String _cityName = ' - ';
   String _temp = ' - ';
+  String _weather = ' - ';
 
   DateTime _dateTime = DateTime.now();
 
   void _updateLocAndTemp() async {
     final location = await LocationMethods.getLocation();
     final weather = await LocationMethods.getWeather(location.adcode);
-    print(weather);
     setState(() {
       _cityName = weather.city ?? ' - ';
       _temp = weather.temperature ?? ' - ';
+      _weather = weather.weather ?? ' - ';
     });
   }
 
@@ -78,12 +79,7 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
     _controller ??= TimelineScreenController();
 
     _savedList = _placeholder = Container();
-    _loadingPlaceholder = Center(
-      child: SpinKitCircle(
-        color: Colors.blue,
-        size: 70.0,
-      ),
-    );
+    _loadingPlaceholder = CupertinoActivityIndicator(radius: 16.0,);
 
     _taskList = TaskDBAction.getTaskListByDate(_dateTime);
     _updateLocAndTemp();
@@ -190,10 +186,10 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
                     Positioned(
                       right: 0.0,
                       top: 0.0,
-                      child: Container(
-                        height: 32.0,
-                        child: Image.asset('assets/images/cloud.png'),
-                      ),
+                      child: weatherImageMap[_weather] != null
+                          ? Container(height: 32.0, width: 32, child: Image.asset(weatherImageMap[_weather]))
+                          //? Container(height: 32.0, width: 32, child: Image.asset('assets/images/weather/test1.png'))
+                          : CupertinoActivityIndicator(radius: 16.0,),
                     ),
                   ],
                 ),
@@ -228,7 +224,7 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
-                                    color: Color(0xFFD7CAFF), fontSize: 15.0),
+                                    color: Color(0xFFD7CAFF), fontSize: 15.0,),
                               ),
                               const SizedBox(
                                 height: 10.0,

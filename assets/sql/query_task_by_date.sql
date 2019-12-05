@@ -14,5 +14,5 @@ SELECT
 FROM `task_data`
 LEFT OUTER JOIN `task_tag`
 ON `task_data`.`tag_id` = `task_tag`.`id`
-WHERE `task_data`.`task_time` >= ? AND `task_data`.`task_time` < ?
+WHERE `task_data`.`task_time` >= ? AND `task_data`.`task_time` < ? AND `task_data`.`time_type_code` != 2
 ORDER BY `task_data`.`task_time`;
