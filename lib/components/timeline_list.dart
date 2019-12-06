@@ -46,14 +46,13 @@ class TimelineListView extends StatelessWidget {
                   showTime
                       ? Container(
                           width: 80.0,
-                          alignment: Alignment.topLeft,
+                          alignment: Alignment.topRight,
                           padding: const EdgeInsets.only(right: 23.5),
                           child: Text(
                             onGenerateLabel(index),
                             style: const TextStyle(
                                 color: Color(0xFFC9A2F5),
-                                fontSize: 12.0,
-                                fontFamily: ''),
+                                fontSize: 12.0,),
                           ),
                         )
                       : SizedBox(),

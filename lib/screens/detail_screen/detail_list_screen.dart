@@ -1,4 +1,5 @@
 import 'dart:math' as Math;
+import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -59,7 +60,10 @@ class _DetailListScreenState extends State<DetailListScreen>
   TaskDetail _savedDetail;
 
   double _dragOffset;
+  double _dragOffsetStart = 1.0;
   bool _isDragging;
+  double _dragDelta = 0.0;
+  double _screenWidth = 1.0;
 
   bool _isLoadingValue = false;
   bool get _isLoading => _isLoadingValue;
@@ -81,14 +85,14 @@ class _DetailListScreenState extends State<DetailListScreen>
     _dragOffset = 0.0;
     _isDragging = false;
     _dragController = AnimationController(
-        vsync: this, value: 0.0, duration: Duration(milliseconds: 600));
+        vsync: this, value: 0.0, duration: Duration(milliseconds: 500));
     _dragAnim = CurvedAnimation(
       parent: _dragController,
-      curve: const ElasticOutCurve(1.0),
+      curve: const ElasticOutCurve(0.9),
     );
     _dragAnim.addListener(() {
       setState(() {
-        _dragOffset = 1 - _dragAnim.value;
+        _dragOffset = _dragOffsetStart * (1 - _dragAnim.value); // lerp from _dragOffsetStart to 0.0
       });
     });
 
@@ -151,8 +155,10 @@ class _DetailListScreenState extends State<DetailListScreen>
             child: GestureDetector(
               onHorizontalDragStart: (detail) {
                 final x = detail.globalPosition.dx;
-                if (x < 50.0 && x > 0) {
+                if (x < 100.0 && x > 0) {
                   _isDragging = true;
+                  _dragDelta = x;
+                  _screenWidth = MediaQuery.of(context).size.width;
                 }
               },
               onHorizontalDragEnd: (detail) {
@@ -160,10 +166,10 @@ class _DetailListScreenState extends State<DetailListScreen>
                   return;
                 }
                 _isDragging = false;
-                if (detail.primaryVelocity > 200.0 || _dragOffset >= 0.3) {
+                if (detail.primaryVelocity > 200.0 || _dragOffset >= 0.2) {
                   Navigator.of(context).maybePop();
                 } else {
-                  _dragController.forward(from: _dragOffset);
+                  _dragController.forward(from: 0);
                 }
               },
               onHorizontalDragCancel: () {
@@ -171,23 +177,23 @@ class _DetailListScreenState extends State<DetailListScreen>
                   return;
                 }
                 _isDragging = false;
-                if (_dragOffset >= 0.3) {
+                if (_dragOffset >= 0.2) {
                   Navigator.of(context).maybePop();
                 } else {
-                  _dragController.forward(from: _dragOffset);
+                  _dragController.forward(from: 0);
                 }
               },
               onHorizontalDragUpdate: (detail) {
                 if (_isDragging) {
-                  final frac = detail.globalPosition.dx /
-                      MediaQuery.of(context).size.width;
-                  if (frac >= 0.7) {
+                  final frac = (detail.globalPosition.dx - _dragDelta) /
+                      _screenWidth;
+                  if (frac >= 0.6) {
                     _isDragging = false;
                     Navigator.of(context).maybePop();
                   } else {
                     setState(() {
-                      final factor = 0.5 * frac;
-                      _dragOffset = factor - factor * factor * factor;
+                      final factor = 0.6 * frac;
+                      _dragOffsetStart = _dragOffset = factor - factor * factor * factor;
                     });
                   }
                 }
@@ -196,16 +202,17 @@ class _DetailListScreenState extends State<DetailListScreen>
                 children: <Widget>[
                   SafeArea(
                     bottom: false,
-                    child: Container(
-                      alignment: Alignment.centerLeft,
-                      child: CupertinoButton(
-                        padding: const EdgeInsets.only(top: 15.0, bottom: 0.0),
-                        child: const Icon(
-                          FontAwesomeIcons.chevronLeft,
-                          color: Color(0xFFD7CAFF),
+                    child: Row(
+                      children: <Widget>[
+                        CupertinoButton(
+                          padding: const EdgeInsets.all(17.0),
+                          child: const Icon(
+                            FontAwesomeIcons.chevronLeft,
+                            color: Color(0xFFD7CAFF),
+                          ),
+                          onPressed: () => Navigator.of(context).maybePop(),
                         ),
-                        onPressed: () => Navigator.of(context).maybePop(),
-                      ),
+                      ],
                     ),
                   ),
                   _HeaderPanel(
@@ -229,12 +236,12 @@ class _DetailListScreenState extends State<DetailListScreen>
                       }
                     },
                   ),
+                  const SizedBox(
+                    height: 25.0,
+                  ),
                   Expanded(
                     child: ListView(
                       children: <Widget>[
-                        const SizedBox(
-                          height: 40.0,
-                        ),
                         _ListItem(
                           iconData: FontAwesomeIcons.clock,
                           child: _savedDetail.reminderBitMap != null &&
@@ -454,42 +461,26 @@ class _HeaderPanel extends StatelessWidget {
         dateTimeString = DateFormat('MM月dd日 HH:mm').format(dateTime);
         break;
     }
-    return TapAnimator(
-      behavior: HitTestBehavior.deferToChild,
-      onTap: onTap ?? () {},
-      builder: (_factor) => Transform(
-        alignment: Alignment.center,
-        transform: Matrix4.identity()
-          ..setEntry(3, 2, 0.002)
-          ..rotateY(-_factor * Math.pi / 24)
-          ..rotateX(_factor * Math.pi / 36),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 15.0),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 17.0),
+      child: TapAnimator(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap ?? () {},
+        builder: (_factor) => Transform(
+          alignment: Alignment.center,
+          transform: Matrix4.identity()
+            ..setEntry(3, 2, 0.002)
+            ..rotateY(-_factor * Math.pi / 24)
+            ..rotateX(_factor * Math.pi / 36),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               const SizedBox(
-                height: 30.0,
-              ),
-              Text(
-                content,
-                textAlign: TextAlign.center,
-                style:
-                    const TextStyle(fontSize: 22.0, color: Color(0xFFEDE7FF)),
-              ),
-              const SizedBox(
-                height: 10.0,
-              ),
-              Text(
-                dateTimeString,
-                textAlign: TextAlign.center,
-                style:
-                    const TextStyle(fontSize: 14.0, color: Color(0x88EDE7FF)),
-              ),
-              const SizedBox(
-                height: 10.0,
+                height: 20.0,
               ),
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
                   Icon(
                     FontAwesomeIcons.solidCircle,
@@ -504,6 +495,24 @@ class _HeaderPanel extends StatelessWidget {
                     style: TextStyle(color: tagColor, fontSize: 12.0),
                   )
                 ],
+              ),
+              const SizedBox(
+                height: 14.0,
+              ),
+              Text(
+                dateTimeString,
+                textAlign: TextAlign.start,
+                style:
+                    const TextStyle(fontSize: 14.0, color: Color(0xFFEDE7FF), fontWeight: FontWeight.w200),
+              ),
+              const SizedBox(
+                height: 20.0,
+              ),
+              Text(
+                content,
+                textAlign: TextAlign.start,
+                style:
+                    const TextStyle(fontSize: 20.0, color: Color(0xFFEDE7FF)),
               ),
             ],
           ),

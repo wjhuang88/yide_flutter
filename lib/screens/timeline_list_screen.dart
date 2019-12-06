@@ -61,6 +61,8 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
   String _weather = ' - ';
 
   bool _isDragging = false;
+  double _animDragDelta = 0.0;
+  double _screenWidth = 1.0;
 
   DateTime _dateTime = DateTime.now();
 
@@ -125,28 +127,34 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
     return GestureDetector(
       onHorizontalDragStart: (detail) {
         final x = detail.globalPosition.dx;
-        if (x < 50.0 && x > 0) {
+        if (x < 100.0 && x > 0) {
           _isDragging = true;
+          _animDragDelta = x;
+          _screenWidth = MediaQuery.of(context).size.width;
         }
       },
       onHorizontalDragEnd: (detail) {
-        _isDragging = false;
-        if (detail.primaryVelocity > 200.0) {
-          AppNotification('open_menu').dispatch(context);
-        } else if (detail.primaryVelocity < -200.0) {
-          AppNotification('close_menu').dispatch(context);
-        } else {
-          AppNotification('drag_menu_end').dispatch(context);
+        if (!_isDragging) {
+          return;
         }
+        _isDragging = false;
+        AppNotification('drag_menu_end', value: detail.primaryVelocity)
+            .dispatch(context);
       },
       onHorizontalDragCancel: () {
+        if (!_isDragging) {
+          return;
+        }
         _isDragging = false;
         AppNotification('drag_menu_end').dispatch(context);
       },
       onHorizontalDragUpdate: (detail) {
         if (_isDragging) {
           final frac =
-              detail.globalPosition.dx / MediaQuery.of(context).size.width;
+              (detail.globalPosition.dx - _animDragDelta) / _screenWidth + 0.3;
+          if (frac < 0.3) {
+            return;
+          }
           AppNotification('drag_menu', value: frac).dispatch(context);
         }
       },
@@ -181,7 +189,7 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
                 child: Container(
                   alignment: Alignment.centerLeft,
                   child: CupertinoButton(
-                    padding: const EdgeInsets.only(top: 15.0, bottom: 15.0),
+                    padding: const EdgeInsets.all(17.0),
                     child: const Icon(
                       FontAwesomeIcons.bars,
                       color: Color(0xFFD7CAFF),
@@ -343,8 +351,11 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
         Text(
-          '总共10件事还剩',
-          style: const TextStyle(fontSize: 14.0, color: Color(0xFFDEC0FF)),
+          '总共10件事项还剩',
+          style: const TextStyle(
+              fontSize: 14.0,
+              color: Color(0xFFDEC0FF),
+              fontWeight: FontWeight.w200),
         ),
         Expanded(
           child: Row(
@@ -352,18 +363,26 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.ideographic,
             children: <Widget>[
+              const SizedBox(
+                width: 50.0,
+              ),
               Text(
                 '5',
                 style: const TextStyle(
-                    fontSize: 75.0,
-                    color: Color(0xFFFFFFFF),
-                    fontWeight: FontWeight.w200,
-                    fontFamily: ''),
+                  fontSize: 75.0,
+                  color: Color(0xFFFFFFFF),
+                  fontWeight: FontWeight.w200,
+                ),
               ),
-              Text(
-                '未完成',
-                style:
-                    const TextStyle(fontSize: 12.0, color: Color(0xFFFFFFFF)),
+              SizedBox(
+                width: 50.0,
+                child: Text(
+                  '未完成',
+                  style: const TextStyle(
+                      fontSize: 12.0,
+                      color: Color(0xFFFFFFFF),
+                      fontWeight: FontWeight.w200),
+                ),
               ),
             ],
           ),
@@ -377,12 +396,19 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
                 Text(
                   DateFormat('yyyy.MM.dd').format(_dateTime),
                   style: const TextStyle(
-                      fontSize: 16.0, color: Color(0xFFDEC0FF), fontFamily: ''),
+                      fontSize: 16.0,
+                      color: Color(0xFFDEC0FF),
+                      fontWeight: FontWeight.w200),
+                ),
+                const SizedBox(
+                  height: 5.0,
                 ),
                 Text(
                   getWeekNameLong(_dateTime.weekday),
-                  style:
-                      const TextStyle(fontSize: 12.0, color: Color(0xFFDEC0FF)),
+                  style: const TextStyle(
+                      fontSize: 12.0,
+                      color: Color(0xFFDEC0FF),
+                      fontWeight: FontWeight.w200),
                 ),
               ],
             ),
@@ -391,13 +417,20 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
               children: <Widget>[
                 Text(
                   _cityName,
-                  style:
-                      const TextStyle(fontSize: 14.0, color: Color(0xFFDEC0FF)),
+                  style: const TextStyle(
+                      fontSize: 14.0,
+                      color: Color(0xFFDEC0FF),
+                      fontWeight: FontWeight.w200),
+                ),
+                const SizedBox(
+                  height: 5.0,
                 ),
                 Text(
                   '气温：$_temp℃',
-                  style:
-                      const TextStyle(fontSize: 12.0, color: Color(0xFFDEC0FF)),
+                  style: const TextStyle(
+                      fontSize: 12.0,
+                      color: Color(0xFFDEC0FF),
+                      fontWeight: FontWeight.w200),
                 ),
               ],
             ),

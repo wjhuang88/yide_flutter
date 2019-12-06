@@ -42,7 +42,8 @@ class MyApp extends StatelessWidget {
               _screenController.dragMenu(dist);
               break;
             case 'drag_menu_end':
-              _screenController.dragMenuEnd();
+              final v = n.value as double ?? 0.0;
+              _screenController.dragMenuEnd(v);
               break;
             default:
           }
@@ -97,8 +98,8 @@ class _ScreenContainerController {
     _state?._dragMenu(dist);
   }
 
-  Future<void> dragMenuEnd() async {
-    return _state?._dragMenuEnd();
+  Future<void> dragMenuEnd(double v) async {
+    return _state?._dragMenuEnd(v);
   }
 }
 
@@ -110,15 +111,27 @@ class _ScreenContainerState extends State<_ScreenContainer>
   AnimationController _animationController;
   Animation _animation;
 
-  double _offsetValue = 1.0;
-  double _animValue = 0.0;
+  double _offsetValue;
+  double _animValue;
+  double _animStartValue;
+  double _animEndValue;
+  double _animDragDelta;
+  double _screenWidth;
 
   bool _menuOpen = false;
+  bool _menuMoving = false;
   bool _isMenuDragging = false;
 
   @override
   void initState() {
     super.initState();
+    _offsetValue = 0.0;
+    _animValue = 0.0;
+    _animStartValue = 0.0;
+    _animEndValue = 1.0;
+    _animDragDelta = 0.0;
+    _screenWidth = 1.0;
+
     _controller ??= _ScreenContainerController();
     _controller._state = this;
     _animationController = AnimationController(
@@ -129,7 +142,13 @@ class _ScreenContainerState extends State<_ScreenContainer>
       reverseCurve: const ElasticInCurve(0.9),
     );
     _animation.addListener(() {
-      _dragMenu(_animation.value);
+      final value = _animStartValue +
+          (_animEndValue - _animStartValue) * _animation.value;
+      setState(() {
+        _menuOpen = true;
+        _animValue = value;
+        _offsetValue = value * 0.7;
+      });
     });
   }
 
@@ -141,27 +160,47 @@ class _ScreenContainerState extends State<_ScreenContainer>
   }
 
   Future<void> _openMenu() async {
+    if (_menuMoving) {
+      return;
+    }
+    _menuMoving = true;
     _menuOpen = true;
-    return _animationController.forward(from: _animValue);
+    _animStartValue = _offsetValue + 0.3;
+    _animEndValue = 1.0;
+    await _animationController.forward(from: 0.0);
+    _animStartValue = 0.0;
+    _menuMoving = false;
   }
 
   Future<void> _closeMenu() async {
-    await _animationController.reverse(from: _animValue);
+    if (_menuMoving) {
+      return;
+    }
+    _menuMoving = true;
+    _animStartValue = 0.0;
+    _animEndValue = _offsetValue;
+    await _animationController.reverse(from: 1.0);
+    _animEndValue = 1.0;
     setState(() {
       _menuOpen = false;
     });
+    _menuMoving = false;
   }
 
   void _dragMenu(double dist) {
     setState(() {
       _menuOpen = true;
       _animValue = dist;
-      _offsetValue = 1.0 + (0.85 - 1.0) * dist;
+      _offsetValue = dist - 0.3;
     });
   }
 
-  Future<void> _dragMenuEnd() async {
-    if (_animValue >= 0.5) {
+  Future<void> _dragMenuEnd(double v) async {
+    if (v > 200.0) {
+      return _openMenu();
+    } else if (v < -200.0) {
+      return _closeMenu();
+    } else if (_offsetValue >= 0.4) {
       return _openMenu();
     } else {
       return _closeMenu();
@@ -183,9 +222,9 @@ class _ScreenContainerState extends State<_ScreenContainer>
         ),
         Transform(
           alignment: Alignment.centerRight,
-          transform: Matrix4.identity()..scale(_offsetValue),
+          transform: Matrix4.identity()..scale(1.0 - _offsetValue * 0.3),
           child: FractionalTranslation(
-            translation: Offset((1 - _offsetValue) * 5.0, 0.0),
+            translation: Offset(_offsetValue, 0.0),
             child: Stack(
               children: <Widget>[
                 Container(
@@ -202,7 +241,7 @@ class _ScreenContainerState extends State<_ScreenContainer>
                         ),
                       ]),
                   child: Opacity(
-                    opacity: 1 - _animValue.clamp(0.0, 1.0),
+                    opacity: 1 - (_offsetValue / 0.7).clamp(0.0, 1.0),
                     child: Navigator(
                       initialRoute: '/',
                       observers: [_navigatorObserver],
@@ -220,7 +259,7 @@ class _ScreenContainerState extends State<_ScreenContainer>
                   ),
                 ),
                 Offstage(
-                  offstage: !(_offsetValue < 1.0),
+                  offstage: !(_offsetValue > 0.0),
                   child: GestureDetector(
                     child: Container(
                       alignment: Alignment.centerLeft,
@@ -233,26 +272,35 @@ class _ScreenContainerState extends State<_ScreenContainer>
                       final x = detail.globalPosition.dx;
                       if (x > 0) {
                         _isMenuDragging = true;
+                        _animDragDelta = x;
+                        _screenWidth = MediaQuery.of(context).size.width;
                       }
                     },
                     onHorizontalDragEnd: (detail) {
-                      _isMenuDragging = false;
-                      if (detail.primaryVelocity > 200.0) {
-                        AppNotification('open_menu').dispatch(context);
-                      } else if (detail.primaryVelocity < -200.0) {
-                        AppNotification('close_menu').dispatch(context);
-                      } else {
-                        AppNotification('drag_menu_end').dispatch(context);
+                      if (!_isMenuDragging) {
+                        return;
                       }
+                      _isMenuDragging = false;
+                      AppNotification('drag_menu_end',
+                              value: detail.primaryVelocity)
+                          .dispatch(context);
                     },
                     onHorizontalDragCancel: () {
+                      if (!_isMenuDragging) {
+                        return;
+                      }
                       _isMenuDragging = false;
                       AppNotification('drag_menu_end').dispatch(context);
                     },
                     onHorizontalDragUpdate: (detail) {
                       if (_isMenuDragging) {
-                        final frac = detail.globalPosition.dx /
-                            MediaQuery.of(context).size.width;
+                        final frac =
+                            (detail.globalPosition.dx - _animDragDelta) /
+                                    _screenWidth +
+                                1.0;
+                        if (frac < 0.3) {
+                          return;
+                        }
                         AppNotification('drag_menu', value: frac)
                             .dispatch(context);
                       }
@@ -422,7 +470,7 @@ class _MainMenu extends StatelessWidget {
                     size: 20.0,
                   ),
                   title: const Text(
-                    '建议与反馈',
+                    '建�����反馈',
                   ),
                   onTap: () {
                     _screenController.closeMenu();
