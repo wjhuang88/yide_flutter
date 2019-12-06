@@ -213,112 +213,120 @@ class _EditMainScreenState extends State<EditMainScreen>
     final _bottomOffset = _setupOffset + (1 - _bottomBarAnimation.value) * 50;
     final _bottomOpacity = _bottomBarAnimation.value;
 
-    return CupertinoPageScaffold(
-      backgroundColor: Colors.transparent,
-      resizeToAvoidBottomInset: false,
-      child: SafeArea(
-        bottom: false,
-        child: Opacity(
-          opacity: opacity,
-          child: Column(
-            children: <Widget>[
-              _buildInputPanel(),
-              const SizedBox(
-                height: 25.5,
-              ),
-              Expanded(
-                child: Transform.translate(
-                  offset: Offset(0.0, 200 * transitionFactor),
-                  child: Column(
-                    children: <Widget>[
-                      GestureDetector(
-                        onTap: () {
-                          _changePanel(DetailDateTimePanel.panelName, '日期');
-                        },
-                        child: Container(
-                          height: 80.0,
-                          child: FractionalTranslation(
-                            translation:
-                                Offset(0.0, -_dateListAnimation.value * 0.1),
-                            child: Opacity(
-                              opacity: 1 - _dateListAnimation.value,
-                              child: InfinityPageView(
-                                controller: _datePageController,
-                                itemBuilder: (context, i) {
-                                  final timeToRender =
-                                      _baseTime.add(Duration(days: i));
-                                  return Column(
-                                    children: <Widget>[
-                                      Text(
-                                        _getWeekDayName(timeToRender),
-                                        style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 20.0),
-                                      ),
-                                      Text(
-                                        DateFormat('MM月dd日')
-                                            .format(timeToRender),
-                                        style: const TextStyle(
-                                            color: Color(0xFFBBADE7),
-                                            fontSize: 14.0,
-                                            fontFamily: ''),
-                                      ),
-                                    ],
-                                  );
-                                },
-                                onPageChanged: (page) {
-                                  setState(() {
-                                    _taskData.taskTime =
-                                        _baseTime.add(Duration(days: page));
-                                  });
-                                },
+    return Opacity(
+      opacity: opacity,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF8346C8), Color(0xFF523F88)]),
+        ),
+        child: CupertinoPageScaffold(
+          backgroundColor: Colors.transparent,
+          resizeToAvoidBottomInset: false,
+          child: SafeArea(
+            bottom: false,
+            child: Column(
+              children: <Widget>[
+                _buildInputPanel(),
+                const SizedBox(
+                  height: 25.5,
+                ),
+                Expanded(
+                  child: Transform.translate(
+                    offset: Offset(0.0, 200 * transitionFactor),
+                    child: Column(
+                      children: <Widget>[
+                        GestureDetector(
+                          onTap: () {
+                            _changePanel(DetailDateTimePanel.panelName, '日期');
+                          },
+                          child: Container(
+                            height: 80.0,
+                            child: FractionalTranslation(
+                              translation:
+                                  Offset(0.0, -_dateListAnimation.value * 0.1),
+                              child: Opacity(
+                                opacity: 1 - _dateListAnimation.value,
+                                child: InfinityPageView(
+                                  controller: _datePageController,
+                                  itemBuilder: (context, i) {
+                                    final timeToRender =
+                                        _baseTime.add(Duration(days: i));
+                                    return Column(
+                                      children: <Widget>[
+                                        Text(
+                                          _getWeekDayName(timeToRender),
+                                          style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 20.0),
+                                        ),
+                                        Text(
+                                          DateFormat('MM月dd日')
+                                              .format(timeToRender),
+                                          style: const TextStyle(
+                                              color: Color(0xFFBBADE7),
+                                              fontSize: 14.0,
+                                              fontFamily: ''),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                  onPageChanged: (page) {
+                                    setState(() {
+                                      _taskData.taskTime =
+                                          _baseTime.add(Duration(days: page));
+                                    });
+                                  },
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(
-                        height: 12.0,
-                      ),
-                      FractionalTranslation(
-                        translation: Offset(0.0, -_dateListAnimation.value),
-                        child: FadeIn(
-                          duration: Duration(milliseconds: 250),
-                          controller: _fadeInController,
-                          child: _buildDatetimeField(_taskData.timeType),
+                        const SizedBox(
+                          height: 12.0,
                         ),
-                      ),
+                        FractionalTranslation(
+                          translation: Offset(0.0, -_dateListAnimation.value),
+                          child: FadeIn(
+                            duration: Duration(milliseconds: 250),
+                            controller: _fadeInController,
+                            child: _buildDatetimeField(_taskData.timeType),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Container(
+                  transform: Matrix4.translationValues(
+                      0.0, 60.0 * transitionFactor, 0.0),
+                  height: 40.0,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      _buildTypeSwitcher('设置时间', DateTimeType.datetime),
+                      _buildTypeSwitcher('全天', DateTimeType.fullday),
+                      _buildTypeSwitcher('某天', DateTimeType.someday),
                     ],
                   ),
                 ),
-              ),
-              Container(
-                transform: Matrix4.translationValues(
-                    0.0, 60.0 * transitionFactor, 0.0),
-                height: 40.0,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Stack(
                   children: <Widget>[
-                    _buildTypeSwitcher('设置时间', DateTimeType.datetime),
-                    _buildTypeSwitcher('全天', DateTimeType.fullday),
-                    _buildTypeSwitcher('某天', DateTimeType.someday),
+                    _buildSetupPanel(context, _setupOffset, 1 - _bottomOpacity,
+                        title: _setupTitle),
+                    Offstage(
+                      offstage: _bottomOpacity < 0.01,
+                      child: Opacity(
+                        opacity: _bottomOpacity,
+                        child: _buildBottomBar(context, _bottomOffset),
+                      ),
+                    ),
                   ],
                 ),
-              ),
-              Stack(
-                children: <Widget>[
-                  _buildSetupPanel(context, _setupOffset, 1 - _bottomOpacity,
-                      title: _setupTitle),
-                  Offstage(
-                    offstage: _bottomOpacity < 0.01,
-                    child: Opacity(
-                      opacity: _bottomOpacity,
-                      child: _buildBottomBar(context, _bottomOffset),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

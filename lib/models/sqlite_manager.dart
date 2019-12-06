@@ -40,7 +40,8 @@ class SqliteManager {
     }
   }
 
-  Future _execute(Database db, String path) async {
+  Future<void> _execute(Database db, String path,
+      [List<dynamic> arguments = const []]) async {
     final sqlBatch = await rootBundle.loadString(path).catchError((e) {
       print('Read sql error, sql path: $path\n$e');
     });
@@ -51,16 +52,42 @@ class SqliteManager {
     if (sqlListLen <= 0) {
       return;
     } else if (sqlListLen == 1) {
-      return await db.execute(sqlList.first).catchError((e) {
+      return db.execute(sqlList.first, arguments).catchError((e) {
         print('Execute sql error, sql path: ${sqlList.first}\n$e');
       });
     } else {
       final batch = db.batch();
       sqlList.forEach((sql) {
-        batch.execute(sql);
+        batch.execute(sql, arguments);
       });
-      return await batch.commit().catchError((e) {
-        print('Execute sql error, sql paths: $sqlList\n$e');
+      return batch.commit().catchError((e) {
+        print('Execute sql error, sql list: $sqlList\n$e');
+      });
+    }
+  }
+
+  Future<int> _deleteInTransaction(Database db, String path,
+      [List<dynamic> arguments = const []]) async {
+    final sqlBatch = await rootBundle.loadString(path).catchError((e) {
+      print('Read sql error, sql path: $path\n$e');
+    });
+    final sqlList =
+        sqlBatch.trim().split(';').where((token) => token.isNotEmpty);
+    final sqlListLen = sqlList.length;
+    if (sqlListLen <= 0) {
+      return 0;
+    } else {
+      return db.transaction<int>((txn) async {
+        final batch = txn.batch();
+        sqlList.forEach((sql) {
+          batch.rawDelete(sql, arguments);
+        });
+        final result = await batch.commit().catchError((e) {
+          print('Delete error, sql list: $sqlList\n$e');
+        });
+        return result.map((value) => value as int).reduce((l, r) => l + r);
+      }).catchError((e) {
+        print('Delete transaction error, sql path: $path\n$e');
       });
     }
   }
@@ -129,6 +156,16 @@ class SqliteManager {
     return (await _database).rawQuery(sql, arguments).catchError((e) {
       print('DB query error, query sql: $sql, arguments: $arguments\n$e');
     });
+  }
+
+  Future<void> execute(String sqlPath,
+      [List<dynamic> arguments = const []]) async {
+    return _execute(await _database, sqlPath, arguments);
+  }
+
+  Future<int> deleteInTransaction(String sqlPath,
+      [List<dynamic> arguments = const []]) async {
+    return _deleteInTransaction(await _database, sqlPath, arguments);
   }
 
   void dispose() async {
@@ -334,6 +371,17 @@ class TaskDBAction {
           updateSqlPath, _makeDetailQueryArgs(detail, true));
     } else {
       return _dbManager.insert(insertSqlPath, _makeDetailQueryArgs(detail));
+    }
+  }
+
+  static Future<int> deleteTask(TaskData task) async {
+
+    final isExist = await isTaskExists(task.id);
+    if (!isExist) {
+      return 0;
+    } else {
+      return _dbManager
+          .deleteInTransaction('assets/sql/delete_task.sql', [task.id]);
     }
   }
 }

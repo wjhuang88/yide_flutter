@@ -1,5 +1,6 @@
 import 'dart:math' as Math;
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
@@ -27,19 +28,21 @@ class DetailListScreen extends StatefulWidget implements Navigatable {
   Route get route {
     return PageRouteBuilder<TaskPack>(
       pageBuilder: (context, anim1, anim2) => this,
-      transitionDuration: Duration(milliseconds: 400),
+      transitionDuration: Duration(milliseconds: 600),
       transitionsBuilder: (context, anim1, anim2, child) {
         final anim1Curved = Tween<double>(begin: 0.0, end: 1.0).animate(
           CurvedAnimation(
             parent: anim1,
-            curve: Curves.easeOutCubic,
+            curve: const ElasticOutCurve(1.0),
+            reverseCurve: Curves.easeInToLinear,
           ),
         );
-        return Transform(
-          alignment: Alignment.center,
-          transform: Matrix4.identity()..scale(anim1Curved.value),
+        final opacity = (anim1Curved.value - anim2.value).clamp(0.0, 1.0);
+        return Transform.scale(
+          alignment: Alignment.centerRight,
+          scale: anim1Curved.value,
           child: Opacity(
-            opacity: anim1Curved.value - anim2.value,
+            opacity: opacity * opacity,
             child: child,
           ),
         );
@@ -48,29 +51,80 @@ class DetailListScreen extends StatefulWidget implements Navigatable {
   }
 }
 
-class _DetailListScreenState extends State<DetailListScreen> {
+class _DetailListScreenState extends State<DetailListScreen>
+    with SingleTickerProviderStateMixin {
   TaskData _data;
   TaskTag _tag;
 
-  Future<TaskDetail> _detail;
-  static TaskDetail _savedDetail = TaskDetail.nullDetail;
+  TaskDetail _savedDetail;
+
+  double _dragOffset;
+  bool _isDragging;
+
+  bool _isLoadingValue = false;
+  bool get _isLoading => _isLoadingValue;
+  set _isLoading(bool value) {
+    setState(() {
+      _isLoadingValue = value;
+    });
+  }
+
+  AnimationController _dragController;
+  Animation _dragAnim;
 
   @override
   void initState() {
     super.initState();
     _data = widget.taskPack.data;
     _tag = widget.taskPack.tag;
-    _detail = TaskDBAction.getTaskDetailById(_data.id);
+
+    _dragOffset = 0.0;
+    _isDragging = false;
+    _dragController = AnimationController(
+        vsync: this, value: 0.0, duration: Duration(milliseconds: 600));
+    _dragAnim = CurvedAnimation(
+      parent: _dragController,
+      curve: const ElasticOutCurve(1.0),
+    );
+    _dragAnim.addListener(() {
+      setState(() {
+        _dragOffset = 1 - _dragAnim.value;
+      });
+    });
+
+    _savedDetail ??= TaskDetail.defultNull();
+    _updateDetailData();
   }
 
-  @override
-  void didUpdateWidget(DetailListScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.taskPack.data.id != oldWidget.taskPack.data.id) {
-      _data = widget.taskPack.data;
-      _tag = widget.taskPack.tag;
-      _detail = TaskDBAction.getTaskDetailById(_data.id);
-    }
+  Future<void> _updateDetailData() async {
+    _isLoading = true;
+    final detail = await TaskDBAction.getTaskDetailById(_data.id);
+    setState(() {
+      _savedDetail = detail ?? _savedDetail;
+    });
+    _isLoading = false;
+  }
+
+  Future<int> _saveTask() async {
+    _isLoading = true;
+    final r = await TaskDBAction.saveTask(_data);
+    _isLoading = false;
+    return r;
+  }
+
+  Future<int> _saveDetail() async {
+    _isLoading = true;
+    _savedDetail.id = _data.id;
+    final r = await TaskDBAction.saveTaskDetail(_savedDetail);
+    _isLoading = false;
+    return r;
+  }
+
+  Future<int> _deleteTask() async {
+    _isLoading = true;
+    final r = await TaskDBAction.deleteTask(_data);
+    _isLoading = false;
+    return r;
   }
 
   @override
@@ -80,210 +134,289 @@ class _DetailListScreenState extends State<DetailListScreen> {
     final nocontentStyle =
         const TextStyle(color: Color(0x88EDE7FF), fontSize: 14.0);
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        brightness: Brightness.dark,
-        backgroundColor: Colors.transparent,
-        elevation: 0.0,
-        leading: IconButton(
-          icon: const Icon(
-            FontAwesomeIcons.chevronLeft,
-            color: Color(0xFFD7CAFF),
-          ),
-          onPressed: () => Navigator.of(context).maybePop(),
-        ),
-        actions: <Widget>[
-          FlatButton(
-            child: Text(
-              '保存',
-              style: TextStyle(fontSize: 16.0, color: Color(0xFFEDE7FF)),
-            ),
-            onPressed: () async {
-              await TaskDBAction.saveTask(_data);
-              await TaskDBAction.saveTaskDetail(_savedDetail);
-              Navigator.of(context).maybePop();
-            },
-          ),
-        ],
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF8346C8), Color(0xFF523F88)]),
       ),
-      body: Column(
-        children: <Widget>[
-          _HeaderPanel(
-            content: _data.content,
-            dateTime: _data.taskTime,
-            timeType: _data.timeType,
-            tagName: _tag.name,
-            tagColor: _tag.iconColor,
-            onTap: () async {
-              final pack =
-                  await Navigator.of(context).push<TaskPack>(EditMainScreen(
-                taskPack: TaskPack(_data, _tag),
-              ).route);
-              if (pack != null) {
-                setState(() {
-                  _data = pack.data;
-                  _tag = pack.tag;
-                  _data.tagId = _tag.id;
-                });
-              }
-            },
-          ),
-          Expanded(
-            child: FutureBuilder<TaskDetail>(
-              future: _detail,
-              initialData: _savedDetail,
-              builder: (context, snap) {
-                final detail =
-                    _savedDetail = snap.data ?? TaskDetail.nullDetail;
-                return ListView(
-                  children: <Widget>[
-                    const SizedBox(
-                      height: 40.0,
-                    ),
-                    _ListItem(
-                      iconData: FontAwesomeIcons.clock,
-                      child: detail.reminderBitMap != null &&
-                              detail.reminderBitMap.bitMap != 0
-                          ? Text(
-                              detail.reminderBitMap.makeLabel(),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: contentStyle,
-                            )
-                          : Text(
-                              '点击设置提醒',
-                              style: nocontentStyle,
-                            ),
-                      onTap: () async {
-                        final code = await Navigator.of(context)
-                            .push<int>(DetailReminderScreen(
-                          stateCode: detail.reminderBitMap.bitMap ?? 0,
-                        ).route);
-                        if (code != null) {
-                          setState(() {
-                            detail.reminderBitMap.bitMap = code;
-                          });
-                        }
-                      },
-                    ),
-                    const SizedBox(
-                      height: 10.0,
-                    ),
-                    _ListItem(
-                      iconData: FontAwesomeIcons.redo,
-                      child: detail.repeatBitMap != null &&
-                              !(detail.repeatBitMap.isNoneRepeat)
-                          ? Text(
-                              detail.repeatBitMap.makeRepeatModeLabel() +
-                                  ' - ' +
-                                  detail.repeatBitMap.makeRepeatTimeLabel(),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: contentStyle,
-                            )
-                          : Text(
-                              '点击设置重复',
-                              style: nocontentStyle,
-                            ),
-                      onTap: () async {
-                        final code = await Navigator.of(context)
-                            .push<int>(DetailRepeatScreen(
-                          stateCode: detail.repeatBitMap.bitMap ?? 0,
-                        ).route);
-                        if (code != null) {
-                          setState(() {
-                            detail.repeatBitMap.bitMap = code;
-                          });
-                        }
-                      },
-                    ),
-                    const SizedBox(
-                      height: 10.0,
-                    ),
-                    _ListItem(
-                      iconData: FontAwesomeIcons.mapMarkerAlt,
-                      child: detail.address != null
-                          ? Text(
-                              detail.address.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: contentStyle,
-                            )
-                          : Text(
-                              '点击添加地址',
-                              style: nocontentStyle,
-                            ),
-                      onTap: () async {
-                        final address = await Navigator.of(context)
-                            .push<AroundData>(DetailMapScreen(
-                          address: detail.address,
-                        ).route);
-                        if (address != null) {
-                          setState(() {
-                            detail.address = address;
-                          });
-                        }
-                      },
-                    ),
-                    const SizedBox(
-                      height: 10.0,
-                    ),
-                    _ListItem(
-                      iconData: FontAwesomeIcons.folder,
-                      child: _data.catalog != null && _data.catalog.isNotEmpty
-                          ? Text(
-                              _data.catalog,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: contentStyle,
-                            )
-                          : Text(
-                              '没有所属项目',
-                              style: nocontentStyle,
-                            ),
-                      onTap: () {},
-                    ),
-                    const SizedBox(
-                      height: 10.0,
-                    ),
-                    _ListItem(
-                      iconData: FontAwesomeIcons.stickyNote,
-                      child: _data.remark != null && _data.remark.isNotEmpty
-                          ? Text(
-                              _data.remark,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: contentStyle,
-                            )
-                          : Text('点击添加备注', style: nocontentStyle),
-                      onTap: () async {
-                        final value = await Navigator.of(context).push<String>(
-                            DetailCommentsScreen(value: _data.remark).route);
-                        if (value != null) {
-                          setState(() {
-                            _data.remark = value;
-                          });
-                        }
-                      },
-                    ),
-                  ],
-                );
+      child: CupertinoPageScaffold(
+        backgroundColor: Colors.transparent,
+        child: FractionalTranslation(
+          translation: Offset(_dragOffset, 0.0),
+          child: Transform(
+            alignment: Alignment.centerLeft,
+            transform: Matrix4.identity()..scale(1 - _dragOffset * 0.3),
+            child: GestureDetector(
+              onHorizontalDragStart: (detail) {
+                final x = detail.globalPosition.dx;
+                if (x < 50.0 && x > 0) {
+                  _isDragging = true;
+                }
               },
-            ),
-          ),
-          SafeArea(
-            top: false,
-            child: IconButton(
-              icon: const Icon(
-                FontAwesomeIcons.trashAlt,
-                color: Color(0x88EDE7FF),
-                size: 21.0,
+              onHorizontalDragEnd: (detail) {
+                if (!_isDragging) {
+                  return;
+                }
+                _isDragging = false;
+                if (detail.primaryVelocity > 200.0 || _dragOffset >= 0.3) {
+                  Navigator.of(context).maybePop();
+                } else {
+                  _dragController.forward(from: _dragOffset);
+                }
+              },
+              onHorizontalDragCancel: () {
+                if (!_isDragging) {
+                  return;
+                }
+                _isDragging = false;
+                if (_dragOffset >= 0.3) {
+                  Navigator.of(context).maybePop();
+                } else {
+                  _dragController.forward(from: _dragOffset);
+                }
+              },
+              onHorizontalDragUpdate: (detail) {
+                if (_isDragging) {
+                  final frac = detail.globalPosition.dx /
+                      MediaQuery.of(context).size.width;
+                  if (frac >= 0.7) {
+                    _isDragging = false;
+                    Navigator.of(context).maybePop();
+                  } else {
+                    setState(() {
+                      final factor = 0.5 * frac;
+                      _dragOffset = factor - factor * factor * factor;
+                    });
+                  }
+                }
+              },
+              child: Column(
+                children: <Widget>[
+                  SafeArea(
+                    bottom: false,
+                    child: Container(
+                      alignment: Alignment.centerLeft,
+                      child: CupertinoButton(
+                        padding: const EdgeInsets.only(top: 15.0, bottom: 0.0),
+                        child: const Icon(
+                          FontAwesomeIcons.chevronLeft,
+                          color: Color(0xFFD7CAFF),
+                        ),
+                        onPressed: () => Navigator.of(context).maybePop(),
+                      ),
+                    ),
+                  ),
+                  _HeaderPanel(
+                    content: _data.content,
+                    dateTime: _data.taskTime,
+                    timeType: _data.timeType,
+                    tagName: _tag.name,
+                    tagColor: _tag.iconColor,
+                    onTap: () async {
+                      final pack = await Navigator.of(context)
+                          .push<TaskPack>(EditMainScreen(
+                        taskPack: TaskPack(_data, _tag),
+                      ).route);
+                      if (pack != null) {
+                        setState(() {
+                          _data = pack.data;
+                          _tag = pack.tag;
+                          _data.tagId = _tag.id;
+                        });
+                        _saveTask();
+                      }
+                    },
+                  ),
+                  Expanded(
+                    child: ListView(
+                      children: <Widget>[
+                        const SizedBox(
+                          height: 40.0,
+                        ),
+                        _ListItem(
+                          iconData: FontAwesomeIcons.clock,
+                          child: _savedDetail.reminderBitMap != null &&
+                                  _savedDetail.reminderBitMap.bitMap != 0
+                              ? Text(
+                                  _savedDetail.reminderBitMap.makeLabel(),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: contentStyle,
+                                )
+                              : Text(
+                                  '点击设置提醒',
+                                  style: nocontentStyle,
+                                ),
+                          onTap: () async {
+                            final code = await Navigator.of(context)
+                                .push<int>(DetailReminderScreen(
+                              stateCode:
+                                  _savedDetail.reminderBitMap.bitMap ?? 0,
+                            ).route);
+                            if (code != null) {
+                              setState(() {
+                                _savedDetail.reminderBitMap.bitMap = code;
+                              });
+                              _saveDetail();
+                            }
+                          },
+                        ),
+                        const SizedBox(
+                          height: 10.0,
+                        ),
+                        _ListItem(
+                          iconData: FontAwesomeIcons.redo,
+                          child: _savedDetail.repeatBitMap != null &&
+                                  !(_savedDetail.repeatBitMap.isNoneRepeat)
+                              ? Text(
+                                  _savedDetail.repeatBitMap
+                                          .makeRepeatModeLabel() +
+                                      ' - ' +
+                                      _savedDetail.repeatBitMap
+                                          .makeRepeatTimeLabel(),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: contentStyle,
+                                )
+                              : Text(
+                                  '点击设置重复',
+                                  style: nocontentStyle,
+                                ),
+                          onTap: () async {
+                            final code = await Navigator.of(context)
+                                .push<int>(DetailRepeatScreen(
+                              stateCode: _savedDetail.repeatBitMap.bitMap ?? 0,
+                            ).route);
+                            if (code != null) {
+                              setState(() {
+                                _savedDetail.repeatBitMap.bitMap = code;
+                              });
+                              _saveDetail();
+                            }
+                          },
+                        ),
+                        const SizedBox(
+                          height: 10.0,
+                        ),
+                        _ListItem(
+                          iconData: FontAwesomeIcons.mapMarkerAlt,
+                          child: _savedDetail.address != null &&
+                                  _savedDetail.address.name?.isNotEmpty == true
+                              ? Text(
+                                  _savedDetail.address.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: contentStyle,
+                                )
+                              : Text(
+                                  '点击添加地址',
+                                  style: nocontentStyle,
+                                ),
+                          onTap: () async {
+                            final address = await Navigator.of(context)
+                                .push<AroundData>(DetailMapScreen(
+                              address: _savedDetail.address,
+                            ).route);
+                            if (address != null) {
+                              setState(() {
+                                _savedDetail.address = address;
+                              });
+                              _saveDetail();
+                            }
+                          },
+                        ),
+                        const SizedBox(
+                          height: 10.0,
+                        ),
+                        _ListItem(
+                          iconData: FontAwesomeIcons.folder,
+                          child:
+                              _data.catalog != null && _data.catalog.isNotEmpty
+                                  ? Text(
+                                      _data.catalog,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: contentStyle,
+                                    )
+                                  : Text(
+                                      '没有所属项目',
+                                      style: nocontentStyle,
+                                    ),
+                          onTap: () {},
+                        ),
+                        const SizedBox(
+                          height: 10.0,
+                        ),
+                        _ListItem(
+                          iconData: FontAwesomeIcons.stickyNote,
+                          child: _data.remark != null && _data.remark.isNotEmpty
+                              ? Text(
+                                  _data.remark,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: contentStyle,
+                                )
+                              : Text('点击添加备注', style: nocontentStyle),
+                          onTap: () async {
+                            final value = await Navigator.of(context)
+                                .push<String>(
+                                    DetailCommentsScreen(value: _data.remark)
+                                        .route);
+                            if (value != null) {
+                              setState(() {
+                                _data.remark = value;
+                              });
+                              _saveTask();
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  SafeArea(
+                    top: false,
+                    child: CupertinoButton(
+                      child: const Icon(
+                        FontAwesomeIcons.trashAlt,
+                        color: Color(0x88EDE7FF),
+                        size: 21.0,
+                      ),
+                      onPressed: () async {
+                        final isDelete = await showCupertinoDialog<bool>(
+                          context: context,
+                          builder: (context) => CupertinoAlertDialog(
+                            title: Text('将要删除本事项，请您确认'),
+                            content: Text('删除事项后将无法恢复，请确认此次操作是您的真实意图'),
+                            actions: <Widget>[
+                              CupertinoDialogAction(
+                                child: Text('确定删除'),
+                                isDestructiveAction: true,
+                                onPressed: () =>
+                                    Navigator.of(context).maybePop(true),
+                              ),
+                              CupertinoDialogAction(
+                                child: Text('取消'),
+                                isDefaultAction: true,
+                                onPressed: () =>
+                                    Navigator.of(context).maybePop(false),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (isDelete) {
+                          await _deleteTask();
+                          Navigator.of(context).maybePop();
+                        }
+                      },
+                    ),
+                  ),
+                ],
               ),
-              onPressed: () {},
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -322,7 +455,7 @@ class _HeaderPanel extends StatelessWidget {
         break;
     }
     return TapAnimator(
-      behavior: HitTestBehavior.opaque,
+      behavior: HitTestBehavior.deferToChild,
       onTap: onTap ?? () {},
       builder: (_factor) => Transform(
         alignment: Alignment.center,

@@ -37,6 +37,13 @@ class MyApp extends StatelessWidget {
             case 'close_menu':
               _screenController.closeMenu();
               break;
+            case 'drag_menu':
+              final dist = n.value as double ?? 0.0;
+              _screenController.dragMenu(dist);
+              break;
+            case 'drag_menu_end':
+              _screenController.dragMenuEnd();
+              break;
             default:
           }
           return true;
@@ -78,12 +85,20 @@ class _ScreenContainer extends StatefulWidget {
 
 class _ScreenContainerController {
   _ScreenContainerState _state;
-  void openMenu() {
-    _state?._openMenu();
+  Future<void> openMenu() async {
+    return _state?._openMenu();
   }
 
-  void closeMenu() {
-    _state?._closeMenu();
+  Future<void> closeMenu() async {
+    return _state?._closeMenu();
+  }
+
+  void dragMenu(double dist) {
+    _state?._dragMenu(dist);
+  }
+
+  Future<void> dragMenuEnd() async {
+    return _state?._dragMenuEnd();
   }
 }
 
@@ -99,6 +114,7 @@ class _ScreenContainerState extends State<_ScreenContainer>
   double _animValue = 0.0;
 
   bool _menuOpen = false;
+  bool _isMenuDragging = false;
 
   @override
   void initState() {
@@ -113,21 +129,7 @@ class _ScreenContainerState extends State<_ScreenContainer>
       reverseCurve: const ElasticInCurve(0.9),
     );
     _animation.addListener(() {
-      setState(() {
-        _animValue = _animation.value;
-        _offsetValue = 1.0 + (0.85 - 1.0) * _animation.value;
-      });
-    });
-    _animation.addStatusListener((status) {
-      switch (status) {
-        case AnimationStatus.dismissed:
-          _menuOpen = false;
-          break;
-        case AnimationStatus.forward:
-          _menuOpen = true;
-          break;
-        default:
-      }
+      _dragMenu(_animation.value);
     });
   }
 
@@ -138,12 +140,32 @@ class _ScreenContainerState extends State<_ScreenContainer>
     super.dispose();
   }
 
-  void _openMenu() {
-    _animationController.forward(from: 0.1);
+  Future<void> _openMenu() async {
+    _menuOpen = true;
+    return _animationController.forward(from: _animValue);
   }
 
-  void _closeMenu() {
-    _animationController.reverse(from: 0.9);
+  Future<void> _closeMenu() async {
+    await _animationController.reverse(from: _animValue);
+    setState(() {
+      _menuOpen = false;
+    });
+  }
+
+  void _dragMenu(double dist) {
+    setState(() {
+      _menuOpen = true;
+      _animValue = dist;
+      _offsetValue = 1.0 + (0.85 - 1.0) * dist;
+    });
+  }
+
+  Future<void> _dragMenuEnd() async {
+    if (_animValue >= 0.5) {
+      return _openMenu();
+    } else {
+      return _closeMenu();
+    }
   }
 
   @override
@@ -206,6 +228,34 @@ class _ScreenContainerState extends State<_ScreenContainer>
                     ),
                     onTap: () {
                       _screenController.closeMenu();
+                    },
+                    onHorizontalDragStart: (detail) {
+                      final x = detail.globalPosition.dx;
+                      if (x > 0) {
+                        _isMenuDragging = true;
+                      }
+                    },
+                    onHorizontalDragEnd: (detail) {
+                      _isMenuDragging = false;
+                      if (detail.primaryVelocity > 200.0) {
+                        AppNotification('open_menu').dispatch(context);
+                      } else if (detail.primaryVelocity < -200.0) {
+                        AppNotification('close_menu').dispatch(context);
+                      } else {
+                        AppNotification('drag_menu_end').dispatch(context);
+                      }
+                    },
+                    onHorizontalDragCancel: () {
+                      _isMenuDragging = false;
+                      AppNotification('drag_menu_end').dispatch(context);
+                    },
+                    onHorizontalDragUpdate: (detail) {
+                      if (_isMenuDragging) {
+                        final frac = detail.globalPosition.dx /
+                            MediaQuery.of(context).size.width;
+                        AppNotification('drag_menu', value: frac)
+                            .dispatch(context);
+                      }
                     },
                   ),
                 ),

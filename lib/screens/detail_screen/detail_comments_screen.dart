@@ -48,6 +48,7 @@ class DetailCommentsScreen extends StatelessWidget implements Navigatable {
           keyboardType: TextInputType.text,
           keyboardAppearance: Brightness.dark,
           textInputAction: TextInputAction.done,
+          onSubmitted: (text) => Navigator.of(context).maybePop<String>(text),
           decoration: InputDecoration(
               contentPadding: EdgeInsets.symmetric(horizontal: 24.0),
               border: InputBorder.none,

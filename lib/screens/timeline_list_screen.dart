@@ -2,7 +2,6 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:yide/components/location_methods.dart';
@@ -29,10 +28,11 @@ class TimelineListScreen extends StatefulWidget implements Navigatable {
   Route get route {
     return PageRouteBuilder(
       pageBuilder: (context, anim1, anim2) => this,
-      transitionDuration: Duration(milliseconds: 500),
+      transitionDuration: Duration(milliseconds: 400),
       transitionsBuilder: (context, anim1, anim2, child) {
         final anim1Curved = Curves.easeOutCubic.transform(anim1.value);
-        controller.updateTransition(1 - anim2.value);
+        final anim2Curved = const ElasticInCurve(1.0).transform(anim2.value);
+        controller.updateTransition(1 - anim2Curved);
         return Opacity(
           opacity: anim1Curved,
           child: Transform.scale(
@@ -60,6 +60,8 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
   String _temp = ' - ';
   String _weather = ' - ';
 
+  bool _isDragging = false;
+
   DateTime _dateTime = DateTime.now();
 
   void _updateLocAndTemp() async {
@@ -79,7 +81,9 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
     _controller ??= TimelineScreenController();
 
     _savedList = _placeholder = Container();
-    _loadingPlaceholder = CupertinoActivityIndicator(radius: 16.0,);
+    _loadingPlaceholder = CupertinoActivityIndicator(
+      radius: 16.0,
+    );
 
     _taskList = TaskDBAction.getTaskListByDate(_dateTime);
     _updateLocAndTemp();
@@ -118,177 +122,216 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
   @override
   Widget build(BuildContext context) {
     final opacity = (transitionFactor).clamp(0.0, 1.0);
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      floatingActionButton: Offstage(
-        offstage: opacity < 1.0,
-        child: FloatingActionButton(
-          backgroundColor: const Color(0xFFFAB807),
-          child: const Icon(
-            Icons.add,
-            size: 40.0,
+    return GestureDetector(
+      onHorizontalDragStart: (detail) {
+        final x = detail.globalPosition.dx;
+        if (x < 50.0 && x > 0) {
+          _isDragging = true;
+        }
+      },
+      onHorizontalDragEnd: (detail) {
+        _isDragging = false;
+        if (detail.primaryVelocity > 200.0) {
+          AppNotification('open_menu').dispatch(context);
+        } else if (detail.primaryVelocity < -200.0) {
+          AppNotification('close_menu').dispatch(context);
+        } else {
+          AppNotification('drag_menu_end').dispatch(context);
+        }
+      },
+      onHorizontalDragCancel: () {
+        _isDragging = false;
+        AppNotification('drag_menu_end').dispatch(context);
+      },
+      onHorizontalDragUpdate: (detail) {
+        if (_isDragging) {
+          final frac =
+              detail.globalPosition.dx / MediaQuery.of(context).size.width;
+          AppNotification('drag_menu', value: frac).dispatch(context);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        floatingActionButton: Opacity(
+          opacity: opacity,
+          child: FloatingActionButton(
+            backgroundColor: const Color(0xFFFAB807),
+            child: const Icon(
+              Icons.add,
+              size: 40.0,
+            ),
+            onPressed: () async {
+              final newTask = await Navigator.push<TaskPack>(
+                  context, EditMainScreen().route);
+              if (newTask != null) {
+                await TaskDBAction.saveTask(newTask.data);
+                setState(() {
+                  _taskList = TaskDBAction.getTaskListByDate(_dateTime);
+                });
+              }
+            },
           ),
-          onPressed: () async {
-            final newTask =
-                await Navigator.push<TaskPack>(context, EditMainScreen().route);
-            if (newTask != null) {
-              await TaskDBAction.saveTask(newTask.data);
-              setState(() {
-                _taskList = TaskDBAction.getTaskListByDate(_dateTime);
-              });
-            }
-          },
         ),
-      ),
-      body: Opacity(
-        opacity: opacity,
-        child: Column(
-          children: <Widget>[
-            SafeArea(
-              bottom: false,
-              child: Container(
-                alignment: Alignment.centerLeft,
-                child: IconButton(
-                  padding: const EdgeInsets.only(top: 15.0, bottom: 15.0),
-                  icon: const Icon(
-                    FontAwesomeIcons.bars,
-                    color: Color(0xFFD7CAFF),
-                  ),
-                  onPressed: () {
-                    AppNotification("open_menu").dispatch(context);
-                  },
-                ),
-              ),
-            ),
-            FractionalTranslation(
-              translation: Offset(0.0, transitionFactor - 1),
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 17.0),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 20.0, vertical: 18.0),
-                height: 182.0,
-                decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFF975ED8), Color(0xFF7352D0)]),
-                    borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                    boxShadow: [
-                      BoxShadow(
-                        offset: Offset(0.0, 6.0),
-                        blurRadius: 23.0,
-                        color: Color(0x8A4F3A8C),
-                      )
-                    ]),
-                child: Stack(
-                  children: <Widget>[
-                    _buildHeaderColumn(),
-                    Positioned(
-                      right: 0.0,
-                      top: 0.0,
-                      child: weatherImageMap[_weather] != null
-                          ? Container(height: 32.0, width: 32, child: Image.asset(weatherImageMap[_weather]))
-                          //? Container(height: 32.0, width: 32, child: Image.asset('assets/images/weather/test1.png'))
-                          : CupertinoActivityIndicator(radius: 16.0,),
+        body: Opacity(
+          opacity: opacity,
+          child: Column(
+            children: <Widget>[
+              SafeArea(
+                bottom: false,
+                child: Container(
+                  alignment: Alignment.centerLeft,
+                  child: CupertinoButton(
+                    padding: const EdgeInsets.only(top: 15.0, bottom: 15.0),
+                    child: const Icon(
+                      FontAwesomeIcons.bars,
+                      color: Color(0xFFD7CAFF),
                     ),
-                  ],
+                    onPressed: () {
+                      AppNotification("open_menu").dispatch(context);
+                    },
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(
-              height: 20.0,
-            ),
-            Expanded(
-              child: FractionalTranslation(
-                translation: Offset(transitionFactor - 1, 0.0),
-                child: FutureBuilder<List<TaskPack>>(
-                  future: _taskList,
-                  initialData: null,
-                  builder: (context, snapshot) {
-                    switch (snapshot.connectionState) {
-                      case ConnectionState.none:
-                        return _savedList;
-                      case ConnectionState.waiting:
-                        return _loadingPlaceholder;
-                      case ConnectionState.active:
-                      case ConnectionState.done:
-                        final dataList = snapshot.data;
-                        _savedList = TimelineListView.build(
-                          placeholder: _placeholder,
-                          itemCount: dataList.length,
-                          tileBuilder: (context, index) {
-                            final item = dataList[index];
-                            final rows = <Widget>[
-                              Text(
-                                item.data.content,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                    color: Color(0xFFD7CAFF), fontSize: 15.0,),
+              FractionalTranslation(
+                translation: Offset(0.0, transitionFactor - 1),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 17.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 20.0, vertical: 18.0),
+                  height: 182.0,
+                  decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF975ED8), Color(0xFF7352D0)]),
+                      borderRadius: BorderRadius.all(Radius.circular(10.0)),
+                      boxShadow: [
+                        BoxShadow(
+                          offset: Offset(0.0, 6.0),
+                          blurRadius: 23.0,
+                          color: Color(0x8A4F3A8C),
+                        )
+                      ]),
+                  child: Stack(
+                    children: <Widget>[
+                      _buildHeaderColumn(),
+                      Positioned(
+                        right: 5.0,
+                        top: 0.0,
+                        child: weatherImageMap[_weather] != null
+                            ? Container(
+                                height: 32.0,
+                                width: 32,
+                                child: Image.asset(weatherImageMap[_weather]))
+                            //? Container(height: 32.0, width: 32, child: Image.asset('assets/images/weather/test1.png'))
+                            : CupertinoActivityIndicator(
+                                radius: 16.0,
                               ),
-                              const SizedBox(
-                                height: 10.0,
-                              ),
-                              Text(
-                                item.tag.name ?? '默认',
-                                style: TextStyle(
-                                    color: item.tag.iconColor, fontSize: 12.0),
-                              ),
-                            ];
-                            if (item.data.catalog != null &&
-                                item.data.catalog.isNotEmpty) {
-                              rows
-                                ..add(
-                                  const SizedBox(
-                                    height: 10.0,
-                                  ),
-                                )
-                                ..add(Text(
-                                  item.data.catalog,
-                                  style: const TextStyle(
-                                      color: Color(0xFFC9A2F5), fontSize: 12.0),
-                                ));
-                            }
-                            if (item.data.remark != null &&
-                                item.data.remark.isNotEmpty) {
-                              rows
-                                ..add(const SizedBox(height: 10.0))
-                                ..add(Text(
-                                  item.data.remark,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(
+                height: 20.0,
+              ),
+              Expanded(
+                child: FractionalTranslation(
+                  translation: Offset(transitionFactor - 1, 0.0),
+                  child: FutureBuilder<List<TaskPack>>(
+                    future: _taskList,
+                    initialData: null,
+                    builder: (context, snapshot) {
+                      switch (snapshot.connectionState) {
+                        case ConnectionState.none:
+                          return _savedList;
+                        case ConnectionState.waiting:
+                          return _loadingPlaceholder;
+                        case ConnectionState.active:
+                        case ConnectionState.done:
+                          final dataList = snapshot.data;
+                          _savedList = TimelineListView.build(
+                            placeholder: _placeholder,
+                            itemCount: dataList.length,
+                            tileBuilder: (context, index) {
+                              final item = dataList[index];
+                              final rows = <Widget>[
+                                Text(
+                                  item.data.content,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
-                                      color: Color(0xFFC9A2F5), fontSize: 12.0),
-                                ));
-                            }
-                            return TimelineTile(
-                              rows: rows,
-                              onTap: () async {
-                                await Navigator.of(context)
-                                    .push<TaskPack>(DetailListScreen(
-                                  taskPack: item,
-                                ).route);
-                                setState(() {
-                                  _taskList =
-                                      TaskDBAction.getTaskListByDate(_dateTime);
-                                });
-                              },
-                            );
-                          },
-                          onGenerateLabel: (index) =>
-                              _makeTimeLabel(dataList[index]?.data),
-                          onGenerateDotColor: (index) =>
-                              dataList[index]?.tag?.iconColor,
-                        );
-                        return _savedList;
-                      default:
-                        return _placeholder;
-                    }
-                  },
+                                    color: Color(0xFFD7CAFF),
+                                    fontSize: 15.0,
+                                  ),
+                                ),
+                                const SizedBox(
+                                  height: 10.0,
+                                ),
+                                Text(
+                                  item.tag.name ?? '默认',
+                                  style: TextStyle(
+                                      color: item.tag.iconColor,
+                                      fontSize: 12.0),
+                                ),
+                              ];
+                              if (item.data.catalog != null &&
+                                  item.data.catalog.isNotEmpty) {
+                                rows
+                                  ..add(
+                                    const SizedBox(
+                                      height: 10.0,
+                                    ),
+                                  )
+                                  ..add(Text(
+                                    item.data.catalog,
+                                    style: const TextStyle(
+                                        color: Color(0xFFC9A2F5),
+                                        fontSize: 12.0),
+                                  ));
+                              }
+                              if (item.data.remark != null &&
+                                  item.data.remark.isNotEmpty) {
+                                rows
+                                  ..add(const SizedBox(height: 10.0))
+                                  ..add(Text(
+                                    item.data.remark,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                        color: Color(0xFFC9A2F5),
+                                        fontSize: 12.0),
+                                  ));
+                              }
+                              return TimelineTile(
+                                rows: rows,
+                                onTap: () async {
+                                  await Navigator.of(context)
+                                      .push<TaskPack>(DetailListScreen(
+                                    taskPack: item,
+                                  ).route);
+                                  setState(() {
+                                    _taskList = TaskDBAction.getTaskListByDate(
+                                        _dateTime);
+                                  });
+                                },
+                              );
+                            },
+                            onGenerateLabel: (index) =>
+                                _makeTimeLabel(dataList[index]?.data),
+                            onGenerateDotColor: (index) =>
+                                dataList[index]?.tag?.iconColor,
+                          );
+                          return _savedList;
+                        default:
+                          return _placeholder;
+                      }
+                    },
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

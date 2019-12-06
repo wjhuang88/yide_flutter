@@ -2,7 +2,6 @@ import 'dart:math' as Math;
 
 import 'package:flutter/widgets.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:intl/intl.dart';
 
 import 'tap_animator.dart';
 

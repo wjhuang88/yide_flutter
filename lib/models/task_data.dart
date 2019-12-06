@@ -95,7 +95,7 @@ class TaskData {
 }
 
 class TaskDetail {
-  final int id;
+  int id;
   final ReminderBitMap reminderBitMap;
   final RepeatBitMap repeatBitMap;
   AroundData address;
