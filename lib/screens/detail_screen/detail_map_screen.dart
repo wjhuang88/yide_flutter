@@ -38,6 +38,24 @@ class DetailMapScreen extends StatefulWidget implements Navigatable {
   }
 }
 
+const gradientDecoration = const BoxDecoration(
+  gradient: LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF975ED8), Color(0xFF7352D0)],
+  ),
+  borderRadius: BorderRadius.all(
+    Radius.circular(10.0),
+  ),
+  boxShadow: [
+    BoxShadow(
+      offset: Offset(0.0, 6.0),
+      blurRadius: 23.0,
+      color: Color(0x8A4F3A8C),
+    ),
+  ],
+);
+
 class _DetailMapScreenState extends State<DetailMapScreen>
     with SingleTickerProviderStateMixin {
   _DetailMapScreenState(this._selectedAddress);
@@ -48,6 +66,14 @@ class _DetailMapScreenState extends State<DetailMapScreen>
 
   AnimationController _pinJumpController;
   Animation _pinJumpAnim;
+
+  bool _isLoadingValue = true;
+  bool get _isLoading => _isLoadingValue;
+  set _isLoading(bool value) {
+    setState(() {
+      _isLoadingValue = value;
+    });
+  }
 
   @override
   void initState() {
@@ -77,8 +103,10 @@ class _DetailMapScreenState extends State<DetailMapScreen>
 
   @override
   Widget build(BuildContext context) {
-    final originHeight = MediaQuery.of(context).size.height / 3;
-    final panelHeight = originHeight - (originHeight % 50) + 20;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final originPanelHeight = screenHeight / 3;
+    final panelHeight = originPanelHeight - (originPanelHeight % 50) + 20;
     return CupertinoPageScaffold(
       backgroundColor: const Color(0x00000000),
       resizeToAvoidBottomInset: false,
@@ -92,16 +120,20 @@ class _DetailMapScreenState extends State<DetailMapScreen>
               cameraDegree: 30.0,
               zoomLevel: 16.0,
               showsCompass: true,
-              compassOffset: Offset(-10.0, 40.0),
+              compassOffset: const Offset(-10.0, 40.0),
               showsScale: false,
               showsUserLocation: true,
-              centerOffset: FractionalOffset(0.5, 0.3),
+              centerOffset: const FractionalOffset(0.5, 0.3),
+              onRegionStartChanging: () async {
+                _isLoading = true;
+                await _pinJumpController.forward();
+                await _pinJumpController.reverse();
+              },
               onRegionChanged: (around, coord) async {
                 setState(() {
                   _arounds = around;
+                  _isLoadingValue = false;
                 });
-                await _pinJumpController.forward();
-                await _pinJumpController.reverse();
               },
             ),
           ),
@@ -116,8 +148,8 @@ class _DetailMapScreenState extends State<DetailMapScreen>
             ),
           ),
           Positioned(
-            top: MediaQuery.of(context).size.height * 0.3 - 40.0,
-            left: MediaQuery.of(context).size.width * 0.5 - 20.0,
+            top: screenHeight * 0.3 - 40.0,
+            left: screenWidth * 0.5 - 20.0,
             child: Transform.translate(
                 offset: Offset(0.0, -10.0 * _pinJumpAnim.value),
                 child: const Icon(
@@ -146,88 +178,29 @@ class _DetailMapScreenState extends State<DetailMapScreen>
             left: 10.0,
             right: 10.0,
             child: SafeArea(
-              child: Container(
-                height: panelHeight,
-                padding: const EdgeInsets.symmetric(vertical: 10.0),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFF975ED8), Color(0xFF7352D0)],
-                  ),
-                  borderRadius: BorderRadius.all(
-                    Radius.circular(10.0),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      offset: Offset(0.0, 6.0),
-                      blurRadius: 23.0,
-                      color: Color(0x8A4F3A8C),
+              child: Column(
+                children: <Widget>[
+                  Container(
+                    height: 50.0,
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    decoration: gradientDecoration,
+                    child: CupertinoTextField(
+                      maxLines: 1,
+                      placeholder: '搜索关键字',
+                      style: const TextStyle(fontSize: 16.0, color: Color(0xFFFFFFFF)),
+                      placeholderStyle: const TextStyle(fontSize: 16.0, color: Color(0x66FFFFFF)),
+                      clearButtonMode: OverlayVisibilityMode.editing,
+                      prefix: Icon(CupertinoIcons.search),
+                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                      decoration: BoxDecoration(color: Colors.transparent),
                     ),
-                  ],
-                ),
-                child: ListView.separated(
-                  itemCount: _arounds.length,
-                  separatorBuilder: (context, i) => const Divider(
-                    color: Colors.white,
-                    thickness: 0.2,
                   ),
-                  itemBuilder: (context, i) {
-                    final data = _arounds[i];
-                    final dist =
-                        data.distance < 30 ? '30m内' : '${data.distance}m';
-                    final addr = data.address;
-                    return GestureDetector(
-                      onTap: () => Navigator.of(context)
-                          .maybePop<AroundData>(_arounds[i]),
-                      child: Container(
-                        height: 50.0,
-                        alignment: Alignment.centerLeft,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20.0),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: <Widget>[
-                            Icon(
-                              buildCupertinoIconData(0xf37c),
-                              color: Color(0x88FFFFFF),
-                              size: 20.0,
-                            ),
-                            const SizedBox(
-                              width: 15.0,
-                            ),
-                            Expanded(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  Text(
-                                    data.name,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16.0,
-                                        fontWeight: FontWeight.w200),
-                                  ),
-                                  Text(
-                                    '$dist | $addr',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                        color: Color(0x88FFFFFF),
-                                        fontSize: 12.0,
-                                        fontWeight: FontWeight.w200),
-                                  )
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                  const SizedBox(height: 10.0,),
+                  _LocationListPanel(
+                      isLoading: _isLoading,
+                      panelHeight: panelHeight,
+                      values: _arounds),
+                ],
               ),
             ),
           ),
@@ -278,7 +251,7 @@ class _DetailMapScreenState extends State<DetailMapScreen>
                         child: Icon(
                           buildCupertinoIconData(0xf474),
                           color: Color(0x99FFFFFF),
-                          size: 26.0,
+                          size: 22.0,
                         ),
                         onPressed: () {
                           _locationMapController.backToUserLocation();
@@ -292,6 +265,94 @@ class _DetailMapScreenState extends State<DetailMapScreen>
           ),
         ],
       ),
+    );
+  }
+}
+
+class _LocationListPanel extends StatelessWidget {
+  const _LocationListPanel({
+    Key key,
+    @required this.panelHeight,
+    @required List<AroundData> values,
+    this.isLoading = false,
+  })  : _arounds = values,
+        super(key: key);
+
+  final double panelHeight;
+  final List<AroundData> _arounds;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: panelHeight,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(vertical: 10.0),
+      decoration: gradientDecoration,
+      child: isLoading
+          ? CupertinoActivityIndicator(
+              radius: 15.0,
+            )
+          : ListView.separated(
+              itemCount: _arounds.length,
+              separatorBuilder: (context, i) => const Divider(
+                color: Colors.white,
+                thickness: 0.2,
+              ),
+              itemBuilder: (context, i) {
+                final data = _arounds[i];
+                final dist = data.distance < 30 ? '30m内' : '${data.distance}m';
+                final addr = data.address;
+                return GestureDetector(
+                  onTap: () =>
+                      Navigator.of(context).maybePop<AroundData>(_arounds[i]),
+                  child: Container(
+                    height: 50.0,
+                    alignment: Alignment.centerLeft,
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: <Widget>[
+                        Icon(
+                          buildCupertinoIconData(0xf37c),
+                          color: Color(0x88FFFFFF),
+                          size: 20.0,
+                        ),
+                        const SizedBox(
+                          width: 15.0,
+                        ),
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Text(
+                                data.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16.0,
+                                    fontWeight: FontWeight.w200),
+                              ),
+                              Text(
+                                '$dist | $addr',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    color: Color(0x88FFFFFF),
+                                    fontSize: 12.0,
+                                    fontWeight: FontWeight.w200),
+                              )
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
     );
   }
 }

@@ -29,24 +29,26 @@ class LocationMapView extends StatefulWidget {
   final Coordinate initCenter;
   final void Function(List<AroundData> around, Coordinate coordinate)
       onRegionChanged;
+  final VoidCallback onRegionStartChanging;
 
   final LocationMapController controller;
 
-  const LocationMapView(
-      {Key key,
-      this.cameraDegree,
-      this.zoomLevel,
-      this.logoOffset,
-      this.showsCompass,
-      this.compassOffset,
-      this.showsScale,
-      this.scaleOffset,
-      this.showsUserLocation,
-      this.centerOffset,
-      this.controller,
-      this.onRegionChanged,
-      this.initCenter})
-      : super(key: key);
+  const LocationMapView({
+    Key key,
+    this.cameraDegree,
+    this.zoomLevel,
+    this.logoOffset,
+    this.showsCompass,
+    this.compassOffset,
+    this.showsScale,
+    this.scaleOffset,
+    this.showsUserLocation,
+    this.centerOffset,
+    this.controller,
+    this.onRegionChanged,
+    this.initCenter,
+    this.onRegionStartChanging,
+  }) : super(key: key);
 
   @override
   _LocationMapViewState createState() => _LocationMapViewState(controller);
@@ -69,17 +71,26 @@ class _LocationMapViewState extends State<LocationMapView> {
       platform.setMethodCallHandler((call) async {
         if (call.method == 'onRegionChanged' && (call.arguments is Map)) {
           final args = call.arguments as Map;
-          final coordinateList = args['coordinate'] as List;
-          final aroundMapList = args['around'] as List;
-          final aroundList = aroundMapList
-              .map((map) => AroundData.fromMap(
-                  (map as Map).map((k, v) => MapEntry(k as String, v))))
-              .toList();
-          final coordinate = Coordinate.fromList(
-              coordinateList.map((d) => d as double).toList());
-          widget.onRegionChanged(aroundList, coordinate);
+          _makeAroundDataCallback(args);
+        } else if (call.method == 'onRegionStartChanging' &&
+            widget.onRegionStartChanging != null) {
+          widget.onRegionStartChanging();
         }
       });
+    }
+  }
+
+  void _makeAroundDataCallback(Map args) {
+    final coordinateList = args['coordinate'] as List;
+    final aroundMapList = args['around'] as List;
+    final aroundList = aroundMapList
+        .map((map) => AroundData.fromMap(
+            (map as Map).map((k, v) => MapEntry(k as String, v))))
+        .toList();
+    final coordinate =
+        Coordinate.fromList(coordinateList.map((d) => d as double).toList());
+    if (widget.onRegionChanged != null) {
+      widget.onRegionChanged(aroundList, coordinate);
     }
   }
 

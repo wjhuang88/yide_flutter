@@ -129,6 +129,11 @@ public class LocationMethod : NSObject, AMapSearchDelegate {
             result(resultMap)
         }
     }
+    
+    public func aMapSearchRequest(_ request: Any!, didFailWithError error: Error!) {
+        print("Error:\(String(describing: error))")
+        self._channel.invokeMethod("onError", arguments: NSString(utf8String: String(describing: error)))
+    }
 }
 
 class WeatherHandler : NSObject {

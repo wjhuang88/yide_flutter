@@ -9,8 +9,7 @@ class LocationMethods {
   }
 
   static Future<LocationData> getLocation() async {
-    final result =
-        await _platform.invokeMapMethod<String, dynamic>('getLocation');
+    final result = await _platform.invokeMapMethod<String, dynamic>('getLocation');
     return LocationData.fromMap(result);
   }
 

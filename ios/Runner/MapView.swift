@@ -190,6 +190,8 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, MAMapV
         if let initCenter = self.initCenter {
             self._view.centerCoordinate = initCenter
         }
+        
+        updateRegionInfo()
 
         _channel.setMethodCallHandler({ [self]
           (call: FlutterMethodCall, result: @escaping FlutterResult) -> Void in
@@ -217,6 +219,10 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, MAMapV
                     }
                 }
                 self._searchManager.aMapReGoecodeSearch(request)
+            } else if ("searchAround" == call.method) {
+                if let keyword = call.arguments as? String {
+                    self.searchPOI(keyword: keyword, result: result)
+                }
             }
         });
     }
@@ -271,6 +277,40 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, MAMapV
         self._searchManager.aMapPOIAroundSearch(request)
     }
     
+    private func searchPOI(keyword: String, result: @escaping FlutterResult) {
+        let centerCoord = self._view.region.center
+        requestPOI(coord: centerCoord, keyword: keyword) { (data) in
+            let coordList = Array(arrayLiteral: centerCoord.latitude, centerCoord.longitude)
+            let resultMap = Dictionary<String, Any?>(
+                dictionaryLiteral:
+                ("coordinate", coordList),
+                ("around", data)
+            )
+            result(resultMap)
+        }
+    }
+    
+    private func updateRegionInfo() {
+        let centerCoord = self._view.region.center
+        if let lastCoord = _regionCenter {
+            let dist = MAMetersBetweenMapPoints(MAMapPointForCoordinate(centerCoord), MAMapPointForCoordinate(lastCoord))
+            if dist < 50 {
+                return
+            }
+        }
+        self._channel.invokeMethod("onRegionStartChanging", arguments: nil)
+        _regionCenter = centerCoord
+        requestPOI(coord: centerCoord, keyword: nil) { (data) in
+            let coordList = Array(arrayLiteral: centerCoord.latitude, centerCoord.longitude)
+            let resultMap = Dictionary<String, Any?>(
+                dictionaryLiteral:
+                ("coordinate", coordList),
+                ("around", data)
+            )
+            self._channel.invokeMethod("onRegionChanged", arguments: resultMap)
+        }
+    }
+    
     public func onReGeocodeSearchDone(_ request: AMapReGeocodeSearchRequest!, response: AMapReGeocodeSearchResponse!) {
         let _invokeId: Int = request.hash
         if let handler = self._reGeoHandler.handles[_invokeId] {
@@ -293,26 +333,11 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, MAMapV
     
     public func aMapSearchRequest(_ request: Any!, didFailWithError error: Error!) {
         print("Error:\(String(describing: error))")
+        self._channel.invokeMethod("onError", arguments: String(describing: error))
     }
     
-    public func mapView(_ mapView: MAMapView!, regionDidChangeAnimated animated: Bool) {
-        let centerCoord = self._view.region.center
-        if let lastCoord = _regionCenter {
-            let dist = MAMetersBetweenMapPoints(MAMapPointForCoordinate(centerCoord), MAMapPointForCoordinate(lastCoord))
-            if dist < 50 {
-                return
-            }
-        }
-        _regionCenter = centerCoord
-        requestPOI(coord: centerCoord, keyword: nil) { (data) in
-            let coordList = Array(arrayLiteral: centerCoord.latitude, centerCoord.longitude)
-            let resultMap = Dictionary<String, Any?>(
-                dictionaryLiteral:
-                ("coordinate", coordList),
-                ("around", data)
-            )
-            self._channel.invokeMethod("onRegionChanged", arguments: resultMap)
-        }
+    public func mapView(_ mapView: MAMapView!, mapDidMoveByUser wasUserAction: Bool) {
+        updateRegionInfo()
     }
     
     public func view() -> UIView {
