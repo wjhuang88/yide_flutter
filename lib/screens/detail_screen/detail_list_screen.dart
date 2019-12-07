@@ -5,12 +5,14 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:yide/components/header_bar.dart';
 import 'package:yide/components/tap_animator.dart';
 import 'package:yide/interfaces/navigatable.dart';
 import 'package:yide/models/geo_data.dart';
 import 'package:yide/models/sqlite_manager.dart';
 import 'package:yide/models/task_data.dart';
 import 'package:yide/screens/edit_main_screen.dart';
+import 'package:yide/tools/icon_tools.dart';
 
 import 'detail_comments_screen.dart';
 import 'detail_map_screen.dart';
@@ -200,20 +202,13 @@ class _DetailListScreenState extends State<DetailListScreen>
               },
               child: Column(
                 children: <Widget>[
-                  SafeArea(
-                    bottom: false,
-                    child: Row(
-                      children: <Widget>[
-                        CupertinoButton(
-                          padding: const EdgeInsets.all(17.0),
-                          child: const Icon(
-                            FontAwesomeIcons.chevronLeft,
-                            color: Color(0xFFD7CAFF),
-                          ),
-                          onPressed: () => Navigator.of(context).maybePop(),
-                        ),
-                      ],
+                  HeaderBar(
+                    leadingIcon: const Icon(
+                      CupertinoIcons.left_chevron,
+                      color: Color(0xFFD7CAFF),
+                      size: 30.0,
                     ),
+                    onLeadingAction: Navigator.of(context).maybePop,
                   ),
                   _HeaderPanel(
                     content: _data.content,
@@ -243,7 +238,7 @@ class _DetailListScreenState extends State<DetailListScreen>
                     child: ListView(
                       children: <Widget>[
                         _ListItem(
-                          iconData: FontAwesomeIcons.clock,
+                          iconData: buildCupertinoIconData(0xf3c8),
                           child: _savedDetail.reminderBitMap != null &&
                                   _savedDetail.reminderBitMap.bitMap != 0
                               ? Text(
@@ -274,7 +269,7 @@ class _DetailListScreenState extends State<DetailListScreen>
                           height: 10.0,
                         ),
                         _ListItem(
-                          iconData: FontAwesomeIcons.redo,
+                          iconData: CupertinoIcons.restart,
                           child: _savedDetail.repeatBitMap != null &&
                                   !(_savedDetail.repeatBitMap.isNoneRepeat)
                               ? Text(
@@ -308,7 +303,7 @@ class _DetailListScreenState extends State<DetailListScreen>
                           height: 10.0,
                         ),
                         _ListItem(
-                          iconData: FontAwesomeIcons.mapMarkerAlt,
+                          iconData: buildCupertinoIconData(0xf3a3),
                           child: _savedDetail.address != null &&
                                   _savedDetail.address.name?.isNotEmpty == true
                               ? Text(
@@ -338,7 +333,7 @@ class _DetailListScreenState extends State<DetailListScreen>
                           height: 10.0,
                         ),
                         _ListItem(
-                          iconData: FontAwesomeIcons.folder,
+                          iconData: CupertinoIcons.folder_solid,
                           child:
                               _data.catalog != null && _data.catalog.isNotEmpty
                                   ? Text(
@@ -357,7 +352,7 @@ class _DetailListScreenState extends State<DetailListScreen>
                           height: 10.0,
                         ),
                         _ListItem(
-                          iconData: FontAwesomeIcons.stickyNote,
+                          iconData: buildCupertinoIconData(0xf418),
                           child: _data.remark != null && _data.remark.isNotEmpty
                               ? Text(
                                   _data.remark,
@@ -388,7 +383,7 @@ class _DetailListScreenState extends State<DetailListScreen>
                       child: const Icon(
                         FontAwesomeIcons.trashAlt,
                         color: Color(0x88EDE7FF),
-                        size: 21.0,
+                        size: 25.0,
                       ),
                       onPressed: () async {
                         final isDelete = await showCupertinoDialog<bool>(
@@ -398,16 +393,16 @@ class _DetailListScreenState extends State<DetailListScreen>
                             content: Text('删除事项后将无法恢复，请确认此次操作是您的真实意图'),
                             actions: <Widget>[
                               CupertinoDialogAction(
-                                child: Text('确定删除'),
-                                isDestructiveAction: true,
-                                onPressed: () =>
-                                    Navigator.of(context).maybePop(true),
-                              ),
-                              CupertinoDialogAction(
                                 child: Text('取消'),
                                 isDefaultAction: true,
                                 onPressed: () =>
                                     Navigator.of(context).maybePop(false),
+                              ),
+                              CupertinoDialogAction(
+                                child: Text('确定删除'),
+                                isDestructiveAction: true,
+                                onPressed: () =>
+                                    Navigator.of(context).maybePop(true),
                               ),
                             ],
                           ),
@@ -501,7 +496,7 @@ class _HeaderPanel extends StatelessWidget {
               ),
               Text(
                 dateTimeString,
-                textAlign: TextAlign.start,
+                textAlign: TextAlign.end,
                 style:
                     const TextStyle(fontSize: 14.0, color: Color(0xFFEDE7FF), fontWeight: FontWeight.w200),
               ),
@@ -560,7 +555,7 @@ class _ListItem extends StatelessWidget {
                 ),
                 Icon(
                   iconData,
-                  size: 20.0,
+                  size: 25.0,
                   color: Color(0x88EDE7FF),
                 ),
                 const SizedBox(

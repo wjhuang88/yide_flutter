@@ -6,6 +6,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:yide/components/location_map_view.dart';
 import 'package:yide/interfaces/navigatable.dart';
 import 'package:yide/models/geo_data.dart';
+import 'package:yide/tools/icon_tools.dart';
 
 class DetailMapScreen extends StatefulWidget implements Navigatable {
   final AroundData address;
@@ -114,7 +115,7 @@ class _DetailMapScreenState extends State<DetailMapScreen>
             child: Transform.translate(
                 offset: Offset(0.0, -10.0 * _pinJumpAnim.value),
                 child: const Icon(
-                  FontAwesomeIcons.mapPin,
+                  CupertinoIcons.location_solid,
                   color: Color(0xFFFAB807),
                   size: 40.0,
                 )),
@@ -163,23 +164,32 @@ class _DetailMapScreenState extends State<DetailMapScreen>
                       onTap: () => Navigator.of(context).maybePop<AroundData>(_arounds[i]),
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: <Widget>[
-                            Text(
-                              data.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 18.0),
+                            Icon(buildCupertinoIconData(0xf393), color: Color(0x88FFFFFF), size: 26.0,),
+                            const SizedBox(width: 15.0,),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Text(
+                                    data.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                        color: Colors.white, fontSize: 18.0, fontWeight: FontWeight.w300),
+                                  ),
+                                  Text(
+                                    '$dist | $addr',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                        color: Color(0x88FFFFFF), fontSize: 14.0, fontWeight: FontWeight.w300),
+                                  )
+                                ],
+                              ),
                             ),
-                            Text(
-                              '$dist | $addr',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                  color: Color(0xFFFAB807), fontSize: 14.0),
-                            )
                           ],
                         ),
                       ),
@@ -209,25 +219,25 @@ class _DetailMapScreenState extends State<DetailMapScreen>
                       child: CupertinoButton(
                         padding: EdgeInsets.zero,
                         child: const Icon(
-                          FontAwesomeIcons.chevronLeft,
-                          color: Color(0xFF8346C8),
-                          size: 14.0,
+                          CupertinoIcons.left_chevron,
+                          color: Color(0x99000000),
+                          size: 25.0,
                         ),
                         onPressed: () => Navigator.of(context).maybePop(),
                       ),
                     ),
                     const Divider(
-                      color: Color(0xFF8346C8),
+                      color: Color(0x99000000),
                       height: 0.0,
                       thickness: 0.1,
                     ),
                     Expanded(
                       child: CupertinoButton(
                         padding: EdgeInsets.zero,
-                        child: const Icon(
-                          FontAwesomeIcons.locationArrow,
-                          color: Color(0xFF8346C8),
-                          size: 14.0,
+                        child: Icon(
+                          buildCupertinoIconData(0xf474),
+                          color: Color(0x99000000),
+                          size: 26.0,
                         ),
                         onPressed: () {
                           _locationMapController.backToUserLocation();

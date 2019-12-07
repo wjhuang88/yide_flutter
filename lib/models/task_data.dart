@@ -74,7 +74,8 @@ class TaskData {
       case 1:
         return DateTimeType.fullday;
       default:
-        print('Unsupported DateTimeType code: $timeTypeCode, set to default value: fullday.');
+        print(
+            'Unsupported DateTimeType code: $timeTypeCode, set to default value: fullday.');
         return DateTimeType.fullday;
     }
   }
@@ -246,6 +247,25 @@ class RepeatBitMap {
 
   void resetMode() {
     bitMap &= ~_allModeMask;
+  }
+
+  void checkAndSetMonday() {
+    if (!isWeekSelected) {
+      return;
+    }
+    if (bitMap & _allWeekMask == 0) {
+      bitMap |= 1 << 1;
+    }
+  }
+
+  void checkAndNotUnselect(int day) {
+    if (!isWeekSelected) {
+      return;
+    }
+    final tempResult = bitMap ^ (1 << day);
+    if (tempResult & _allWeekMask != 0) {
+      reverseWeekDay(day);
+    }
   }
 
   String makeRepeatModeLabel() {

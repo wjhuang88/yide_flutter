@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:yide/components/header_bar.dart';
 import 'package:yide/components/location_methods.dart';
 import 'package:yide/components/timeline_list.dart';
 import 'package:yide/interfaces/navigatable.dart';
@@ -14,6 +15,7 @@ import 'package:yide/models/task_data.dart';
 import 'package:yide/notification.dart';
 import 'package:yide/screens/detail_screen/detail_list_screen.dart';
 import 'package:yide/screens/edit_main_screen.dart';
+import 'package:yide/tools/icon_tools.dart';
 
 class TimelineListScreen extends StatefulWidget implements Navigatable {
   const TimelineListScreen({Key key}) : super(key: key);
@@ -158,183 +160,209 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
           AppNotification('drag_menu', value: frac).dispatch(context);
         }
       },
-      child: Scaffold(
+      child: CupertinoPageScaffold(
         backgroundColor: Colors.transparent,
-        floatingActionButton: Opacity(
+        child: Opacity(
           opacity: opacity,
-          child: FloatingActionButton(
-            backgroundColor: const Color(0xFFFAB807),
-            child: const Icon(
-              Icons.add,
-              size: 40.0,
-            ),
-            onPressed: () async {
-              final newTask = await Navigator.push<TaskPack>(
-                  context, EditMainScreen().route);
-              if (newTask != null) {
-                await TaskDBAction.saveTask(newTask.data);
-                setState(() {
-                  _taskList = TaskDBAction.getTaskListByDate(_dateTime);
-                });
-              }
-            },
-          ),
-        ),
-        body: Opacity(
-          opacity: opacity,
-          child: Column(
+          child: Stack(
             children: <Widget>[
-              SafeArea(
-                bottom: false,
-                child: Container(
-                  alignment: Alignment.centerLeft,
-                  child: CupertinoButton(
-                    padding: const EdgeInsets.all(17.0),
-                    child: const Icon(
-                      FontAwesomeIcons.bars,
-                      color: Color(0xFFD7CAFF),
-                    ),
-                    onPressed: () {
-                      AppNotification("open_menu").dispatch(context);
-                    },
-                  ),
-                ),
-              ),
-              FractionalTranslation(
-                translation: Offset(0.0, transitionFactor - 1),
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 17.0),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 20.0, vertical: 18.0),
-                  height: 182.0,
-                  decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color(0xFF975ED8), Color(0xFF7352D0)]),
-                      borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                      boxShadow: [
-                        BoxShadow(
-                          offset: Offset(0.0, 6.0),
-                          blurRadius: 23.0,
-                          color: Color(0x8A4F3A8C),
-                        )
-                      ]),
-                  child: Stack(
-                    children: <Widget>[
-                      _buildHeaderColumn(),
-                      Positioned(
-                        right: 5.0,
-                        top: 0.0,
-                        child: weatherImageMap[_weather] != null
-                            ? Container(
-                                height: 32.0,
-                                width: 32,
-                                child: Image.asset(weatherImageMap[_weather]))
-                            //? Container(height: 32.0, width: 32, child: Image.asset('assets/images/weather/test1.png'))
-                            : CupertinoActivityIndicator(
-                                radius: 16.0,
-                              ),
+              Column(
+                children: <Widget>[
+                  SafeArea(
+                    bottom: false,
+                    child: Container(
+                      alignment: Alignment.centerLeft,
+                      child: CupertinoButton(
+                        padding: const EdgeInsets.all(17.0),
+                        child: Icon(
+                          buildCupertinoIconData(0xf394),
+                          color: Color(0xFFD7CAFF),
+                          size: 30.0,
+                        ),
+                        onPressed: () {
+                          AppNotification("open_menu").dispatch(context);
+                        },
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(
-                height: 20.0,
-              ),
-              Expanded(
-                child: FractionalTranslation(
-                  translation: Offset(transitionFactor - 1, 0.0),
-                  child: FutureBuilder<List<TaskPack>>(
-                    future: _taskList,
-                    initialData: null,
-                    builder: (context, snapshot) {
-                      switch (snapshot.connectionState) {
-                        case ConnectionState.none:
-                          return _savedList;
-                        case ConnectionState.waiting:
-                          return _loadingPlaceholder;
-                        case ConnectionState.active:
-                        case ConnectionState.done:
-                          final dataList = snapshot.data;
-                          _savedList = TimelineListView.build(
-                            placeholder: _placeholder,
-                            itemCount: dataList.length,
-                            tileBuilder: (context, index) {
-                              final item = dataList[index];
-                              final rows = <Widget>[
-                                Text(
-                                  item.data.content,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Color(0xFFD7CAFF),
-                                    fontSize: 15.0,
+                  FractionalTranslation(
+                    translation: Offset(0.0, transitionFactor - 1),
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 17.0),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20.0, vertical: 18.0),
+                      height: 182.0,
+                      decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [Color(0xFF975ED8), Color(0xFF7352D0)]),
+                          borderRadius: BorderRadius.all(Radius.circular(10.0)),
+                          boxShadow: [
+                            BoxShadow(
+                              offset: Offset(0.0, 6.0),
+                              blurRadius: 23.0,
+                              color: Color(0x8A4F3A8C),
+                            )
+                          ]),
+                      child: Stack(
+                        children: <Widget>[
+                          _buildHeaderColumn(),
+                          Positioned(
+                            right: 5.0,
+                            top: 0.0,
+                            child: weatherImageMap[_weather] != null
+                                ? Container(
+                                    height: 32.0,
+                                    width: 32,
+                                    child: Image.asset(weatherImageMap[_weather]))
+                                //? Container(height: 32.0, width: 32, child: Image.asset('assets/images/weather/test1.png'))
+                                : CupertinoActivityIndicator(
+                                    radius: 16.0,
                                   ),
-                                ),
-                                const SizedBox(
-                                  height: 10.0,
-                                ),
-                                Text(
-                                  item.tag.name ?? '默认',
-                                  style: TextStyle(
-                                      color: item.tag.iconColor,
-                                      fontSize: 12.0),
-                                ),
-                              ];
-                              if (item.data.catalog != null &&
-                                  item.data.catalog.isNotEmpty) {
-                                rows
-                                  ..add(
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 20.0,
+                  ),
+                  Expanded(
+                    child: FractionalTranslation(
+                      translation: Offset(transitionFactor - 1, 0.0),
+                      child: FutureBuilder<List<TaskPack>>(
+                        future: _taskList,
+                        initialData: null,
+                        builder: (context, snapshot) {
+                          switch (snapshot.connectionState) {
+                            case ConnectionState.none:
+                              return _savedList;
+                            case ConnectionState.waiting:
+                              return _loadingPlaceholder;
+                            case ConnectionState.active:
+                            case ConnectionState.done:
+                              final dataList = snapshot.data;
+                              _savedList = TimelineListView.build(
+                                placeholder: _placeholder,
+                                itemCount: dataList.length,
+                                tileBuilder: (context, index) {
+                                  final item = dataList[index];
+                                  final rows = <Widget>[
+                                    Text(
+                                      item.data.content,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: Color(0xFFD7CAFF),
+                                        fontSize: 15.0,
+                                      ),
+                                    ),
                                     const SizedBox(
                                       height: 10.0,
                                     ),
-                                  )
-                                  ..add(Text(
-                                    item.data.catalog,
-                                    style: const TextStyle(
-                                        color: Color(0xFFC9A2F5),
-                                        fontSize: 12.0),
-                                  ));
-                              }
-                              if (item.data.remark != null &&
-                                  item.data.remark.isNotEmpty) {
-                                rows
-                                  ..add(const SizedBox(height: 10.0))
-                                  ..add(Text(
-                                    item.data.remark,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                        color: Color(0xFFC9A2F5),
-                                        fontSize: 12.0),
-                                  ));
-                              }
-                              return TimelineTile(
-                                rows: rows,
-                                onTap: () async {
-                                  await Navigator.of(context)
-                                      .push<TaskPack>(DetailListScreen(
-                                    taskPack: item,
-                                  ).route);
-                                  setState(() {
-                                    _taskList = TaskDBAction.getTaskListByDate(
-                                        _dateTime);
-                                  });
+                                    Text(
+                                      item.tag.name ?? '默认',
+                                      style: TextStyle(
+                                          color: item.tag.iconColor,
+                                          fontSize: 12.0),
+                                    ),
+                                  ];
+                                  if (item.data.catalog != null &&
+                                      item.data.catalog.isNotEmpty) {
+                                    rows
+                                      ..add(
+                                        const SizedBox(
+                                          height: 10.0,
+                                        ),
+                                      )
+                                      ..add(Text(
+                                        item.data.catalog,
+                                        style: const TextStyle(
+                                            color: Color(0xFFC9A2F5),
+                                            fontSize: 12.0),
+                                      ));
+                                  }
+                                  if (item.data.remark != null &&
+                                      item.data.remark.isNotEmpty) {
+                                    rows
+                                      ..add(const SizedBox(height: 10.0))
+                                      ..add(Text(
+                                        item.data.remark,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                            color: Color(0xFFC9A2F5),
+                                            fontSize: 12.0),
+                                      ));
+                                  }
+                                  return TimelineTile(
+                                    rows: rows,
+                                    onTap: () async {
+                                      await Navigator.of(context)
+                                          .push<TaskPack>(DetailListScreen(
+                                        taskPack: item,
+                                      ).route);
+                                      setState(() {
+                                        _taskList = TaskDBAction.getTaskListByDate(
+                                            _dateTime);
+                                      });
+                                    },
+                                  );
                                 },
+                                onGenerateLabel: (index) =>
+                                    _makeTimeLabel(dataList[index]?.data),
+                                onGenerateDotColor: (index) =>
+                                    dataList[index]?.tag?.iconColor,
                               );
-                            },
-                            onGenerateLabel: (index) =>
-                                _makeTimeLabel(dataList[index]?.data),
-                            onGenerateDotColor: (index) =>
-                                dataList[index]?.tag?.iconColor,
-                          );
-                          return _savedList;
-                        default:
-                          return _placeholder;
-                      }
-                    },
+                              return _savedList;
+                            default:
+                              return _placeholder;
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Positioned(
+                bottom: 0.0,
+                right: 0.0,
+                child: SafeArea(
+                  child: Container(
+                    height: 55.0,
+                    width: 55.0,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.all(Radius.circular(30.0)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0x883D2E75),
+                          blurRadius: 10.5,
+                          offset: Offset(0.0, 6.5),
+                        ),
+                      ]
+                    ),
+                    margin: const EdgeInsets.only(right: 20.0, bottom: 20.0),
+                    child: CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      color: const Color(0xFFFAB807),
+                      borderRadius: BorderRadius.all(Radius.circular(30.0)),
+                      child: const Icon(
+                        CupertinoIcons.add,
+                        size: 45.0,
+                        color: Colors.white,
+                      ),
+                      onPressed: () async {
+                        final newTask = await Navigator.push<TaskPack>(
+                            context, EditMainScreen().route);
+                        if (newTask != null) {
+                          await TaskDBAction.saveTask(newTask.data);
+                          setState(() {
+                            _taskList = TaskDBAction.getTaskListByDate(_dateTime);
+                          });
+                        }
+                      },
+                    ),
                   ),
                 ),
               ),

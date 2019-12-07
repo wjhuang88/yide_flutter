@@ -470,7 +470,7 @@ class _MainMenu extends StatelessWidget {
                     size: 20.0,
                   ),
                   title: const Text(
-                    '建�����反馈',
+                    '建议反馈',
                   ),
                   onTap: () {
                     _screenController.closeMenu();

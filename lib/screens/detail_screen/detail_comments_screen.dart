@@ -1,5 +1,7 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:yide/components/header_bar.dart';
 import 'package:yide/interfaces/navigatable.dart';
 
 class DetailCommentsScreen extends StatelessWidget implements Navigatable {
@@ -11,50 +13,46 @@ class DetailCommentsScreen extends StatelessWidget implements Navigatable {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return CupertinoPageScaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        brightness: Brightness.dark,
-        backgroundColor: Colors.transparent,
-        elevation: 0.0,
-        leading: IconButton(
-          icon: const Icon(
-            FontAwesomeIcons.times,
-            color: Color(0xFFD7CAFF),
-          ),
-          onPressed: () => Navigator.of(context).maybePop(),
-        ),
-        title: Text(
-          '备注',
-          style: TextStyle(fontSize: 18.0, color: Colors.white),
-        ),
-        actions: <Widget>[
-          FlatButton(
-            child: Text(
-              '完成',
-              style: TextStyle(fontSize: 16.0, color: Color(0xFFEDE7FF)),
+      child: Column(
+        children: <Widget>[
+          HeaderBar(
+            leadingIcon: const Icon(
+              CupertinoIcons.clear,
+              color: Color(0xFFD7CAFF),
+              size: 40.0,
             ),
-            onPressed: () => Navigator.of(context).maybePop<String>(_controller.text),
+            onLeadingAction: Navigator.of(context).maybePop,
+            actionIcon: const Text(
+              '完成',
+              style: const TextStyle(
+                  fontSize: 15.0, color: const Color(0xFFEDE7FF)),
+            ),
+            onAction: () =>
+                Navigator.of(context).maybePop<String>(_controller.text),
+            title: '备注',
+          ),
+          Container(
+            margin: const EdgeInsets.only(top: 50.0),
+            child: CupertinoTextField(
+              style: const TextStyle(color: Colors.white, fontSize: 14.0),
+              autofocus: true,
+              maxLines: null,
+              controller: _controller,
+              keyboardType: TextInputType.text,
+              keyboardAppearance: Brightness.dark,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (text) => Navigator.of(context).maybePop<String>(text),
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              placeholder: '请输入内容',
+              placeholderStyle: const TextStyle(color: Color(0xFF9B7FE9)),
+              decoration: BoxDecoration(
+                color: Colors.transparent
+              ),
+            ),
           ),
         ],
-      ),
-      body: Container(
-        margin: const EdgeInsets.only(top: 50.0),
-        child: TextField(
-          style: const TextStyle(color: Colors.white, fontSize: 14.0),
-          autofocus: true,
-          maxLines: null,
-          controller: _controller,
-          keyboardType: TextInputType.text,
-          keyboardAppearance: Brightness.dark,
-          textInputAction: TextInputAction.done,
-          onSubmitted: (text) => Navigator.of(context).maybePop<String>(text),
-          decoration: InputDecoration(
-              contentPadding: EdgeInsets.symmetric(horizontal: 24.0),
-              border: InputBorder.none,
-              hintText: '请输入内容',
-              hintStyle: const TextStyle(color: Color(0xFF9B7FE9))),
-        ),
       ),
     );
   }
