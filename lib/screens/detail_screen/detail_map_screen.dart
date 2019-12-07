@@ -2,7 +2,6 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:yide/components/location_map_view.dart';
 import 'package:yide/interfaces/navigatable.dart';
 import 'package:yide/models/geo_data.dart';
@@ -55,9 +54,14 @@ class _DetailMapScreenState extends State<DetailMapScreen>
     super.initState();
     _locationMapController = LocationMapController();
     _pinJumpController = AnimationController(
-        vsync: this, value: 1.0, duration: Duration(milliseconds: 150));
-    _pinJumpAnim = Tween(begin: 0.0, end: 1.0).animate(CurvedAnimation(
-        parent: _pinJumpController, curve: Curves.easeInOutCubic));
+        vsync: this, value: 1.0, duration: Duration(milliseconds: 500));
+    _pinJumpAnim = Tween(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _pinJumpController,
+        curve: Curves.decelerate,
+        reverseCurve: Curves.elasticIn,
+      ),
+    );
     _pinJumpAnim.addListener(() {
       setState(() {
         // Trigger update.
@@ -73,6 +77,8 @@ class _DetailMapScreenState extends State<DetailMapScreen>
 
   @override
   Widget build(BuildContext context) {
+    final originHeight = MediaQuery.of(context).size.height / 3;
+    final panelHeight = originHeight - (originHeight % 50) + 20;
     return CupertinoPageScaffold(
       backgroundColor: const Color(0x00000000),
       resizeToAvoidBottomInset: false,
@@ -136,19 +142,30 @@ class _DetailMapScreenState extends State<DetailMapScreen>
             ),
           ),
           Positioned(
-            bottom: 20.0,
-            left: 20.0,
-            right: 20.0,
+            bottom: 10.0,
+            left: 10.0,
+            right: 10.0,
             child: SafeArea(
               child: Container(
-                height: MediaQuery.of(context).size.height / 3,
-                padding: const EdgeInsets.symmetric(vertical: 20.0),
+                height: panelHeight,
+                padding: const EdgeInsets.symmetric(vertical: 10.0),
                 decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Color(0xFF8346C8), Color(0xFF523F88)]),
-                    borderRadius: BorderRadius.all(Radius.circular(20.0))),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF975ED8), Color(0xFF7352D0)],
+                  ),
+                  borderRadius: BorderRadius.all(
+                    Radius.circular(10.0),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      offset: Offset(0.0, 6.0),
+                      blurRadius: 23.0,
+                      color: Color(0x8A4F3A8C),
+                    ),
+                  ],
+                ),
                 child: ListView.separated(
                   itemCount: _arounds.length,
                   separatorBuilder: (context, i) => const Divider(
@@ -158,19 +175,30 @@ class _DetailMapScreenState extends State<DetailMapScreen>
                   itemBuilder: (context, i) {
                     final data = _arounds[i];
                     final dist =
-                        data.distance < 50 ? '50m内' : '${data.distance}m';
+                        data.distance < 30 ? '30m内' : '${data.distance}m';
                     final addr = data.address;
                     return GestureDetector(
-                      onTap: () => Navigator.of(context).maybePop<AroundData>(_arounds[i]),
+                      onTap: () => Navigator.of(context)
+                          .maybePop<AroundData>(_arounds[i]),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                        height: 50.0,
+                        alignment: Alignment.centerLeft,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20.0),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: <Widget>[
-                            Icon(buildCupertinoIconData(0xf393), color: Color(0x88FFFFFF), size: 26.0,),
-                            const SizedBox(width: 15.0,),
+                            Icon(
+                              buildCupertinoIconData(0xf37c),
+                              color: Color(0x88FFFFFF),
+                              size: 20.0,
+                            ),
+                            const SizedBox(
+                              width: 15.0,
+                            ),
                             Expanded(
                               child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: <Widget>[
                                   Text(
@@ -178,14 +206,18 @@ class _DetailMapScreenState extends State<DetailMapScreen>
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
-                                        color: Colors.white, fontSize: 18.0, fontWeight: FontWeight.w300),
+                                        color: Colors.white,
+                                        fontSize: 16.0,
+                                        fontWeight: FontWeight.w200),
                                   ),
                                   Text(
                                     '$dist | $addr',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
-                                        color: Color(0x88FFFFFF), fontSize: 14.0, fontWeight: FontWeight.w300),
+                                        color: Color(0x88FFFFFF),
+                                        fontSize: 12.0,
+                                        fontWeight: FontWeight.w200),
                                   )
                                 ],
                               ),
@@ -207,11 +239,20 @@ class _DetailMapScreenState extends State<DetailMapScreen>
                 width: 45.0,
                 padding: const EdgeInsets.symmetric(vertical: 5.0),
                 decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.all(Radius.circular(25.0)),
-                    boxShadow: [
-                      BoxShadow(color: Color(0x44523F88), blurRadius: 3.0)
-                    ]),
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0xFF975ED8), Color(0xFF7352D0)],
+                  ),
+                  borderRadius: BorderRadius.all(Radius.circular(25.0)),
+                  boxShadow: [
+                    BoxShadow(
+                      offset: Offset(0.0, 6.0),
+                      blurRadius: 23.0,
+                      color: Color(0x8A4F3A8C),
+                    ),
+                  ],
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: <Widget>[
@@ -220,14 +261,14 @@ class _DetailMapScreenState extends State<DetailMapScreen>
                         padding: EdgeInsets.zero,
                         child: const Icon(
                           CupertinoIcons.left_chevron,
-                          color: Color(0x99000000),
+                          color: Color(0x99FFFFFF),
                           size: 25.0,
                         ),
                         onPressed: () => Navigator.of(context).maybePop(),
                       ),
                     ),
                     const Divider(
-                      color: Color(0x99000000),
+                      color: Color(0x99FFFFFF),
                       height: 0.0,
                       thickness: 0.1,
                     ),
@@ -236,7 +277,7 @@ class _DetailMapScreenState extends State<DetailMapScreen>
                         padding: EdgeInsets.zero,
                         child: Icon(
                           buildCupertinoIconData(0xf474),
-                          color: Color(0x99000000),
+                          color: Color(0x99FFFFFF),
                           size: 26.0,
                         ),
                         onPressed: () {

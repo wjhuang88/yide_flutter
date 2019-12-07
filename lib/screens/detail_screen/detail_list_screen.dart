@@ -67,7 +67,7 @@ class _DetailListScreenState extends State<DetailListScreen>
   double _dragDelta = 0.0;
   double _screenWidth = 1.0;
 
-  bool _isLoadingValue = false;
+  bool _isLoadingValue = true;
   bool get _isLoading => _isLoadingValue;
   set _isLoading(bool value) {
     setState(() {
@@ -208,6 +208,7 @@ class _DetailListScreenState extends State<DetailListScreen>
                       color: Color(0xFFD7CAFF),
                       size: 30.0,
                     ),
+                    actionIcon: _isLoading ? CupertinoActivityIndicator() : null,
                     onLeadingAction: Navigator.of(context).maybePop,
                   ),
                   _HeaderPanel(

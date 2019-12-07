@@ -2,9 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:yide/components/header_bar.dart';
 import 'package:yide/components/location_methods.dart';
 import 'package:yide/components/timeline_list.dart';
 import 'package:yide/interfaces/navigatable.dart';
@@ -54,7 +52,6 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
   TimelineScreenController _controller;
   Widget _savedList;
   Widget _placeholder;
-  Widget _loadingPlaceholder;
 
   Future<List<TaskPack>> _taskList;
 
@@ -68,7 +65,15 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
 
   DateTime _dateTime = DateTime.now();
 
-  void _updateLocAndTemp() async {
+  bool _isLoadingValue = true;
+  bool get _isLoading => _isLoadingValue;
+  set _isLoading(bool value) {
+    setState(() {
+      _isLoadingValue = value;
+    });
+  }
+
+  Future<void> _updateLocAndTemp() async {
     final location = await LocationMethods.getLocation();
     final weather = await LocationMethods.getWeather(location.adcode);
     setState(() {
@@ -78,6 +83,13 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
     });
   }
 
+  Future<List<TaskPack>> _updateListData() async {
+    _isLoading = true;
+    final result = await TaskDBAction.getTaskListByDate(_dateTime);
+    _isLoading = false;
+    return result;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -85,11 +97,8 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
     _controller ??= TimelineScreenController();
 
     _savedList = _placeholder = Container();
-    _loadingPlaceholder = CupertinoActivityIndicator(
-      radius: 16.0,
-    );
 
-    _taskList = TaskDBAction.getTaskListByDate(_dateTime);
+    _taskList = _updateListData();
     _updateLocAndTemp();
 
     _controller._state = this;
@@ -170,19 +179,27 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
                 children: <Widget>[
                   SafeArea(
                     bottom: false,
-                    child: Container(
-                      alignment: Alignment.centerLeft,
-                      child: CupertinoButton(
-                        padding: const EdgeInsets.all(17.0),
-                        child: Icon(
-                          buildCupertinoIconData(0xf394),
-                          color: Color(0xFFD7CAFF),
-                          size: 30.0,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        CupertinoButton(
+                          padding: const EdgeInsets.all(17.0),
+                          child: Icon(
+                            buildCupertinoIconData(0xf394),
+                            color: Color(0xFFD7CAFF),
+                            size: 30.0,
+                          ),
+                          onPressed: () {
+                            AppNotification("open_menu").dispatch(context);
+                          },
                         ),
-                        onPressed: () {
-                          AppNotification("open_menu").dispatch(context);
-                        },
-                      ),
+                        _isLoading
+                            ? Container(
+                                padding: const EdgeInsets.only(right: 17.0),
+                                child: CupertinoActivityIndicator(),
+                              )
+                            : const SizedBox(),
+                      ],
                     ),
                   ),
                   FractionalTranslation(
@@ -215,7 +232,8 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
                                 ? Container(
                                     height: 32.0,
                                     width: 32,
-                                    child: Image.asset(weatherImageMap[_weather]))
+                                    child:
+                                        Image.asset(weatherImageMap[_weather]))
                                 //? Container(height: 32.0, width: 32, child: Image.asset('assets/images/weather/test1.png'))
                                 : CupertinoActivityIndicator(
                                     radius: 16.0,
@@ -237,9 +255,8 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
                         builder: (context, snapshot) {
                           switch (snapshot.connectionState) {
                             case ConnectionState.none:
-                              return _savedList;
                             case ConnectionState.waiting:
-                              return _loadingPlaceholder;
+                              return _savedList;
                             case ConnectionState.active:
                             case ConnectionState.done:
                               final dataList = snapshot.data;
@@ -304,8 +321,9 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
                                         taskPack: item,
                                       ).route);
                                       setState(() {
-                                        _taskList = TaskDBAction.getTaskListByDate(
-                                            _dateTime);
+                                        _taskList =
+                                            TaskDBAction.getTaskListByDate(
+                                                _dateTime);
                                       });
                                     },
                                   );
@@ -333,15 +351,14 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
                     height: 55.0,
                     width: 55.0,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.all(Radius.circular(30.0)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0x883D2E75),
-                          blurRadius: 10.5,
-                          offset: Offset(0.0, 6.5),
-                        ),
-                      ]
-                    ),
+                        borderRadius: BorderRadius.all(Radius.circular(30.0)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0x883D2E75),
+                            blurRadius: 10.5,
+                            offset: Offset(0.0, 6.5),
+                          ),
+                        ]),
                     margin: const EdgeInsets.only(right: 20.0, bottom: 20.0),
                     child: CupertinoButton(
                       padding: EdgeInsets.zero,
@@ -358,7 +375,8 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
                         if (newTask != null) {
                           await TaskDBAction.saveTask(newTask.data);
                           setState(() {
-                            _taskList = TaskDBAction.getTaskListByDate(_dateTime);
+                            _taskList =
+                                TaskDBAction.getTaskListByDate(_dateTime);
                           });
                         }
                       },
