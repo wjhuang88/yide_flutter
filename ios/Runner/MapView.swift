@@ -32,6 +32,7 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, MAMapV
     
     let _reGeoHandler: ReGeoHandler
     let _poiHandler: POIHandler
+    let _tipHandler: TipHandler
     
     var _regionCenter: CLLocationCoordinate2D?
     
@@ -45,6 +46,7 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, MAMapV
         self._view = MAMapView(frame: frame)
         self._reGeoHandler = ReGeoHandler()
         self._poiHandler = POIHandler()
+        self._tipHandler = TipHandler()
         
         self._regionCenter = nil
         
@@ -186,12 +188,9 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, MAMapV
         self._view.update(r)
         
         self._view.screenAnchor = centerOffset
-        
-        if let initCenter = self.initCenter {
-            self._view.centerCoordinate = initCenter
+        if let initLocation = self.initCenter {
+            self._view.centerCoordinate = initLocation
         }
-        
-        updateRegionInfo()
 
         _channel.setMethodCallHandler({ [self]
           (call: FlutterMethodCall, result: @escaping FlutterResult) -> Void in
@@ -221,7 +220,23 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, MAMapV
                 self._searchManager.aMapReGoecodeSearch(request)
             } else if ("searchAround" == call.method) {
                 if let keyword = call.arguments as? String {
-                    self.searchPOI(keyword: keyword, result: result)
+                    self.requestKeywordPOI(keyword: keyword, result: result)
+                    
+                    let tipReq = AMapInputTipsSearchRequest()
+                    let invokeId = tipReq.hash
+                    self._tipHandler.results[invokeId] = result
+                    self._tipHandler.handles[invokeId] = {(response, result) -> Void in
+                        let list = response.tips.map { (tip) -> String in
+                            tip.name
+                        }
+                        self._channel.invokeMethod("onTips", arguments: list)
+                    }
+                    tipReq.keywords = keyword
+                    self._searchManager.aMapInputTipsSearch(tipReq)
+                }
+            } else if ("forceTriggerRegionChange" == call.method) {
+                if let coord = self._regionCenter {
+                    self.forceUpdateRegionInfo(centerCoord: coord)
                 }
             }
         });
@@ -251,43 +266,55 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, MAMapV
             )
     }
     
-    private func requestPOI(coord: CLLocationCoordinate2D, keyword: String?, result: @escaping FlutterResult) {
+    private func makeDectionaryFromPOI(poi: AMapPOI) -> Dictionary<String, Any?> {
+        let dist: Int
+        if let poiLoc = poi.location {
+            let baseCoord = self._userLocation.coordinate
+            let basePoint = MAMapPointForCoordinate(baseCoord)
+            let poiCoord = CLLocationCoordinate2D(latitude: CLLocationDegrees(poiLoc.latitude), longitude: CLLocationDegrees(poiLoc.longitude))
+            let poiPoint = MAMapPointForCoordinate(poiCoord)
+            dist = Int(MAMetersBetweenMapPoints(basePoint , poiPoint))
+        } else {
+            dist = poi.distance
+        }
+        return Dictionary<String, Any?>(
+            dictionaryLiteral:
+            ("name", poi.name),
+            ("id", poi.uid),
+            ("distance", dist),
+            ("address", poi.address),
+            ("latitude", poi.location.latitude),
+            ("longitude", poi.location.longitude)
+        )
+    }
+    
+    private func requestAroundPOI(coord: CLLocationCoordinate2D, keyword: String?, result: @escaping FlutterResult) {
         let request = AMapPOIAroundSearchRequest()
         request.location = AMapGeoPoint.location(withLatitude: CGFloat(coord.latitude), longitude: CGFloat(coord.longitude))
+        request.requireExtension = true
         if let keyword = keyword {
             request.keywords = keyword
         }
-        request.requireExtension = true
         let invokeId = request.hash
         self._poiHandler.results[invokeId] = result
         self._poiHandler.handles[invokeId] = {(response, result) -> Void in
-            result(response.pois.map { (poi) -> Dictionary<String, Any?> in
-                return Dictionary<String, Any?>(
-                    dictionaryLiteral:
-                    ("name", poi.name),
-                    ("id", poi.uid),
-                    ("distance", poi.distance),
-                    ("address", poi.address),
-                    ("latitude", poi.location.latitude),
-                    ("longitude", poi.location.longitude)
-                )
-            })
+            result(response.pois.map(self.makeDectionaryFromPOI))
         }
-        
         self._searchManager.aMapPOIAroundSearch(request)
     }
     
-    private func searchPOI(keyword: String, result: @escaping FlutterResult) {
-        let centerCoord = self._view.region.center
-        requestPOI(coord: centerCoord, keyword: keyword) { (data) in
-            let coordList = Array(arrayLiteral: centerCoord.latitude, centerCoord.longitude)
-            let resultMap = Dictionary<String, Any?>(
-                dictionaryLiteral:
-                ("coordinate", coordList),
-                ("around", data)
-            )
-            result(resultMap)
+    private func requestKeywordPOI(keyword: String, result: @escaping FlutterResult) {
+        let request = AMapPOIKeywordsSearchRequest()
+        request.keywords = keyword
+        request.requireExtension = true
+        request.cityLimit = true
+        request.requireSubPOIs = true
+        let invokeId = request.hash
+        self._poiHandler.results[invokeId] = result
+        self._poiHandler.handles[invokeId] = {(response, result) -> Void in
+            result(response.pois.map(self.makeDectionaryFromPOI))
         }
+        self._searchManager.aMapPOIKeywordsSearch(request)
     }
     
     private func updateRegionInfo() {
@@ -300,7 +327,11 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, MAMapV
         }
         self._channel.invokeMethod("onRegionStartChanging", arguments: nil)
         _regionCenter = centerCoord
-        requestPOI(coord: centerCoord, keyword: nil) { (data) in
+        forceUpdateRegionInfo(centerCoord: centerCoord)
+    }
+    
+    private func forceUpdateRegionInfo(centerCoord: CLLocationCoordinate2D) {
+        requestAroundPOI(coord: centerCoord, keyword: nil) { (data) in
             let coordList = Array(arrayLiteral: centerCoord.latitude, centerCoord.longitude)
             let resultMap = Dictionary<String, Any?>(
                 dictionaryLiteral:
@@ -308,6 +339,18 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, MAMapV
                 ("around", data)
             )
             self._channel.invokeMethod("onRegionChanged", arguments: resultMap)
+        }
+    }
+    
+    public func mapView(_ mapView: MAMapView!, didSingleTappedAt coordinate: CLLocationCoordinate2D) {
+        let resultList = Array(arrayLiteral: coordinate.latitude, coordinate.longitude)
+        self._channel.invokeMethod("onMapTap", arguments: resultList)
+    }
+    
+    public func mapView(_ mapView: MAMapView!, didUpdate userLocation: MAUserLocation!, updatingLocation: Bool) {
+        
+        if _regionCenter == nil {
+            updateRegionInfo()
         }
     }
     
@@ -325,6 +368,16 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, MAMapV
         let _invokeId: Int = request.hash
         if let handler = self._poiHandler.handles[_invokeId] {
             if let result = self._poiHandler.results[_invokeId] {
+                handler(response, result)
+                self._poiHandler.handles.removeValue(forKey: _invokeId)
+            }
+        }
+    }
+    
+    public func onInputTipsSearchDone(_ request: AMapInputTipsSearchRequest!, response: AMapInputTipsSearchResponse!) {
+        let _invokeId: Int = request.hash
+        if let handler = self._tipHandler.handles[_invokeId] {
+            if let result = self._tipHandler.results[_invokeId] {
                 handler(response, result)
                 self._poiHandler.handles.removeValue(forKey: _invokeId)
             }
@@ -386,6 +439,16 @@ class POIHandler : NSObject {
     
     override init() {
         self.handles = Dictionary<Int, ((AMapPOISearchResponse, FlutterResult) -> Void)>()
+        self.results = Dictionary<Int, FlutterResult>()
+    }
+}
+
+class TipHandler : NSObject {
+    var handles: Dictionary<Int, ((AMapInputTipsSearchResponse, FlutterResult) -> Void)>
+    var results: Dictionary<Int, FlutterResult>
+    
+    override init() {
+        self.handles = Dictionary<Int, ((AMapInputTipsSearchResponse, FlutterResult) -> Void)>()
         self.results = Dictionary<Int, FlutterResult>()
     }
 }

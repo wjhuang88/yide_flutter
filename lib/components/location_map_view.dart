@@ -6,14 +6,18 @@ import 'package:yide/models/geo_data.dart';
 class LocationMapController {
   _LocationMapViewState _state;
 
-  Future<void> backToUserLocation() async {
-    return _state?._backToUserLocation();
-  }
+  Future<void> backToUserLocation() async => _state?._backToUserLocation();
 
   Future<AddressData> getUserAddress() async {
     final map = await _state?._getUserAddress();
     return AddressData.fromMap(map);
   }
+
+  Future<List<AroundData>> searchAround(String keyword) async =>
+      _state?._searchAround(keyword);
+
+  Future<void> forceTriggerRegionChange() async =>
+      _state?._forceTriggerRegionChange();
 }
 
 class LocationMapView extends StatefulWidget {
@@ -30,6 +34,8 @@ class LocationMapView extends StatefulWidget {
   final void Function(List<AroundData> around, Coordinate coordinate)
       onRegionChanged;
   final VoidCallback onRegionStartChanging;
+  final void Function(List<String> tips) onTips;
+  final void Function(Coordinate coord) onMapTap;
 
   final LocationMapController controller;
 
@@ -48,6 +54,8 @@ class LocationMapView extends StatefulWidget {
     this.onRegionChanged,
     this.initCenter,
     this.onRegionStartChanging,
+    this.onTips,
+    this.onMapTap,
   }) : super(key: key);
 
   @override
@@ -75,6 +83,16 @@ class _LocationMapViewState extends State<LocationMapView> {
         } else if (call.method == 'onRegionStartChanging' &&
             widget.onRegionStartChanging != null) {
           widget.onRegionStartChanging();
+        } else if (call.method == 'onTips' && widget.onTips != null) {
+          final tips = call.arguments as List;
+          widget.onTips(
+            tips.map((tip) => tip as String).toList(),
+          );
+        } else if (call.method == 'onMapTap' && widget.onMapTap != null) {
+          final coordList = call.arguments as List;
+          widget.onMapTap(
+            Coordinate.fromList(coordList.map((d) => d as double).toList()),
+          );
         }
       });
     }
@@ -83,10 +101,7 @@ class _LocationMapViewState extends State<LocationMapView> {
   void _makeAroundDataCallback(Map args) {
     final coordinateList = args['coordinate'] as List;
     final aroundMapList = args['around'] as List;
-    final aroundList = aroundMapList
-        .map((map) => AroundData.fromMap(
-            (map as Map).map((k, v) => MapEntry(k as String, v))))
-        .toList();
+    final aroundList = _parseAroundData(aroundMapList);
     final coordinate =
         Coordinate.fromList(coordinateList.map((d) => d as double).toList());
     if (widget.onRegionChanged != null) {
@@ -94,12 +109,27 @@ class _LocationMapViewState extends State<LocationMapView> {
     }
   }
 
+  List<AroundData> _parseAroundData(List rawList) => rawList
+      .map((map) => AroundData.fromMap(
+          (map as Map).map((k, v) => MapEntry(k as String, v))))
+      .toList()..sort((a, b) => a.distance - b.distance);
+
   Future<void> _backToUserLocation() async {
-    return await platform.invokeMethod<void>('backToUserLocation');
+    return platform.invokeMethod<void>('backToUserLocation');
+  }
+
+  Future<void> _forceTriggerRegionChange() async {
+    return platform.invokeMethod<void>('forceTriggerRegionChange');
   }
 
   Future<Map<String, String>> _getUserAddress() async {
-    return await platform.invokeMapMethod<String, String>('getUserAddress');
+    return platform.invokeMapMethod<String, String>('getUserAddress');
+  }
+
+  Future<List<AroundData>> _searchAround(String keyword) async {
+    final aroundMapList =
+        await platform.invokeListMethod('searchAround', keyword);
+    return _parseAroundData(aroundMapList ?? const []);
   }
 
   @override

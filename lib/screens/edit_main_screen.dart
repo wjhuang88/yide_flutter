@@ -218,9 +218,9 @@ class _EditMainScreenState extends State<EditMainScreen>
       child: Container(
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF8346C8), Color(0xFF523F88)]),
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF8346C8), Color(0xFF523F88)]),
         ),
         child: CupertinoPageScaffold(
           backgroundColor: Colors.transparent,
