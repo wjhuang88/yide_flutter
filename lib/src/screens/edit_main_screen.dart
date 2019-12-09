@@ -4,17 +4,17 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:yide/components/fade_in.dart';
-import 'package:yide/components/infinity_page_view.dart';
-import 'package:yide/components/panel_switcher.dart';
-import 'package:yide/components/tap_animator.dart';
-import 'package:yide/interfaces/navigatable.dart';
-import 'package:yide/models/date_tools.dart';
-import 'package:yide/models/sqlite_manager.dart';
-import 'package:yide/models/task_data.dart';
-import 'package:yide/screens/detail_screen/panels/detail_datetime_panel.dart';
-import 'package:yide/screens/detail_screen/panels/detail_tag_panel.dart';
-import 'package:yide/screens/detail_screen/panels/detail_time_panel.dart';
+import 'package:yide/src/components/fade_in.dart';
+import 'package:yide/src/components/infinity_page_view.dart';
+import 'package:yide/src/components/panel_switcher.dart';
+import 'package:yide/src/components/tap_animator.dart';
+import 'package:yide/src/interfaces/navigatable.dart';
+import 'package:yide/src/tools/date_tools.dart';
+import 'package:yide/src/tools/sqlite_manager.dart';
+import 'package:yide/src/models/task_data.dart';
+import 'package:yide/src/screens/detail_screen/panels/detail_datetime_panel.dart';
+import 'package:yide/src/screens/detail_screen/panels/detail_tag_panel.dart';
+import 'package:yide/src/screens/detail_screen/panels/detail_time_panel.dart';
 
 class EditMainScreen extends StatefulWidget implements Navigatable {
   const EditMainScreen({Key key, this.taskPack}) : super(key: key);

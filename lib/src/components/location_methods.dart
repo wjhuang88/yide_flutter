@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
-import 'package:yide/models/geo_data.dart';
+
+import 'package:yide/src/models/geo_data.dart';
 
 class LocationMethods {
   static const _platform = const MethodChannel("amap_location_method");

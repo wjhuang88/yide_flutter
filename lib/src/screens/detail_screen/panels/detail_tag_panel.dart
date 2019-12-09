@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:yide/models/sqlite_manager.dart';
-import 'package:yide/models/task_data.dart';
+import 'package:yide/src/tools/sqlite_manager.dart';
+import 'package:yide/src/models/task_data.dart';
 
 class DetailTagPanel extends StatefulWidget {
   const DetailTagPanel({Key key, this.selectedTag, this.onChange})

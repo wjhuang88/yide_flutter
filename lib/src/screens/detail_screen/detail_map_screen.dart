@@ -3,10 +3,10 @@ import 'dart:math' as Math;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:yide/components/location_map_view.dart';
-import 'package:yide/interfaces/navigatable.dart';
-import 'package:yide/models/geo_data.dart';
-import 'package:yide/tools/icon_tools.dart';
+import 'package:yide/src/components/location_map_view.dart';
+import 'package:yide/src/interfaces/navigatable.dart';
+import 'package:yide/src/models/geo_data.dart';
+import 'package:yide/src/tools/icon_tools.dart';
 
 class DetailMapScreen extends StatefulWidget implements Navigatable {
   final AroundData address;

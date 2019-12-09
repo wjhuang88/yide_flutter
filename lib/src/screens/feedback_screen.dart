@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:dotted_border/dotted_border.dart';
-import 'package:yide/components/header_bar.dart';
-import 'package:yide/interfaces/navigatable.dart';
+import 'package:yide/src/components/header_bar.dart';
+import 'package:yide/src/interfaces/navigatable.dart';
 
 class FeedbackScreen extends StatelessWidget implements Navigatable {
   @override

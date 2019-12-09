@@ -3,17 +3,17 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:yide/components/location_methods.dart';
-import 'package:yide/components/timeline_list.dart';
-import 'package:yide/interfaces/navigatable.dart';
-import 'package:yide/models/date_tools.dart';
-import 'package:yide/models/geo_data.dart';
-import 'package:yide/models/sqlite_manager.dart';
-import 'package:yide/models/task_data.dart';
-import 'package:yide/notification.dart';
-import 'package:yide/screens/detail_screen/detail_list_screen.dart';
-import 'package:yide/screens/edit_main_screen.dart';
-import 'package:yide/tools/icon_tools.dart';
+import 'package:yide/src/components/location_methods.dart';
+import 'package:yide/src/components/timeline_list.dart';
+import 'package:yide/src/interfaces/navigatable.dart';
+import 'package:yide/src/tools/date_tools.dart';
+import 'package:yide/src/models/geo_data.dart';
+import 'package:yide/src/tools/sqlite_manager.dart';
+import 'package:yide/src/models/task_data.dart';
+import 'package:yide/src/notification.dart';
+import 'package:yide/src/screens/detail_screen/detail_list_screen.dart';
+import 'package:yide/src/screens/edit_main_screen.dart';
+import 'package:yide/src/tools/icon_tools.dart';
 
 class TimelineListScreen extends StatefulWidget implements Navigatable {
   const TimelineListScreen({Key key}) : super(key: key);
@@ -74,13 +74,13 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
   }
 
   Future<void> _updateLocAndTemp() async {
+    _isLoading = true;
     final location = await LocationMethods.getLocation();
     final weather = await LocationMethods.getWeather(location.adcode);
-    setState(() {
-      _cityName = weather.city ?? ' - ';
-      _temp = weather.temperature ?? ' - ';
-      _weather = weather.weather ?? ' - ';
-    });
+    _cityName = weather.city ?? ' - ';
+    _temp = weather.temperature ?? ' - ';
+    _weather = weather.weather ?? ' - ';
+    _isLoading = false;
   }
 
   Future<List<TaskPack>> _updateListData() async {
@@ -149,7 +149,7 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
           return;
         }
         _isDragging = false;
-        AppNotification('drag_menu_end', value: detail.primaryVelocity)
+        AppNotification(NotificationType.dragMenuEnd, value: detail.primaryVelocity)
             .dispatch(context);
       },
       onHorizontalDragCancel: () {
@@ -157,7 +157,7 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
           return;
         }
         _isDragging = false;
-        AppNotification('drag_menu_end').dispatch(context);
+        AppNotification(NotificationType.dragMenuEnd).dispatch(context);
       },
       onHorizontalDragUpdate: (detail) {
         if (_isDragging) {
@@ -166,7 +166,7 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
           if (frac < 0.3) {
             return;
           }
-          AppNotification('drag_menu', value: frac).dispatch(context);
+          AppNotification(NotificationType.dragMenu, value: frac).dispatch(context);
         }
       },
       child: CupertinoPageScaffold(
@@ -190,7 +190,7 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
                             size: 30.0,
                           ),
                           onPressed: () {
-                            AppNotification("open_menu").dispatch(context);
+                            AppNotification(NotificationType.openMenu).dispatch(context);
                           },
                         ),
                         _isLoading

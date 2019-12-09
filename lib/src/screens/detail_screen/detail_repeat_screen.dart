@@ -1,12 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:yide/components/flipping_tile.dart';
-import 'package:yide/components/header_bar.dart';
-import 'package:yide/components/tap_animator.dart';
-import 'package:yide/interfaces/navigatable.dart';
-import 'package:yide/models/date_tools.dart';
-import 'package:yide/models/task_data.dart';
+import 'package:yide/src/components/flipping_tile.dart';
+import 'package:yide/src/components/header_bar.dart';
+import 'package:yide/src/components/tap_animator.dart';
+import 'package:yide/src/interfaces/navigatable.dart';
+import 'package:yide/src/tools/date_tools.dart';
+import 'package:yide/src/models/task_data.dart';
 
 class DetailRepeatScreen extends StatefulWidget implements Navigatable {
   final int stateCode;

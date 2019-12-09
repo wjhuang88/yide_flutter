@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:yide/components/header_bar.dart';
-import 'package:yide/interfaces/navigatable.dart';
+import 'package:yide/src/components/header_bar.dart';
+import 'package:yide/src/interfaces/navigatable.dart';
 
 class DetailCommentsScreen extends StatelessWidget implements Navigatable {
   final TextEditingController _controller;
