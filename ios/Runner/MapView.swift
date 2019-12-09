@@ -220,19 +220,52 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, MAMapV
                 self._searchManager.aMapReGoecodeSearch(request)
             } else if ("searchAround" == call.method) {
                 if let keyword = call.arguments as? String {
-                    self.requestKeywordPOI(keyword: keyword, result: result)
-                    
-                    let tipReq = AMapInputTipsSearchRequest()
-                    let invokeId = tipReq.hash
-                    self._tipHandler.results[invokeId] = result
-                    self._tipHandler.handles[invokeId] = {(response, result) -> Void in
-                        let list = response.tips.map { (tip) -> String in
-                            tip.name
+                    let coord = self._userLocation.coordinate
+                    var resultMap = Dictionary<String, Dictionary<String, Any?>>()
+                    let tipAction = {() in
+                        self.requestTips(keyword: keyword) { (data) in
+                            if let dataTips = data as? Array<Dictionary<String, Any?>> {
+                                if dataTips.count > 0 {
+                                    dataTips.forEach { (tip) in
+                                        resultMap[tip["id"] as! String] = tip
+                                    }
+                                }
+                            }
+                            result(Array(resultMap.values))
                         }
-                        self._channel.invokeMethod("onTips", arguments: list)
                     }
-                    tipReq.keywords = keyword
-                    self._searchManager.aMapInputTipsSearch(tipReq)
+                    let keywordAction = {() in
+                        self.requestKeywordPOI(keyword: keyword) { (data) in
+                            if let dataKeyword = data as? Array<Dictionary<String, Any?>> {
+                                if dataKeyword.count > 0 {
+                                    dataKeyword.forEach { (keywordResult) in
+                                        resultMap[keywordResult["id"] as! String] = keywordResult
+                                    }
+                                }
+                                if resultMap.count >= 5 {
+                                    result(Array(resultMap.values))
+                                } else {
+                                    tipAction()
+                                }
+                            } else {
+                                tipAction()
+                            }
+                        }
+                    }
+                    self.requestAroundPOI(coord: coord, keyword: keyword) { (data) in
+                        if let dataAround = data as? Array<Dictionary<String, Any?>> {
+                            if dataAround.count >= 5 {
+                                result(dataAround)
+                            } else {
+                                dataAround.forEach { (around) in
+                                    resultMap[around["id"] as! String] = around
+                                }
+                                keywordAction()
+                            }
+                        } else {
+                            keywordAction()
+                        }
+                    }
                 }
             } else if ("forceTriggerRegionChange" == call.method) {
                 if let coord = self._regionCenter {
@@ -266,16 +299,26 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, MAMapV
             )
     }
     
-    private func makeDectionaryFromPOI(poi: AMapPOI) -> Dictionary<String, Any?> {
+    private func calculateDistance(a: CLLocationCoordinate2D, b: CLLocationCoordinate2D) -> CLLocationDistance {
+        let aPoint = MAMapPointForCoordinate(a)
+        let bPoint = MAMapPointForCoordinate(b)
+        return MAMetersBetweenMapPoints(aPoint , bPoint)
+    }
+    
+    private func makeDictionaryFromPOI(poi: AMapPOI) -> Dictionary<String, Any?> {
         let dist: Int
+        let latitude: CGFloat
+        let longitude: CGFloat
         if let poiLoc = poi.location {
+            latitude = poiLoc.latitude
+            longitude = poiLoc.longitude
             let baseCoord = self._userLocation.coordinate
-            let basePoint = MAMapPointForCoordinate(baseCoord)
-            let poiCoord = CLLocationCoordinate2D(latitude: CLLocationDegrees(poiLoc.latitude), longitude: CLLocationDegrees(poiLoc.longitude))
-            let poiPoint = MAMapPointForCoordinate(poiCoord)
-            dist = Int(MAMetersBetweenMapPoints(basePoint , poiPoint))
+            let poiCoord = CLLocationCoordinate2D(latitude: CLLocationDegrees(latitude), longitude: CLLocationDegrees(longitude))
+            dist = Int(calculateDistance(a: baseCoord , b: poiCoord))
         } else {
             dist = poi.distance
+            latitude = 0.0
+            longitude = 0.0
         }
         return Dictionary<String, Any?>(
             dictionaryLiteral:
@@ -283,8 +326,34 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, MAMapV
             ("id", poi.uid),
             ("distance", dist),
             ("address", poi.address),
-            ("latitude", poi.location.latitude),
-            ("longitude", poi.location.longitude)
+            ("latitude", latitude),
+            ("longitude", longitude)
+        )
+    }
+    
+    private func makeDictionaryFromTip(tip: AMapTip) -> Dictionary<String, Any?> {
+        let dist: Int?
+        let latitude: CGFloat
+        let longitude: CGFloat
+        if let tipLoc = tip.location {
+            latitude = tipLoc.latitude
+            longitude = tipLoc.longitude
+            let baseCoord = self._userLocation.coordinate
+            let poiCoord = CLLocationCoordinate2D(latitude: CLLocationDegrees(latitude), longitude: CLLocationDegrees(longitude))
+            dist = Int(calculateDistance(a: baseCoord , b: poiCoord))
+        } else {
+            dist = nil
+            latitude = 0.0
+            longitude = 0.0
+        }
+        return Dictionary<String, Any?>(
+            dictionaryLiteral:
+            ("name", tip.name),
+            ("id", tip.uid),
+            ("distance", dist),
+            ("address", tip.address),
+            ("latitude", latitude),
+            ("longitude", longitude)
         )
     }
     
@@ -298,7 +367,7 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, MAMapV
         let invokeId = request.hash
         self._poiHandler.results[invokeId] = result
         self._poiHandler.handles[invokeId] = {(response, result) -> Void in
-            result(response.pois.map(self.makeDectionaryFromPOI))
+            result(response.pois.map(self.makeDictionaryFromPOI))
         }
         self._searchManager.aMapPOIAroundSearch(request)
     }
@@ -312,9 +381,25 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, MAMapV
         let invokeId = request.hash
         self._poiHandler.results[invokeId] = result
         self._poiHandler.handles[invokeId] = {(response, result) -> Void in
-            result(response.pois.map(self.makeDectionaryFromPOI))
+            result(response.pois.map(self.makeDictionaryFromPOI))
         }
         self._searchManager.aMapPOIKeywordsSearch(request)
+    }
+    
+    private func requestTips(keyword: String, result: @escaping FlutterResult) {
+        let request = AMapInputTipsSearchRequest()
+        request.keywords = keyword
+        let location = self._userLocation.coordinate
+        request.location = "\(location.latitude),\(location.longitude)"
+        request.cityLimit = true
+        print(request.location)
+        let invokeId = request.hash
+        self._tipHandler.results[invokeId] = result
+        self._tipHandler.handles[invokeId] = {(response, result) -> Void in
+            let list = response.tips.map(self.makeDictionaryFromTip)
+            result(list)
+        }
+        self._searchManager.aMapInputTipsSearch(request)
     }
     
     private func updateRegionInfo() {

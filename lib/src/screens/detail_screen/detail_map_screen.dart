@@ -1,5 +1,5 @@
+import 'dart:async';
 import 'dart:ui';
-import 'dart:math' as Math;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -90,6 +90,8 @@ class _DetailMapScreenState extends State<DetailMapScreen>
   FocusNode _focusNode = FocusNode();
   TextEditingController _textEditingController = TextEditingController();
 
+  Timer _inputTime;
+
   bool _isLoadingValue = true;
   bool get _isLoading => _isLoadingValue;
   set _isLoading(bool value) {
@@ -167,8 +169,8 @@ class _DetailMapScreenState extends State<DetailMapScreen>
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
-    final originPanelHeight = screenHeight / 3;
-    final baseHeight = originPanelHeight - (originPanelHeight % 50) + 20;
+    final originPanelHeight = screenHeight / 2.5;
+    final baseHeight = originPanelHeight - (originPanelHeight % 70);
 
     final minPanelHeight = baseHeight;
     final maxPanelHeight = screenHeight * 0.78 - 60.0;
@@ -302,13 +304,16 @@ class _DetailMapScreenState extends State<DetailMapScreen>
               padding: const EdgeInsets.symmetric(horizontal: 10.0),
               decoration: BoxDecoration(color: Colors.transparent),
               onChanged: (keyword) async {
-                if (keyword?.isEmpty ?? false) {
-                  _locationMapController.forceTriggerRegionChange();
-                  return;
-                }
-                final list = await _locationMapController.searchAround(keyword);
-                setState(() {
-                  _arounds = list;
+                _inputTime?.cancel();
+                _inputTime = Timer(const Duration(milliseconds: 500), () async {
+                  if (keyword?.isEmpty ?? false) {
+                    _locationMapController.forceTriggerRegionChange();
+                    return;
+                  }
+                  final list = await _locationMapController.searchAround(keyword);
+                  setState(() {
+                    _arounds = list;
+                  });
                 });
               },
               onSubmitted: (keyword) async {
@@ -385,7 +390,6 @@ class _LocationListPanel extends StatelessWidget {
     return Container(
       height: panelHeight,
       alignment: Alignment.center,
-      padding: const EdgeInsets.symmetric(vertical: 10.0),
       decoration: _gradientDecoration,
       child: isLoading
           ? CupertinoActivityIndicator(
@@ -396,30 +400,44 @@ class _LocationListPanel extends StatelessWidget {
   }
 
   ListView _buildListBody() {
-    return ListView.separated(
+    return ListView.builder(
       padding: EdgeInsets.zero,
       itemCount: _arounds.length,
       controller: controller,
       physics: const AlwaysScrollableScrollPhysics(
           parent: const BouncingScrollPhysics()),
-      separatorBuilder: (context, i) => const Divider(
-        color: Colors.white,
-        thickness: 0.2,
-      ),
+      itemExtent: 70.0,
       itemBuilder: (context, i) {
         final data = _arounds[i];
-        final dist = data.distance < 30
-            ? '30m内'
-            : data.distance < 1000
-                ? '${data.distance} m'
-                : '${(data.distance / 1000).toStringAsFixed(1)} km';
+        final dist = data == null
+            ? '-'
+            : data.distance < 30
+                ? '30m内'
+                : data.distance < 1000
+                    ? '${data.distance} m'
+                    : '${(data.distance / 1000).toStringAsFixed(1)} km';
         final addr = data.address;
+        var border;
+        if (i == 0) {
+          border = const Border.fromBorderSide(BorderSide.none);
+        } else {
+          border = const Border(
+            top: BorderSide(
+              color: Color(0x88FFFFFF),
+              width: 0.2,
+            ),
+          );
+        }
         return GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: () => Navigator.of(context).maybePop<AroundData>(_arounds[i]),
           child: Container(
-            height: 50.0,
+            height: 70.0,
             alignment: Alignment.centerLeft,
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            decoration: BoxDecoration(
+              border: border,
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[

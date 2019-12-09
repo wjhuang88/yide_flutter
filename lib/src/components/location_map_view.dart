@@ -35,7 +35,7 @@ class LocationMapView extends StatefulWidget {
   final void Function(List<AroundData> around, Coordinate coordinate)
       onRegionChanged;
   final VoidCallback onRegionStartChanging;
-  final void Function(List<String> tips) onTips;
+  final void Function(List<AroundData> tips) onTips;
   final void Function(Coordinate coord) onMapTap;
 
   final LocationMapController controller;
@@ -87,7 +87,7 @@ class _LocationMapViewState extends State<LocationMapView> {
         } else if (call.method == 'onTips' && widget.onTips != null) {
           final tips = call.arguments as List;
           widget.onTips(
-            tips.map((tip) => tip as String).toList(),
+            _parseAroundData(tips) ?? const [],
           );
         } else if (call.method == 'onMapTap' && widget.onMapTap != null) {
           final coordList = call.arguments as List;

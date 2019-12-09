@@ -207,7 +207,7 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
                     child: Container(
                       margin: const EdgeInsets.symmetric(horizontal: 17.0),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 20.0, vertical: 18.0),
+                          horizontal: 20.0, vertical: 15.0),
                       height: 182.0,
                       decoration: const BoxDecoration(
                           gradient: LinearGradient(
