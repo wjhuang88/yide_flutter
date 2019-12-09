@@ -1,6 +1,7 @@
 package com.lindenz.yideFlutter
 
 import android.content.Context
+import android.util.Log
 import android.util.SparseArray
 import com.amap.api.location.AMapLocation
 import com.amap.api.location.AMapLocationClient
@@ -12,21 +13,26 @@ import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 
-class LocationMethod(private val context: Context, binaryMessenger: BinaryMessenger) : MethodChannel.MethodCallHandler, WeatherSearch.OnWeatherSearchListener, AMapLocationListener {
+class LocationMethod : MethodChannel.MethodCallHandler, WeatherSearch.OnWeatherSearchListener, AMapLocationListener {
 
-    private val weatherHandlers = SparseArray<(LocalWeatherLive, MethodChannel.Result) -> Unit>()
+    private val weatherHandlers = SparseArray<(LocalWeatherLive?, MethodChannel.Result) -> Unit>()
     private val weatherResults = SparseArray<MethodChannel.Result>()
 
     private val locationResults = ArrayList<MethodChannel.Result>()
     private val locationClients = ArrayList<AMapLocationClient>()
 
-    init {
-        MethodChannel(binaryMessenger, "amap_location_method").let {
-            it.setMethodCallHandler(this)
-        }
+    private var channel: MethodChannel? = null
+
+    private var context: Context? = null
+
+    fun doInit(context: Context, binaryMessenger: BinaryMessenger) {
+        this.context = context
+        channel = MethodChannel(binaryMessenger, "amap_location_method")
+        channel?.setMethodCallHandler(this)
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
+        Log.i("method", call.method)
         when(call.method) {
             "getLocation" -> this.getLocation(result)
             "getWeather" -> (call.arguments as? String)?.let { adcode ->
@@ -37,16 +43,18 @@ class LocationMethod(private val context: Context, binaryMessenger: BinaryMessen
                 val invokeId = query.hashCode()
                 this.weatherResults.put(invokeId, result)
                 this.weatherHandlers.put(invokeId) { weatherLive, result ->
-                    val map = HashMap<String, String>().let {
-                        it["adcode"] = weatherLive.adCode
-                        it["province"] = weatherLive.province
-                        it["city"] = weatherLive.city
-                        it["weather"] = weatherLive.weather
-                        it["temperature"] = weatherLive.temperature
-                        it["windDirection"] = weatherLive.windDirection
-                        it["windPower"] = weatherLive.windPower
-                        it["humidity"] = weatherLive.humidity
-                        it["reportTime"] = weatherLive.reportTime
+                    val map = HashMap<String, String>().also {
+                        weatherLive?.let { weatherLive ->
+                            it["adcode"] = weatherLive.adCode
+                            it["province"] = weatherLive.province
+                            it["city"] = weatherLive.city
+                            it["weather"] = weatherLive.weather
+                            it["temperature"] = weatherLive.temperature
+                            it["windDirection"] = weatherLive.windDirection
+                            it["windPower"] = weatherLive.windPower
+                            it["humidity"] = weatherLive.humidity
+                            it["reportTime"] = weatherLive.reportTime
+                        }
                     }
                     result.success(map)
                 }
@@ -60,10 +68,10 @@ class LocationMethod(private val context: Context, binaryMessenger: BinaryMessen
         client.setLocationListener(this)
         val option = AMapLocationClientOption()
 
-        print("start")
-
         option.locationMode = AMapLocationClientOption.AMapLocationMode.Hight_Accuracy
         option.isOnceLocation = true
+        option.isNeedAddress = true
+        option.isGpsFirst = true
         client.setLocationOption(option)
         client.startLocation()
 
@@ -71,11 +79,11 @@ class LocationMethod(private val context: Context, binaryMessenger: BinaryMessen
         locationClients.add(client)
     }
 
-    override fun onWeatherLiveSearched(weatherLiveResult: LocalWeatherLiveResult, rCode: Int) {
-        weatherLiveResult.weatherLiveQuery.hashCode().let { invokeId ->
+    override fun onWeatherLiveSearched(weatherLiveResult: LocalWeatherLiveResult?, rCode: Int) {
+        weatherLiveResult?.weatherLiveQuery.hashCode().let { invokeId ->
             weatherHandlers[invokeId]?.let { handler ->
                 weatherResults[invokeId]?.let { result ->
-                    handler(weatherLiveResult.liveResult, result)
+                    handler(weatherLiveResult?.liveResult, result)
                     weatherHandlers.delete(invokeId)
                     weatherResults.delete(invokeId)
                 }
@@ -84,9 +92,8 @@ class LocationMethod(private val context: Context, binaryMessenger: BinaryMessen
     }
 
     override fun onLocationChanged(amapLocation: AMapLocation) {
-        print("result")
         assert(locationResults.size == locationClients.size)
-        val map = HashMap<String, Any?>().let {
+        val map = HashMap<String, Any?>().also {
             it["country"] = amapLocation.country
             it["province"] = amapLocation.province
             it["city"] = amapLocation.city
@@ -98,13 +105,18 @@ class LocationMethod(private val context: Context, binaryMessenger: BinaryMessen
             it["latitude"] = amapLocation.latitude
             it["longitude"] = amapLocation.longitude
         }
+        Log.i("method", amapLocation.toString())
         for (i in locationClients.indices) {
             locationResults[i].success(map)
             locationClients[i].let {
                 it.stopLocation()
                 it.onDestroy()
             }
+
+            Log.i("method", map.toString())
         }
+        locationResults.clear()
+        locationClients.clear()
     }
 
 

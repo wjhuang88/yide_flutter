@@ -6,11 +6,12 @@ import io.flutter.app.FlutterActivity
 import io.flutter.plugins.GeneratedPluginRegistrant
 
 class MainActivity: FlutterActivity() {
+
+  private val locationMethod = LocationMethod()
+
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-
-    LocationMethod(applicationContext, flutterView)
-
+    locationMethod.doInit(applicationContext, flutterView)
     GeneratedPluginRegistrant.registerWith(this)
   }
 }
