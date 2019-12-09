@@ -445,6 +445,7 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, MAMapV
             if let result = self._reGeoHandler.results[_invokeId] {
                 handler(response, result)
                 self._reGeoHandler.handles.removeValue(forKey: _invokeId)
+                self._reGeoHandler.results.removeValue(forKey: _invokeId)
             }
         }
     }
@@ -455,6 +456,7 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, MAMapV
             if let result = self._poiHandler.results[_invokeId] {
                 handler(response, result)
                 self._poiHandler.handles.removeValue(forKey: _invokeId)
+                self._poiHandler.results.removeValue(forKey: _invokeId)
             }
         }
     }
@@ -465,6 +467,7 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, MAMapV
             if let result = self._tipHandler.results[_invokeId] {
                 handler(response, result)
                 self._poiHandler.handles.removeValue(forKey: _invokeId)
+                self._poiHandler.results.removeValue(forKey: _invokeId)
             }
         }
     }

@@ -75,6 +75,7 @@ public class LocationMethod : NSObject, AMapSearchDelegate {
             if let result = self._weatherHandler.results[_invokeId] {
                 handler(response, result)
                 self._weatherHandler.handles.removeValue(forKey: _invokeId)
+                self._weatherHandler.results.removeValue(forKey: _invokeId)
             }
         }
     }
