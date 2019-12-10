@@ -16,7 +16,7 @@ import Flutter
     let locationManager = AMapLocationManager()
     
     let viewFactory = MapViewFactory(messager: messenger, locationManager: locationManager)
-    let mapRigister = registrar(forPlugin: "yide_map_view")
+    let mapRigister = registrar(forPlugin: viewFactory.flutterId)
     
     let locationChannel = FlutterMethodChannel(name: "amap_location_method", binaryMessenger: messenger)
     let _ = LocationMethod(channel: locationChannel, locationManager: locationManager)

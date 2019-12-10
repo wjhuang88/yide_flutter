@@ -299,6 +299,9 @@ class TaskDBAction {
   static Future<bool> isTaskDetailExists(int id) async {
     final result =
         await _dbManager.query('assets/sql/query_task_detail_count.sql', [id]);
+    if (result == null) {
+      return false;
+    }
     assert(result.length == 1,
         'Querying detail count by id should return 1 and only 1 result, but ${result.length} found.');
     final count = result.first['count'] as int;
@@ -308,6 +311,9 @@ class TaskDBAction {
   static Future<bool> isTaskExists(int id) async {
     final result =
         await _dbManager.query('assets/sql/query_task_count.sql', [id]);
+    if (result == null) {
+      return false;
+    }
     assert(result.length == 1,
         'Querying task count by id should return 1 and only 1 result, but ${result.length} found.');
     final count = result.first['count'] as int;
@@ -374,7 +380,6 @@ class TaskDBAction {
   }
 
   static Future<int> deleteTask(TaskData task) async {
-
     final isExist = await isTaskExists(task.id);
     if (!isExist) {
       return 0;

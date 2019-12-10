@@ -163,6 +163,13 @@ class _EditMainScreenState extends State<EditMainScreen>
     _focus();
   }
 
+  Future<bool> _saveAndBack(
+      BuildContext context, TaskData data, TaskTag tag) async {
+    data.tagId = tag.id;
+    final pack = TaskPack(data, tag);
+    return Navigator.of(context).maybePop<TaskPack>(pack);
+  }
+
   void _updateTransition(double value) {
     setState(() {
       this.transitionFactor = value;
@@ -600,8 +607,7 @@ class _EditMainScreenState extends State<EditMainScreen>
             keyboardType: TextInputType.text,
             textInputAction: TextInputAction.done,
             onSubmitted: (value) {
-              final pack = TaskPack(_taskData, _tagData);
-              Navigator.of(context).maybePop<TaskPack>(pack);
+              _saveAndBack(context, _taskData, _tagData);
             },
             placeholder: '记录你的任务',
             placeholderStyle: const TextStyle(color: Color(0xFF9B7FE9)),
@@ -682,8 +688,7 @@ class _EditMainScreenState extends State<EditMainScreen>
             child: TapAnimator(
               behavior: HitTestBehavior.opaque,
               onTap: () {
-                final pack = TaskPack(_taskData, _tagData);
-                Navigator.of(context).maybePop<TaskPack>(pack);
+                _saveAndBack(context, _taskData, _tagData);
               },
               builder: (factor) {
                 final color =

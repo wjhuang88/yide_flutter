@@ -13,7 +13,7 @@ class SplashScreen extends StatelessWidget implements Navigatable {
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () {
-            Navigator.push(context, TimelineListScreen().route);
+            Navigator.pushReplacement(context, TimelineListScreen().route);
           },
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,

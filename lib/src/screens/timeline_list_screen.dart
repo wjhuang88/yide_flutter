@@ -76,10 +76,14 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
   Future<void> _updateLocAndTemp() async {
     _isLoading = true;
     final location = await LocationMethods.getLocation();
-    final weather = await LocationMethods.getWeather(location.adcode);
-    _cityName = weather.city ?? ' - ';
-    _temp = weather.temperature ?? ' - ';
-    _weather = weather.weather ?? ' - ';
+    if (location.adcode.isEmpty) {
+      _cityName = location.city ?? ' - ';
+    } else {
+      final weather = await LocationMethods.getWeather(location.adcode);
+      _cityName = weather.city ?? ' - ';
+      _temp = weather.temperature ?? ' - ';
+      _weather = weather.weather ?? ' - ';
+    }
     _isLoading = false;
   }
 
@@ -149,7 +153,8 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
           return;
         }
         _isDragging = false;
-        AppNotification(NotificationType.dragMenuEnd, value: detail.primaryVelocity)
+        AppNotification(NotificationType.dragMenuEnd,
+                value: detail.primaryVelocity)
             .dispatch(context);
       },
       onHorizontalDragCancel: () {
@@ -166,7 +171,8 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
           if (frac < 0.3) {
             return;
           }
-          AppNotification(NotificationType.dragMenu, value: frac).dispatch(context);
+          AppNotification(NotificationType.dragMenu, value: frac)
+              .dispatch(context);
         }
       },
       child: CupertinoPageScaffold(
@@ -190,7 +196,8 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
                             size: 30.0,
                           ),
                           onPressed: () {
-                            AppNotification(NotificationType.openMenu).dispatch(context);
+                            AppNotification(NotificationType.openMenu)
+                                .dispatch(context);
                           },
                         ),
                         _isLoading

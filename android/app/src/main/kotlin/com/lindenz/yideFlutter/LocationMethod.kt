@@ -22,8 +22,8 @@ class LocationMethod : MethodChannel.MethodCallHandler, WeatherSearch.OnWeatherS
     private val locationClients = ArrayList<AMapLocationClient>()
 
     private var channel: MethodChannel? = null
-
     private var context: Context? = null
+
 
     fun doInit(context: Context, binaryMessenger: BinaryMessenger) {
         this.context = context
@@ -32,10 +32,13 @@ class LocationMethod : MethodChannel.MethodCallHandler, WeatherSearch.OnWeatherS
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
-        Log.i("method", call.method)
         when(call.method) {
             "getLocation" -> this.getLocation(result)
             "getWeather" -> (call.arguments as? String)?.let { adcode ->
+                if (adcode.isBlank()) {
+                    result.error("x", "No city adCode passed in.", "No city adCode passed in.")
+                    return
+                }
                 val query = WeatherSearchQuery(adcode, WEATHER_TYPE_LIVE)
                 val weatherSearch = WeatherSearch(context)
                 weatherSearch.setOnWeatherSearchListener(this)
@@ -60,10 +63,13 @@ class LocationMethod : MethodChannel.MethodCallHandler, WeatherSearch.OnWeatherS
                 }
                 weatherSearch.searchWeatherAsyn()
             }
+            else -> result.notImplemented()
         }
     }
 
+
     private fun getLocation(result: MethodChannel.Result) {
+
         val client = AMapLocationClient(context)
         client.setLocationListener(this)
         val option = AMapLocationClientOption()
@@ -72,6 +78,7 @@ class LocationMethod : MethodChannel.MethodCallHandler, WeatherSearch.OnWeatherS
         option.isOnceLocation = true
         option.isNeedAddress = true
         option.isGpsFirst = true
+        option.httpTimeOut = 8000
         client.setLocationOption(option)
         client.startLocation()
 

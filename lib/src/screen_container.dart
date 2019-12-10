@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:yide/src/tools/common_tools.dart';
 
 import 'main_menu.dart';
 import 'notification.dart';
@@ -55,7 +57,7 @@ class _ScreenContainerState extends State<ScreenContainer>
   bool _menuMoving = false;
   bool _isMenuDragging = false;
 
-  NavigatorObserver _navigatorObserver = NavigatorObserver();
+  DateTime _backPressedAt;
 
   @override
   void initState() {
@@ -144,6 +146,7 @@ class _ScreenContainerState extends State<ScreenContainer>
 
   @override
   Widget build(BuildContext context) {
+    NavigatorObserver _navigatorObserver = NavigatorObserver();
     return Stack(
       children: <Widget>[
         Material(
@@ -178,19 +181,39 @@ class _ScreenContainerState extends State<ScreenContainer>
                       ]),
                   child: Opacity(
                     opacity: 1 - (_offsetValue / 0.7).clamp(0.0, 1.0),
-                    child: Navigator(
-                      initialRoute: '/',
-                      observers: [_navigatorObserver],
-                      onGenerateRoute: (RouteSettings settings) {
-                        final String name = settings.name;
-                        if ('/' == name) {
-                          return SplashScreen().route;
-                        } else {
-                          throw FlutterError(
-                              'The builder for route "${settings.name}" returned null.\n'
-                              'Route builders must never return null.');
+                    child: WillPopScope(
+                      onWillPop: () async {
+                        final nav = _navigatorObserver.navigator;
+                        // 拦截返回按钮
+                        // 可以后退则后退
+                        if (nav.canPop()) {
+                          nav.maybePop();
+                          return false;
                         }
+                        // 无法后退则检测是否连续按返回键，连续则推出app
+                        if (_backPressedAt == null ||
+                            DateTime.now().difference(_backPressedAt) >
+                                Duration(seconds: 1)) {
+                          _backPressedAt = DateTime.now();
+                          showToast('再次点击退出应用', context, Duration(seconds: 1));
+                          return false;
+                        }
+                        return true;
                       },
+                      child: Navigator(
+                        initialRoute: '/',
+                        observers: [_navigatorObserver],
+                        onGenerateRoute: (RouteSettings settings) {
+                          final String name = settings.name;
+                          if ('/' == name) {
+                            return SplashScreen().route;
+                          } else {
+                            throw FlutterError(
+                                'The builder for route "${settings.name}" returned null.\n'
+                                'Route builders must never return null.');
+                          }
+                        },
+                      ),
                     ),
                   ),
                 ),

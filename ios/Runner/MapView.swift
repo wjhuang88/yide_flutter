@@ -392,7 +392,6 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, MAMapV
         let location = self._userLocation.coordinate
         request.location = "\(location.latitude),\(location.longitude)"
         request.cityLimit = true
-        print(request.location)
         let invokeId = request.hash
         self._tipHandler.results[invokeId] = result
         self._tipHandler.handles[invokeId] = {(response, result) -> Void in
