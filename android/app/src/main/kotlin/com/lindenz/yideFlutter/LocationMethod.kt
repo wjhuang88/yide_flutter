@@ -112,15 +112,12 @@ class LocationMethod : MethodChannel.MethodCallHandler, WeatherSearch.OnWeatherS
             it["latitude"] = amapLocation.latitude
             it["longitude"] = amapLocation.longitude
         }
-        Log.i("method", amapLocation.toString())
         for (i in locationClients.indices) {
             locationResults[i].success(map)
             locationClients[i].let {
                 it.stopLocation()
                 it.onDestroy()
             }
-
-            Log.i("method", map.toString())
         }
         locationResults.clear()
         locationClients.clear()

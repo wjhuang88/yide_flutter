@@ -83,13 +83,14 @@ class AroundData {
       {this.address, this.coordinate, this.id, this.name, this.distance});
   AroundData.fromMap(Map<String, dynamic> map)
       : assert(map != null),
-        this.id = map['id'] as String,
-        this.name = map['name'] as String,
-        this.distance = map['distance'] as int,
-        this.address = map['address'] as String,
+        this.id = map['id'] as String ?? '',
+        this.name = map['name'] as String ?? '',
+        this.distance = map['distance'] as int ?? 0,
+        this.address = map['address'] as String ?? '',
         this.coordinate = Coordinate(
-            latitude: map['latitude'] as double,
-            longitude: map['longitude'] as double);
+          latitude: map['latitude'] as double ?? 0.0,
+          longitude: map['longitude'] as double ?? 0.0,
+        );
 
   @override
   String toString() {

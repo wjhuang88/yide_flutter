@@ -76,27 +76,25 @@ class _LocationMapViewState extends State<LocationMapView> {
     _controller._state = this;
     platform = const MethodChannel("yide_map_view_method");
 
-    if (widget.onRegionChanged != null) {
-      platform.setMethodCallHandler((call) async {
-        if (call.method == 'onRegionChanged' && (call.arguments is Map)) {
-          final args = call.arguments as Map;
-          _makeAroundDataCallback(args);
-        } else if (call.method == 'onRegionStartChanging' &&
-            widget.onRegionStartChanging != null) {
-          widget.onRegionStartChanging();
-        } else if (call.method == 'onTips' && widget.onTips != null) {
-          final tips = call.arguments as List;
-          widget.onTips(
-            _parseAroundData(tips) ?? const [],
-          );
-        } else if (call.method == 'onMapTap' && widget.onMapTap != null) {
-          final coordList = call.arguments as List;
-          widget.onMapTap(
-            Coordinate.fromList(coordList.map((d) => d as double).toList()),
-          );
-        }
-      });
-    }
+    platform.setMethodCallHandler((call) async {
+      if (call.method == 'onRegionChanged' && (call.arguments is Map)) {
+        final args = call.arguments as Map;
+        _makeAroundDataCallback(args);
+      } else if (call.method == 'onRegionStartChanging' &&
+          widget.onRegionStartChanging != null) {
+        widget.onRegionStartChanging();
+      } else if (call.method == 'onTips' && widget.onTips != null) {
+        final tips = call.arguments as List;
+        widget.onTips(
+          _parseAroundData(tips) ?? const [],
+        );
+      } else if (call.method == 'onMapTap' && widget.onMapTap != null) {
+        final coordList = call.arguments as List;
+        widget.onMapTap(
+          Coordinate.fromList(coordList.map((d) => d as double).toList()),
+        );
+      }
+    });
   }
 
   void _makeAroundDataCallback(Map args) {
@@ -110,10 +108,16 @@ class _LocationMapViewState extends State<LocationMapView> {
     }
   }
 
-  List<AroundData> _parseAroundData(List rawList) => rawList
-      .map((map) => AroundData.fromMap(
-          (map as Map).map((k, v) => MapEntry(k as String, v))))
-      .toList()..sort((a, b) => a.distance - b.distance);
+  List<AroundData> _parseAroundData(List rawList) => rawList.map(
+        (map) {
+          return AroundData.fromMap(
+            (map as Map).map(
+              (k, v) => MapEntry(k as String, v),
+            ),
+          );
+        },
+      ).toList()
+        ..sort((a, b) => a.distance - b.distance);
 
   Future<void> _backToUserLocation() async {
     return platform.invokeMethod<void>('backToUserLocation');
