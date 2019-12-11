@@ -40,7 +40,8 @@ class AddressData {
 
   @override
   String toString() {
-    return '''{
+    return '''\
+    {
       country: $country,
       province: $province,
       city: $city,
@@ -134,6 +135,22 @@ class LocationData {
         this.coordinate = Coordinate(
             latitude: map['latitude'] as double,
             longitude: map['longitude'] as double);
+
+  @override
+  String toString() {
+    return '''\
+    {
+      country: $country,
+      province: $province,
+      city: $city,
+      citycode: $citycode,
+      district: $district,
+      adcode: $street,
+      township: $adcode,
+      towncode: $formattedAddress,
+      neighborhood: $coordinate,
+    }''';
+  }
 }
 
 class WeatherData {
@@ -172,7 +189,8 @@ class WeatherData {
 
   @override
   String toString() {
-    return '''{
+    return '''\
+    {
       adcode: $adcode,
       province: $province,
       city: $city,

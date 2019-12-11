@@ -2,19 +2,19 @@ package com.lindenz.yideFlutter
 
 import android.content.Context
 import android.content.res.Resources
-import android.graphics.*
-import android.graphics.drawable.GradientDrawable
-import android.graphics.drawable.GradientDrawable.OVAL
-import android.graphics.drawable.ShapeDrawable
-import android.graphics.drawable.shapes.OvalShape
-import android.graphics.drawable.shapes.RectShape
-import android.graphics.drawable.shapes.Shape
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
 import android.location.Location
 import android.os.Bundle
 import android.util.Log
 import android.util.TypedValue
 import android.view.View
-import com.amap.api.maps.*
+import com.amap.api.maps.AMap
+import com.amap.api.maps.AMapUtils
+import com.amap.api.maps.CameraUpdateFactory
+import com.amap.api.maps.MapView
 import com.amap.api.maps.model.*
 import com.amap.api.services.core.LatLonPoint
 import com.amap.api.services.core.PoiItem

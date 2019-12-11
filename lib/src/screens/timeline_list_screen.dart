@@ -77,7 +77,7 @@ class _TimelineListScreenState extends State<TimelineListScreen> {
     _isLoading = true;
     final location = await LocationMethods.getLocation();
     if (location.adcode.isEmpty) {
-      _cityName = location.city ?? ' - ';
+      _cityName = location.city.isEmpty ? ' - ' : location.city;
     } else {
       final weather = await LocationMethods.getWeather(location.adcode);
       _cityName = weather.city ?? ' - ';
