@@ -1,24 +1,24 @@
 import 'dart:math' as Math;
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:yide/src/config.dart';
 
 import 'notification.dart';
-import 'screens/feedback_screen.dart';
 
 class MainMenu extends StatelessWidget {
   final double transformValue;
   final NavigatorObserver navigatorObserver;
 
+  static const contentPadding =
+      EdgeInsets.symmetric(horizontal: 25.0, vertical: 0.0);
+
   const MainMenu({Key key, this.transformValue = 1.0, this.navigatorObserver})
       : super(key: key);
   @override
   Widget build(BuildContext context) {
-    final contentPadding =
-        EdgeInsets.symmetric(horizontal: 25.0, vertical: 0.0);
     final angle = (1 - transformValue) * Math.pi / 6;
 
-    NavigatorState navigator =
-        navigatorObserver?.navigator ?? Navigator.of(context);
+    NavigatorState navigator = navigatorObserver?.navigator;
 
     return SafeArea(
       child: Transform(
@@ -65,134 +65,46 @@ class MainMenu extends StatelessWidget {
                     ],
                   ),
                 ),
-                const Divider(
-                  color: Color(0xFFBF93FF),
-                  thickness: 0.2,
-                  indent: 25.0,
-                  endIndent: 100.0,
+              ]..addAll(
+                  _buildMenuItems(context, navigator),
                 ),
-                ListTile(
-                  leading: const Icon(
-                    FontAwesomeIcons.solidStar,
-                    size: 20.0,
-                  ),
-                  title: const Text(
-                    '今天',
-                  ),
-                  onTap: () => AppNotification(NotificationType.closeMenu)
-                      .dispatch(context),
-                ),
-                ListTile(
-                  leading: const Icon(
-                    FontAwesomeIcons.inbox,
-                    size: 20.0,
-                  ),
-                  title: const Text(
-                    '收集箱',
-                  ),
-                  onTap: () {},
-                ),
-                const Divider(
-                  color: Color(0xFFBF93FF),
-                  thickness: 0.2,
-                  indent: 25.0,
-                  endIndent: 100.0,
-                ),
-                ListTile(
-                  leading: const Icon(
-                    FontAwesomeIcons.plusCircle,
-                    size: 20.0,
-                  ),
-                  title: const Text(
-                    '添加项目',
-                  ),
-                  onTap: () {},
-                ),
-                ListTile(
-                  contentPadding:
-                      contentPadding + const EdgeInsets.only(left: 40.0),
-                  leading: const Icon(
-                    FontAwesomeIcons.minusCircle,
-                    size: 20.0,
-                  ),
-                  title: const Text(
-                    '项目一',
-                  ),
-                  onTap: () {},
-                ),
-                ListTile(
-                  contentPadding:
-                      contentPadding + const EdgeInsets.only(left: 40.0),
-                  leading: const Icon(
-                    FontAwesomeIcons.minusCircle,
-                    size: 20.0,
-                  ),
-                  title: const Text(
-                    '项目二',
-                  ),
-                  onTap: () {},
-                ),
-                const Divider(
-                  color: Color(0xFFBF93FF),
-                  thickness: 0.2,
-                  indent: 25.0,
-                  endIndent: 100.0,
-                ),
-                ListTile(
-                  leading: const Icon(
-                    FontAwesomeIcons.archive,
-                    size: 20.0,
-                  ),
-                  title: const Text(
-                    '归档内容',
-                  ),
-                  onTap: () {},
-                ),
-                ListTile(
-                  leading: const Icon(
-                    FontAwesomeIcons.ellipsisH,
-                    size: 20.0,
-                  ),
-                  title: const Text(
-                    '更多推荐',
-                  ),
-                  onTap: () {},
-                ),
-                ListTile(
-                  leading: const Icon(
-                    FontAwesomeIcons.solidCommentDots,
-                    size: 20.0,
-                  ),
-                  title: const Text(
-                    '建议反馈',
-                  ),
-                  onTap: () {
-                    AppNotification(NotificationType.closeMenu)
-                        .dispatch(context);
-                    navigator.push(FeedbackScreen().route);
-                  },
-                ),
-                const Divider(
-                  color: Color(0xFFBF93FF),
-                  thickness: 0.2,
-                  indent: 25.0,
-                  endIndent: 100.0,
-                ),
-                ListTile(
-                  leading: const Icon(
-                    FontAwesomeIcons.cogs,
-                    size: 20.0,
-                  ),
-                  title: const Text(
-                    '设置',
-                  ),
-                  onTap: () {},
-                ),
-              ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  List<Widget> _buildMenuItems(BuildContext context, NavigatorState navigator) {
+    final result = List<Widget>();
+    for (var group in menuConfig) {
+      result.add(
+        const Divider(
+          color: Color(0xFFBF93FF),
+          thickness: 0.2,
+          indent: 25.0,
+          endIndent: 100.0,
+        ),
+      );
+      for (var item in group) {
+        final tile = ListTile(
+          contentPadding: contentPadding +
+              EdgeInsets.only(left: 40.0 * (item['level'] as int)),
+          leading: item['icon'],
+          title: Text(
+            item['name'] as String,
+          ),
+          onTap: () {
+            AppNotification(NotificationType.closeMenu).dispatch(context);
+            final route = item['route'] as Function;
+            if (route != null) {
+              navigator.push(route());
+            }
+          },
+        );
+        result.add(tile);
+      }
+    }
+    return result;
   }
 }

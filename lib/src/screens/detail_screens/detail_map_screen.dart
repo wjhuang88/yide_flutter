@@ -195,7 +195,6 @@ class _DetailMapScreenState extends State<DetailMapScreen>
               showsUserLocation: true,
               centerOffset: const FractionalOffset(0.5, 0.3),
               onRegionStartChanging: () async {
-                print("start");
                 _isLoading = true;
                 _focusNode.unfocus();
                 _textEditingController.clear();
@@ -203,14 +202,13 @@ class _DetailMapScreenState extends State<DetailMapScreen>
                 await _pinJumpController.reverse();
               },
               onRegionChanged: (around, coord) async {
-                print("end");
                 setState(() {
                   _arounds = around;
                   _isLoadingValue = false;
                 });
               },
               onTips: (tips) {
-                print("get tips: $tips");
+                //print("get tips: $tips");
               },
               onMapTap: (coord) {
                 _focusNode.unfocus();
@@ -325,7 +323,6 @@ class _DetailMapScreenState extends State<DetailMapScreen>
                   return;
                 }
                 final list = await _locationMapController.searchAround(keyword);
-                print(list);
                 setState(() {
                   _arounds = list;
                 });

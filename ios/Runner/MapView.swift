@@ -220,7 +220,7 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, MAMapV
                 self._searchManager.aMapReGoecodeSearch(request)
             } else if ("searchAround" == call.method) {
                 if let keyword = call.arguments as? String {
-                    let coord = self._userLocation.coordinate
+                    let coord = self._regionCenter ?? self._userLocation.coordinate
                     var resultMap = Dictionary<String, Dictionary<String, Any?>>()
                     let tipAction = {() in
                         self.requestTips(keyword: keyword) { (data) in
@@ -401,8 +401,7 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, MAMapV
         self._searchManager.aMapInputTipsSearch(request)
     }
     
-    private func updateRegionInfo() {
-        let centerCoord = self._view.region.center
+    private func updateRegionInfo(centerCoord: CLLocationCoordinate2D) {
         if let lastCoord = _regionCenter {
             let dist = MAMetersBetweenMapPoints(MAMapPointForCoordinate(centerCoord), MAMapPointForCoordinate(lastCoord))
             if dist < 50 {
@@ -434,7 +433,8 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, MAMapV
     public func mapView(_ mapView: MAMapView!, didUpdate userLocation: MAUserLocation!, updatingLocation: Bool) {
         
         if _regionCenter == nil {
-            updateRegionInfo()
+            let centerCoord = self._view.region.center
+            updateRegionInfo(centerCoord: centerCoord)
         }
     }
     
@@ -477,7 +477,9 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, MAMapV
     }
     
     public func mapView(_ mapView: MAMapView!, mapDidMoveByUser wasUserAction: Bool) {
-        updateRegionInfo()
+        let coord = self._view.region.center
+        print(coord)
+        updateRegionInfo(centerCoord: coord)
     }
     
     public func view() -> UIView {

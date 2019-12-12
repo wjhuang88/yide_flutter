@@ -1,57 +1,86 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:yide/src/config.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
-import 'package:yide/src/screens/timeline_list_screen.dart';
+import 'package:yide/src/screens/single_day_list_screen.dart';
 
-class SplashScreen extends StatelessWidget implements Navigatable {
-
+class SplashScreen extends StatefulWidget implements Navigatable {
   @override
-  Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-        backgroundColor: Colors.transparent,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () {
-            Navigator.pushReplacement(context, TimelineListScreen().route);
-          },
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              Expanded(
-                child: Align(
-                  alignment: Alignment.bottomCenter,
-                  child: const Icon(
-                    FontAwesomeIcons.jedi,
-                    size: 150.0,
-                    color: Color(0xFFE4CEFF),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Center(
-                  child: const Text(
-                    '点击继续',
-                    style: TextStyle(fontSize: 14.0, color: Color(0xFFE4CEFF)),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ));
-  }
+  _SplashScreenState createState() => _SplashScreenState();
 
   @override
   Route get route {
     return PageRouteBuilder(
       pageBuilder: (context, anim1, anim2) => this,
-      transitionDuration: Duration(milliseconds: 500),
-      transitionsBuilder: (context, anim1, anim2, child) {
-        return Opacity(
-          opacity: 1 - anim2.value,
-          child: child,
-        );
-      },
+    );
+  }
+}
+
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  AnimationController _moveController;
+  Animation _moveAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _moveController = AnimationController(
+        vsync: this, duration: Duration(milliseconds: 2000), value: 0.0);
+    _moveAnimation = CurvedAnimation(
+      parent: _moveController,
+      curve: Interval(0.3, 1.0, curve: Curves.easeOutQuint),
+    );
+    _moveAnimation.addListener(() {
+      setState(() {});
+    });
+
+    _moveController.forward();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CupertinoPageScaffold(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          Navigator.of(context).pushReplacement(SingleDayListScreen().route);
+        },
+        child: FractionalTranslation(
+          translation: Offset(0.0, 0.2 - 0.2 * _moveAnimation.value),
+          child: DecoratedBox(
+            decoration: BoxDecoration(gradient: backgroundGradient),
+            child: Opacity(
+              opacity: _moveAnimation.value,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: const Icon(
+                        FontAwesomeIcons.jedi,
+                        size: 150.0,
+                        color: Color(0xFFE4CEFF),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Center(
+                      child: const Text(
+                        '点击继续',
+                        style:
+                            TextStyle(fontSize: 14.0, color: Color(0xFFE4CEFF)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

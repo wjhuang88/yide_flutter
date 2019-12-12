@@ -60,7 +60,7 @@ class MyApp extends StatelessWidget {
       ],
       theme: CupertinoThemeData(
         primaryColor: const Color(0xFFFFFFFF),
-        scaffoldBackgroundColor: const Color(0xFF472478),
+        scaffoldBackgroundColor: const Color(0xFF8346C8),
         brightness: Brightness.dark,
       ),
     );

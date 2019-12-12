@@ -42,6 +42,8 @@ class MapPlatformView(private val viewId: Int, private val context: Context, sav
     private val showsScale: Boolean
     private val centerOffset: Pair<Float, Float>
 
+    private var isUpdating: Boolean = false
+
     private lateinit var initCenter: Pair<Double, Double>
     private lateinit var regionCenter: LatLng
 
@@ -179,7 +181,12 @@ class MapPlatformView(private val viewId: Int, private val context: Context, sav
             }
             "getUserAddress" -> Unit
             "searchAround" -> (call.arguments as? String)?.let { keyword ->
-                requestAroundPOI(LatLng(aMap.myLocation.latitude, aMap.myLocation.longitude), keyword) { data ->
+                val location = if (this::regionCenter.isInitialized) {
+                    regionCenter
+                } else {
+                    LatLng(aMap.myLocation.latitude, aMap.myLocation.longitude)
+                }
+                requestAroundPOI(location, keyword) { data ->
                     val dataAround = data as? List<Map<String, Any?>>
                     if (dataAround != null) {
                         result.success(dataAround)
@@ -238,8 +245,7 @@ class MapPlatformView(private val viewId: Int, private val context: Context, sav
         search.searchPOIAsyn()
     }
 
-    private fun updateRegionInfo() {
-        val centerCoord = aMap.cameraPosition.target
+    private fun updateRegionInfo(centerCoord: LatLng) {
         if (this::regionCenter.isInitialized) {
             val dist = AMapUtils.calculateLineDistance(centerCoord, regionCenter)
             if (dist < 50) {
@@ -252,13 +258,18 @@ class MapPlatformView(private val viewId: Int, private val context: Context, sav
     }
 
     private fun forceUpdateRegionInfo(centerCoord: LatLng) {
-        requestAroundPOI(centerCoord, null) { data ->
-            val coordList = listOf(centerCoord.latitude, centerCoord.longitude)
-            val resultMap = HashMap<String, Any?>()
-            resultMap["coordinate"] = coordList
-            resultMap["around"] = data
-
-            channel.invokeMethod("onRegionChanged", resultMap)
+        if (isUpdating) {
+            return
+        } else {
+            isUpdating = true
+            requestAroundPOI(centerCoord, null) { data ->
+                val coordList = listOf(centerCoord.latitude, centerCoord.longitude)
+                val resultMap = HashMap<String, Any?>()
+                resultMap["coordinate"] = coordList
+                resultMap["around"] = data
+                channel.invokeMethod("onRegionChanged", resultMap)
+                isUpdating = false
+            }
         }
     }
 
@@ -270,7 +281,7 @@ class MapPlatformView(private val viewId: Int, private val context: Context, sav
                 else -> LatLng(0.0, 0.0)
             }
             aMap.moveCamera(CameraUpdateFactory.newCameraPosition(CameraPosition(center, zoomLevel, cameraDegree, 0.0f)))
-            updateRegionInfo()
+            updateRegionInfo(center)
         }
     }
 
@@ -288,7 +299,7 @@ class MapPlatformView(private val viewId: Int, private val context: Context, sav
     }
 
     override fun onCameraChangeFinish(position: CameraPosition) {
-        updateRegionInfo()
+        updateRegionInfo(position.target)
     }
 }
 

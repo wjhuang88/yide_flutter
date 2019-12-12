@@ -11,7 +11,7 @@ class SqliteManager {
       print('Database is null, try to open a new database.');
       _database = openDatabase(
         'yide_app.db',
-        version: 6,
+        version: 7,
         onCreate: (db, version) async {
           print('Init sqlite table at version $version.');
           _execute(db, 'assets/sql/table_create.sql');
@@ -31,6 +31,10 @@ class SqliteManager {
           if (oldVersion < 6) {
             print('Ready to execute upgrade sql from v5 to v6');
             await _execute(db, 'assets/sql/v5_to_v6.sql');
+          }
+          if (oldVersion < 7) {
+            print('Ready to execute upgrade sql from v6 to v7');
+            await _execute(db, 'assets/sql/v6_to_v7.sql');
           }
         },
       ).catchError((e) {

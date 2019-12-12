@@ -51,40 +51,61 @@ class TimelineListView extends StatelessWidget {
                           child: Text(
                             onGenerateLabel(index),
                             style: const TextStyle(
-                                color: Color(0xFFC9A2F5),
-                                fontSize: 12.0,),
+                              color: Color(0xFFC9A2F5),
+                              fontSize: 12.0,
+                            ),
                           ),
                         )
                       : SizedBox(),
                   Expanded(
-                    child: Stack(
-                      children: <Widget>[
-                        Container(
-                          decoration: BoxDecoration(
-                              border: Border(
-                            left: index + 1 != itemCount
-                                ? BorderSide(color: Color(0xFF6F54BC))
-                                : BorderSide(color: Color(0x00000000)),
-                          )),
-                          child: (tileBuilder ?? (c, i) => SizedBox())(
-                              context, index),
-                        ),
-                        Transform.translate(
-                          offset: const Offset(-4.5, 3.0),
-                          child: Icon(
-                            FontAwesomeIcons.solidCircle,
-                            color: (onGenerateDotColor ??
-                                (i) => const Color(0xFFFFFFFF))(index),
-                            size: 10.0,
-                          ),
-                        ),
-                      ],
+                    child: TimelineDecorated(
+                        decorationColor: (onGenerateDotColor ?? (i) => const Color(0xFFFFFFFF))(index),
+                        isBorderShow: index + 1 != itemCount,
+                        child: (tileBuilder ?? (c, i) => SizedBox())(context, index),
                     ),
                   ),
                 ],
               );
             })
         : placeholder;
+  }
+}
+
+class TimelineDecorated extends StatelessWidget {
+  const TimelineDecorated({
+    Key key,
+    this.decorationColor,
+    this.child,
+    this.isBorderShow,
+  }) : super(key: key);
+
+  final Color decorationColor;
+  final Widget child;
+  final bool isBorderShow;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: <Widget>[
+        Container(
+          decoration: BoxDecoration(
+              border: Border(
+            left: isBorderShow
+                ? BorderSide(color: Color(0xFF6F54BC))
+                : BorderSide(color: Color(0x00000000)),
+          )),
+          child: child,
+        ),
+        Transform.translate(
+          offset: const Offset(-4.5, 3.0),
+          child: Icon(
+            FontAwesomeIcons.solidCircle,
+            color: decorationColor,
+            size: 10.0,
+          ),
+        ),
+      ],
+    );
   }
 }
 

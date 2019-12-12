@@ -3,7 +3,7 @@ import 'package:flutter/widgets.dart';
 
 const int _hugePageOffset = 9999999;
 
-class InfinityPageController {
+class InfinityPageController implements Listenable {
   InfinityPageController({
     int initialPage = 0,
     bool keepPage = true,
@@ -19,6 +19,8 @@ class InfinityPageController {
 
   final PageController _pageController;
 
+  bool _disposed = false;
+
   int get initialPage => _pageController.initialPage - _hugePageOffset;
 
   double get page => _pageController.page - _hugePageOffset;
@@ -32,8 +34,21 @@ class InfinityPageController {
     _pageController.jumpToPage(page + _hugePageOffset);
   }
 
+  @override
+  void addListener(listener) {
+    _pageController.addListener(listener);
+  }
+
+  @override
+  void removeListener(listener) {
+    _pageController.removeListener(listener);
+  }
+
   void dispose() {
-    //_pageController.dispose();
+    if (!_disposed) {
+      _pageController.dispose();
+      _disposed = true;
+    }
   }
 }
 
@@ -78,7 +93,7 @@ class _InfinityPageViewState extends State<InfinityPageView> {
 
   @override
   void dispose() {
-    _controller?._pageController?.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 

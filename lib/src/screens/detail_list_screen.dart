@@ -7,6 +7,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:yide/src/components/header_bar.dart';
 import 'package:yide/src/components/tap_animator.dart';
+import 'package:yide/src/config.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
 import 'package:yide/src/models/geo_data.dart';
 import 'package:yide/src/tools/sqlite_manager.dart';
@@ -14,10 +15,10 @@ import 'package:yide/src/models/task_data.dart';
 import 'package:yide/src/screens/edit_main_screen.dart';
 import 'package:yide/src/tools/icon_tools.dart';
 
-import 'detail_comments_screen.dart';
-import 'detail_map_screen.dart';
-import 'detail_reminder_screen.dart';
-import 'detail_repeat_screen.dart';
+import 'detail_screens/detail_comments_screen.dart';
+import 'detail_screens/detail_map_screen.dart';
+import 'detail_screens/detail_reminder_screen.dart';
+import 'detail_screens/detail_repeat_screen.dart';
 
 class DetailListScreen extends StatefulWidget implements Navigatable {
   final TaskPack taskPack;
@@ -142,10 +143,7 @@ class _DetailListScreenState extends State<DetailListScreen>
 
     return Container(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF8346C8), Color(0xFF523F88)]),
+        gradient: backgroundGradient,
       ),
       child: CupertinoPageScaffold(
         backgroundColor: Colors.transparent,
@@ -157,7 +155,7 @@ class _DetailListScreenState extends State<DetailListScreen>
             child: GestureDetector(
               onHorizontalDragStart: (detail) {
                 final x = detail.globalPosition.dx;
-                if (x < 100.0 && x > 0) {
+                if (x > 0) {
                   _isDragging = true;
                   _dragDelta = x;
                   _screenWidth = MediaQuery.of(context).size.width;
@@ -168,7 +166,7 @@ class _DetailListScreenState extends State<DetailListScreen>
                   return;
                 }
                 _isDragging = false;
-                if (detail.primaryVelocity > 200.0 || _dragOffset >= 0.2) {
+                if (detail.primaryVelocity > 700.0 || _dragOffset >= 0.2) {
                   Navigator.of(context).maybePop();
                 } else {
                   _dragController.forward(from: 0);

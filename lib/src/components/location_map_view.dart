@@ -108,15 +108,15 @@ class _LocationMapViewState extends State<LocationMapView> {
     }
   }
 
-  List<AroundData> _parseAroundData(List rawList) => rawList.map(
-        (map) {
-          return AroundData.fromMap(
-            (map as Map).map(
-              (k, v) => MapEntry(k as String, v),
-            ),
-          );
-        },
-      ).toList()
+  List<AroundData> _parseAroundData(List rawList) => rawList
+      .map(
+        (map) => AroundData.fromMap(
+          (map as Map).map(
+            (k, v) => MapEntry(k as String, v),
+          ),
+        ),
+      )
+      .toList()
         ..sort((a, b) => a.distance - b.distance);
 
   Future<void> _backToUserLocation() async {
