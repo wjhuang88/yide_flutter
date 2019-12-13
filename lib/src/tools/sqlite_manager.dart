@@ -233,7 +233,7 @@ class TaskDBAction {
 
   static Future<List<TaskTag>> getAllTaskTag() async {
     final result = await _dbManager.query('assets/sql/query_tag.sql');
-    return result.map((raw) => _makeTagFromQueryResult(raw)).toList();
+    return result.map(_makeTagFromQueryResult).toList();
   }
 
   static Future<TaskTag> getFirstTag() async {
@@ -267,13 +267,17 @@ class TaskDBAction {
     DateTime dateBegin = DateTime(date.year, date.month, date.day);
     DateTime dateEnd = DateTime(date.year, date.month, date.day + 1);
 
-    // DateTime dateBegin = DateTime(1900);
-    // DateTime dateEnd = DateTime(2200);
-
     final result = await _dbManager.query('assets/sql/query_task_by_date.sql',
         [dateBegin.millisecondsSinceEpoch, dateEnd.millisecondsSinceEpoch]);
 
-    return result.map((dataRaw) => _makePackFromQueryResult(dataRaw)).toList();
+    return result.map(_makePackFromQueryResult).toList();
+  }
+
+  static Future<List<TaskPack>> getTaskListByPage(
+      int pagination, int perPage) async {
+    final result = await _dbManager.query(
+        'assets/sql/query_task_by_page.sql', [perPage, perPage * pagination]);
+    return result.map(_makePackFromQueryResult).toList();
   }
 
   static Future<TaskDetail> getTaskDetailById(int id) async {

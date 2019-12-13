@@ -182,9 +182,7 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
         child: Opacity(
           opacity: opacity,
           child: Container(
-            decoration: BoxDecoration(
-              gradient: backgroundGradient
-            ),
+            decoration: BoxDecoration(gradient: backgroundGradient),
             child: Stack(
               children: <Widget>[
                 Column(
@@ -227,7 +225,8 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                                 colors: [Color(0xFF975ED8), Color(0xFF7352D0)]),
-                            borderRadius: BorderRadius.all(Radius.circular(10.0)),
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(10.0)),
                             boxShadow: [
                               BoxShadow(
                                 offset: Offset(0.0, 6.0),
@@ -245,8 +244,8 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
                                   ? Container(
                                       height: 32.0,
                                       width: 32,
-                                      child:
-                                          Image.asset(weatherImageMap[_weather]))
+                                      child: Image.asset(
+                                          weatherImageMap[_weather]))
                                   //? Container(height: 32.0, width: 32, child: Image.asset('assets/images/weather/test1.png'))
                                   : CupertinoActivityIndicator(
                                       radius: 16.0,
@@ -306,12 +305,14 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
                                             height: 10.0,
                                           ),
                                         )
-                                        ..add(Text(
-                                          item.data.catalog,
-                                          style: const TextStyle(
-                                              color: Color(0xFFC9A2F5),
-                                              fontSize: 12.0),
-                                        ));
+                                        ..add(
+                                          Text(
+                                            item.data.catalog,
+                                            style: const TextStyle(
+                                                color: Color(0xFFC9A2F5),
+                                                fontSize: 12.0),
+                                          ),
+                                        );
                                     }
                                     if (item.data.remark != null &&
                                         item.data.remark.isNotEmpty) {

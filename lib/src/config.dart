@@ -21,36 +21,36 @@ final menuConfig = [
     {
       'name': '日程',
       'route': () => MultipleDayListScreen().route,
-      'icon': const Icon(FontAwesomeIcons.inbox, size: 20.0),
+      'icon': const Icon(FontAwesomeIcons.calendar, size: 20.0),
       'level': 0
     },
-    {
-      'name': '收集箱',
-      'route': null,
-      'icon': const Icon(FontAwesomeIcons.inbox, size: 20.0),
-      'level': 0
-    },
+    // {
+    //   'name': '收集箱',
+    //   'route': null,
+    //   'icon': const Icon(FontAwesomeIcons.inbox, size: 20.0),
+    //   'level': 0
+    // },
   ],
-  [
-    {
-      'name': '添加项目',
-      'route': null,
-      'icon': const Icon(FontAwesomeIcons.plusCircle, size: 20.0),
-      'level': 0
-    },
-    {
-      'name': '项目一',
-      'route': null,
-      'icon': const Icon(FontAwesomeIcons.minusCircle, size: 20.0),
-      'level': 1
-    },
-    {
-      'name': '项目二',
-      'route': null,
-      'icon': const Icon(FontAwesomeIcons.minusCircle, size: 20.0),
-      'level': 1
-    },
-  ],
+  // [
+  //   {
+  //     'name': '添加项目',
+  //     'route': null,
+  //     'icon': const Icon(FontAwesomeIcons.plusCircle, size: 20.0),
+  //     'level': 0
+  //   },
+  //   {
+  //     'name': '项目一',
+  //     'route': null,
+  //     'icon': const Icon(FontAwesomeIcons.minusCircle, size: 20.0),
+  //     'level': 1
+  //   },
+  //   {
+  //     'name': '项目二',
+  //     'route': null,
+  //     'icon': const Icon(FontAwesomeIcons.minusCircle, size: 20.0),
+  //     'level': 1
+  //   },
+  // ],
   [
     {
       'name': '归档内容',

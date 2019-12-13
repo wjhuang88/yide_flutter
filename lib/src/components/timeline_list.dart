@@ -76,7 +76,7 @@ class TimelineDecorated extends StatelessWidget {
     Key key,
     this.decorationColor,
     this.child,
-    this.isBorderShow,
+    this.isBorderShow = true,
   }) : super(key: key);
 
   final Color decorationColor;
