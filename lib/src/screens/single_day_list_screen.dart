@@ -44,6 +44,9 @@ class SingleDayListScreen extends StatefulWidget implements Navigatable {
       },
     );
   }
+
+  @override
+  bool get withMene => true;
 }
 
 class _SingleDayListScreenState extends State<SingleDayListScreen> {
@@ -60,9 +63,9 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
   String _temp = ' - ';
   String _weather = ' - ';
 
-  bool _isDragging = false;
-  double _animDragDelta = 0.0;
-  double _screenWidth = 1.0;
+  // bool _isDragging = false;
+  // double _animDragDelta = 0.0;
+  // double _screenWidth = 1.0;
 
   DateTime _dateTime = DateTime.now();
 
@@ -77,7 +80,7 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
   Future<void> _updateLocAndTemp() async {
     _isLoading = true;
     final location = await LocationMethods.getLocation();
-    if (location.adcode.isEmpty) {
+    if (location.adcode?.isEmpty ?? false) {
       _cityName = location.city.isEmpty ? ' - ' : location.city;
     } else {
       final weather = await LocationMethods.getWeather(location.adcode);
@@ -140,266 +143,233 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
   @override
   Widget build(BuildContext context) {
     final opacity = (transitionFactor).clamp(0.0, 1.0);
-    return GestureDetector(
-      onHorizontalDragStart: (detail) {
-        final x = detail.globalPosition.dx;
-        if (x > 0) {
-          _isDragging = true;
-          _animDragDelta = x;
-          _screenWidth = MediaQuery.of(context).size.width;
-        }
-      },
-      onHorizontalDragEnd: (detail) {
-        if (!_isDragging) {
-          return;
-        }
-        _isDragging = false;
-        AppNotification(NotificationType.dragMenuEnd,
-                value: detail.primaryVelocity)
-            .dispatch(context);
-      },
-      onHorizontalDragCancel: () {
-        if (!_isDragging) {
-          return;
-        }
-        _isDragging = false;
-        AppNotification(NotificationType.dragMenuEnd).dispatch(context);
-      },
-      onHorizontalDragUpdate: (detail) {
-        if (_isDragging) {
-          final frac =
-              (detail.globalPosition.dx - _animDragDelta) / _screenWidth + 0.3;
-          if (frac < 0.3) {
-            return;
-          }
-          AppNotification(NotificationType.dragMenu, value: frac)
-              .dispatch(context);
-        }
-      },
-      child: CupertinoPageScaffold(
-        backgroundColor: Colors.transparent,
-        resizeToAvoidBottomInset: false,
-        child: Opacity(
-          opacity: opacity,
-          child: Container(
-            decoration: BoxDecoration(gradient: backgroundGradient),
-            child: Stack(
-              children: <Widget>[
-                Column(
-                  children: <Widget>[
-                    SafeArea(
-                      bottom: false,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: <Widget>[
-                          CupertinoButton(
-                            padding: const EdgeInsets.all(17.0),
-                            child: Icon(
-                              buildCupertinoIconData(0xf394),
-                              color: Color(0xFFD7CAFF),
-                              size: 30.0,
-                            ),
-                            onPressed: () {
-                              AppNotification(NotificationType.openMenu)
-                                  .dispatch(context);
-                            },
+    return CupertinoPageScaffold(
+      backgroundColor: Colors.transparent,
+      resizeToAvoidBottomInset: false,
+      child: Opacity(
+        opacity: opacity,
+        child: Container(
+          decoration: BoxDecoration(gradient: backgroundGradient),
+          child: Stack(
+            children: <Widget>[
+              Column(
+                children: <Widget>[
+                  SafeArea(
+                    bottom: false,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        CupertinoButton(
+                          padding: const EdgeInsets.all(17.0),
+                          child: Icon(
+                            buildCupertinoIconData(0xf394),
+                            color: Color(0xFFD7CAFF),
+                            size: 30.0,
                           ),
-                          _isLoading
-                              ? Container(
-                                  padding: const EdgeInsets.only(right: 17.0),
-                                  child: CupertinoActivityIndicator(),
-                                )
-                              : const SizedBox(),
+                          onPressed: () {
+                            MenuNotification(MenuNotificationType.openMenu)
+                                .dispatch(context);
+                          },
+                        ),
+                        _isLoading
+                            ? Container(
+                                padding: const EdgeInsets.only(right: 17.0),
+                                child: CupertinoActivityIndicator(),
+                              )
+                            : const SizedBox(),
+                      ],
+                    ),
+                  ),
+                  FractionalTranslation(
+                    translation: Offset(0.0, transitionFactor - 1),
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 17.0),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20.0, vertical: 15.0),
+                      height: 182.0,
+                      decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [Color(0xFF975ED8), Color(0xFF7352D0)]),
+                          borderRadius: BorderRadius.all(Radius.circular(10.0)),
+                          boxShadow: [
+                            BoxShadow(
+                              offset: Offset(0.0, 6.0),
+                              blurRadius: 23.0,
+                              color: Color(0x8A4F3A8C),
+                            )
+                          ]),
+                      child: Stack(
+                        children: <Widget>[
+                          _buildHeaderColumn(),
+                          Positioned(
+                            right: 5.0,
+                            top: 0.0,
+                            child: weatherImageMap[_weather] != null
+                                ? Container(
+                                    height: 32.0,
+                                    width: 32,
+                                    child:
+                                        Image.asset(weatherImageMap[_weather]))
+                                //? Container(height: 32.0, width: 32, child: Image.asset('assets/images/weather/test1.png'))
+                                : CupertinoActivityIndicator(
+                                    radius: 16.0,
+                                  ),
+                          ),
                         ],
                       ),
                     ),
-                    FractionalTranslation(
-                      translation: Offset(0.0, transitionFactor - 1),
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 17.0),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20.0, vertical: 15.0),
-                        height: 182.0,
-                        decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [Color(0xFF975ED8), Color(0xFF7352D0)]),
-                            borderRadius:
-                                BorderRadius.all(Radius.circular(10.0)),
-                            boxShadow: [
-                              BoxShadow(
-                                offset: Offset(0.0, 6.0),
-                                blurRadius: 23.0,
-                                color: Color(0x8A4F3A8C),
-                              )
-                            ]),
-                        child: Stack(
-                          children: <Widget>[
-                            _buildHeaderColumn(),
-                            Positioned(
-                              right: 5.0,
-                              top: 0.0,
-                              child: weatherImageMap[_weather] != null
-                                  ? Container(
-                                      height: 32.0,
-                                      width: 32,
-                                      child: Image.asset(
-                                          weatherImageMap[_weather]))
-                                  //? Container(height: 32.0, width: 32, child: Image.asset('assets/images/weather/test1.png'))
-                                  : CupertinoActivityIndicator(
-                                      radius: 16.0,
+                  ),
+                  const SizedBox(
+                    height: 20.0,
+                  ),
+                  Expanded(
+                    child: FractionalTranslation(
+                      translation: Offset(transitionFactor - 1, 0.0),
+                      child: FutureBuilder<List<TaskPack>>(
+                        future: _taskList,
+                        initialData: null,
+                        builder: (context, snapshot) {
+                          switch (snapshot.connectionState) {
+                            case ConnectionState.none:
+                            case ConnectionState.waiting:
+                              return _savedList;
+                            case ConnectionState.active:
+                            case ConnectionState.done:
+                              final dataList = snapshot.data;
+                              _savedList = TimelineListView.build(
+                                placeholder: _placeholder,
+                                itemCount: dataList.length,
+                                tileBuilder: (context, index) {
+                                  final item = dataList[index];
+                                  final rows = <Widget>[
+                                    Text(
+                                      item.data.content,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: Color(0xFFD7CAFF),
+                                        fontSize: 15.0,
+                                      ),
                                     ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 20.0,
-                    ),
-                    Expanded(
-                      child: FractionalTranslation(
-                        translation: Offset(transitionFactor - 1, 0.0),
-                        child: FutureBuilder<List<TaskPack>>(
-                          future: _taskList,
-                          initialData: null,
-                          builder: (context, snapshot) {
-                            switch (snapshot.connectionState) {
-                              case ConnectionState.none:
-                              case ConnectionState.waiting:
-                                return _savedList;
-                              case ConnectionState.active:
-                              case ConnectionState.done:
-                                final dataList = snapshot.data;
-                                _savedList = TimelineListView.build(
-                                  placeholder: _placeholder,
-                                  itemCount: dataList.length,
-                                  tileBuilder: (context, index) {
-                                    final item = dataList[index];
-                                    final rows = <Widget>[
-                                      Text(
-                                        item.data.content,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          color: Color(0xFFD7CAFF),
-                                          fontSize: 15.0,
+                                    const SizedBox(
+                                      height: 10.0,
+                                    ),
+                                    Text(
+                                      item.tag.name ?? '默认',
+                                      style: TextStyle(
+                                          color: item.tag.iconColor,
+                                          fontSize: 12.0),
+                                    ),
+                                  ];
+                                  if (item.data.catalog != null &&
+                                      item.data.catalog.isNotEmpty) {
+                                    rows
+                                      ..add(
+                                        const SizedBox(
+                                          height: 10.0,
                                         ),
-                                      ),
-                                      const SizedBox(
-                                        height: 10.0,
-                                      ),
-                                      Text(
-                                        item.tag.name ?? '默认',
-                                        style: TextStyle(
-                                            color: item.tag.iconColor,
-                                            fontSize: 12.0),
-                                      ),
-                                    ];
-                                    if (item.data.catalog != null &&
-                                        item.data.catalog.isNotEmpty) {
-                                      rows
-                                        ..add(
-                                          const SizedBox(
-                                            height: 10.0,
-                                          ),
-                                        )
-                                        ..add(
-                                          Text(
-                                            item.data.catalog,
-                                            style: const TextStyle(
-                                                color: Color(0xFFC9A2F5),
-                                                fontSize: 12.0),
-                                          ),
-                                        );
-                                    }
-                                    if (item.data.remark != null &&
-                                        item.data.remark.isNotEmpty) {
-                                      rows
-                                        ..add(const SizedBox(height: 10.0))
-                                        ..add(Text(
-                                          item.data.remark,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
+                                      )
+                                      ..add(
+                                        Text(
+                                          item.data.catalog,
                                           style: const TextStyle(
                                               color: Color(0xFFC9A2F5),
                                               fontSize: 12.0),
-                                        ));
-                                    }
-                                    return TimelineTile(
-                                      rows: rows,
-                                      onTap: () async {
-                                        await Navigator.of(context)
-                                            .push<TaskPack>(DetailListScreen(
-                                          taskPack: item,
-                                        ).route);
-                                        setState(() {
-                                          _taskList =
-                                              TaskDBAction.getTaskListByDate(
-                                                  _dateTime);
-                                        });
-                                      },
-                                    );
-                                  },
-                                  onGenerateLabel: (index) =>
-                                      _makeTimeLabel(dataList[index]?.data),
-                                  onGenerateDotColor: (index) =>
-                                      dataList[index]?.tag?.iconColor,
-                                );
-                                return _savedList;
-                              default:
-                                return _placeholder;
-                            }
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                Positioned(
-                  bottom: 0.0,
-                  right: 0.0,
-                  child: SafeArea(
-                    child: Container(
-                      height: 55.0,
-                      width: 55.0,
-                      decoration: BoxDecoration(
-                          borderRadius: BorderRadius.all(Radius.circular(30.0)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0x883D2E75),
-                              blurRadius: 10.5,
-                              offset: Offset(0.0, 6.5),
-                            ),
-                          ]),
-                      margin: const EdgeInsets.only(right: 20.0, bottom: 20.0),
-                      child: CupertinoButton(
-                        padding: EdgeInsets.zero,
-                        color: const Color(0xFFFAB807),
-                        borderRadius: BorderRadius.all(Radius.circular(30.0)),
-                        child: const Icon(
-                          CupertinoIcons.add,
-                          size: 45.0,
-                          color: Colors.white,
-                        ),
-                        onPressed: () async {
-                          final newTask = await Navigator.push<TaskPack>(
-                              context, EditMainScreen().route);
-                          if (newTask != null) {
-                            await TaskDBAction.saveTask(newTask.data);
-                            setState(() {
-                              _taskList =
-                                  TaskDBAction.getTaskListByDate(_dateTime);
-                            });
+                                        ),
+                                      );
+                                  }
+                                  if (item.data.remark != null &&
+                                      item.data.remark.isNotEmpty) {
+                                    rows
+                                      ..add(const SizedBox(height: 10.0))
+                                      ..add(Text(
+                                        item.data.remark,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                            color: Color(0xFFC9A2F5),
+                                            fontSize: 12.0),
+                                      ));
+                                  }
+                                  return TimelineTile(
+                                    rows: rows,
+                                    onTap: () async {
+                                      PushRouteNotification(
+                                        DetailListScreen(taskPack: item),
+                                        callback: (pack) {
+                                          setState(() {
+                                            _taskList =
+                                                TaskDBAction.getTaskListByDate(
+                                                    _dateTime);
+                                          });
+                                        },
+                                      ).dispatch(context);
+                                    },
+                                  );
+                                },
+                                onGenerateLabel: (index) =>
+                                    _makeTimeLabel(dataList[index]?.data),
+                                onGenerateDotColor: (index) =>
+                                    dataList[index]?.tag?.iconColor,
+                              );
+                              return _savedList;
+                            default:
+                              return _placeholder;
                           }
                         },
                       ),
                     ),
                   ),
+                ],
+              ),
+              Positioned(
+                bottom: 0.0,
+                right: 0.0,
+                child: SafeArea(
+                  child: Container(
+                    height: 55.0,
+                    width: 55.0,
+                    decoration: BoxDecoration(
+                        borderRadius: BorderRadius.all(Radius.circular(30.0)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0x883D2E75),
+                            blurRadius: 10.5,
+                            offset: Offset(0.0, 6.5),
+                          ),
+                        ]),
+                    margin: const EdgeInsets.only(right: 20.0, bottom: 20.0),
+                    child: CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      color: const Color(0xFFFAB807),
+                      borderRadius: BorderRadius.all(Radius.circular(30.0)),
+                      child: const Icon(
+                        CupertinoIcons.add,
+                        size: 45.0,
+                        color: Colors.white,
+                      ),
+                      onPressed: () async {
+                        PushRouteNotification(
+                          EditMainScreen(),
+                          callback: (pack) async {
+                            final newTask = pack as TaskPack;
+                            if (newTask != null) {
+                              await TaskDBAction.saveTask(newTask.data);
+                              setState(() {
+                                _taskList =
+                                    TaskDBAction.getTaskListByDate(_dateTime);
+                              });
+                            }
+                          },
+                        ).dispatch(context);
+                      },
+                    ),
+                  ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

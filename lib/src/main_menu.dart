@@ -2,6 +2,7 @@ import 'dart:math' as Math;
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:yide/src/config.dart';
+import 'package:yide/src/interfaces/navigatable.dart';
 
 import 'notification.dart';
 
@@ -17,8 +18,6 @@ class MainMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final angle = (1 - transformValue) * Math.pi / 6;
-
-    NavigatorState navigator = navigatorObserver?.navigator;
 
     return SafeArea(
       child: Transform(
@@ -66,7 +65,7 @@ class MainMenu extends StatelessWidget {
                   ),
                 ),
               ]..addAll(
-                  _buildMenuItems(context, navigator),
+                  _buildMenuItems(context),
                 ),
             ),
           ),
@@ -75,7 +74,7 @@ class MainMenu extends StatelessWidget {
     );
   }
 
-  List<Widget> _buildMenuItems(BuildContext context, NavigatorState navigator) {
+  List<Widget> _buildMenuItems(BuildContext context) {
     final result = List<Widget>();
     for (var group in menuConfig) {
       result.add(
@@ -95,10 +94,14 @@ class MainMenu extends StatelessWidget {
             item['name'] as String,
           ),
           onTap: () {
-            AppNotification(NotificationType.closeMenu).dispatch(context);
+            MenuNotification(MenuNotificationType.closeMenu).dispatch(context);
             final route = item['route'] as Function;
             if (route != null) {
-              navigator.push(route());
+              final page = route();
+              if (page is Navigatable) {
+                PushRouteNotification(page)
+                    .dispatch(navigateKey.currentContext ?? context);
+              }
             }
           },
         );

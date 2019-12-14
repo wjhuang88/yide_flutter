@@ -10,6 +10,8 @@ const backgroundGradient = const LinearGradient(
   colors: [Color(0xFF8346C8), Color(0xFF523F88)],
 );
 
+final navigateKey = GlobalKey<NavigatorState>();
+
 final menuConfig = [
   [
     {
@@ -20,7 +22,7 @@ final menuConfig = [
     },
     {
       'name': '日程',
-      'route': () => MultipleDayListScreen().route,
+      'route': () => MultipleDayListScreen(),
       'icon': const Icon(FontAwesomeIcons.calendar, size: 20.0),
       'level': 0
     },
@@ -66,7 +68,7 @@ final menuConfig = [
     },
     {
       'name': '建议反馈',
-      'route': () => FeedbackScreen().route,
+      'route': () => FeedbackScreen(),
       'icon': const Icon(FontAwesomeIcons.solidCommentDots, size: 20.0),
       'level': 0
     },

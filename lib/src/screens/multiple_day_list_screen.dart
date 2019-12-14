@@ -8,6 +8,7 @@ import 'package:yide/src/components/timeline_list.dart';
 import 'package:yide/src/config.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
 import 'package:yide/src/models/task_data.dart';
+import 'package:yide/src/notification.dart';
 import 'package:yide/src/tools/sqlite_manager.dart';
 
 import 'detail_list_screen.dart';
@@ -44,6 +45,9 @@ class MultipleDayListScreen extends StatefulWidget implements Navigatable {
           );
         },
       );
+
+  @override
+  bool get withMene => false;
 }
 
 class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
@@ -136,7 +140,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
                       style:
                           TextStyle(fontSize: 16.0, color: Color(0xFFD7CAFF)),
                     ),
-              onLeadingAction: Navigator.of(context).maybePop,
+              onLeadingAction: () => PopRouteNotification().dispatch(context),
               title: '日程',
             ),
             const SizedBox(
@@ -197,10 +201,12 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
               isBorderShow: row + 1 != _counts[section],
               child: TimelineTile(
                 onTap: () async {
-                  await Navigator.of(context).push<TaskPack>(
-                    DetailListScreen(taskPack: pack).route,
-                  );
-                  _update();
+                  PushRouteNotification(
+                    DetailListScreen(taskPack: pack),
+                    callback: (pack) {
+                      _update();
+                    },
+                  ).dispatch(context);
                 },
                 rows: <Widget>[
                   Text(
@@ -240,7 +246,8 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
     _updating?.then(
       (f) {
         if (_scrollController.offset == 0) {
-          _scrollController.jumpTo(_todayOffset - MediaQuery.of(context).size.height / 4);
+          _scrollController
+              .jumpTo(_todayOffset - MediaQuery.of(context).size.height / 4);
         }
       },
     );

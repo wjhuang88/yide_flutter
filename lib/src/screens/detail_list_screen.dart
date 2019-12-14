@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as Math;
 import 'dart:ui';
 
@@ -10,6 +11,7 @@ import 'package:yide/src/components/tap_animator.dart';
 import 'package:yide/src/config.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
 import 'package:yide/src/models/geo_data.dart';
+import 'package:yide/src/notification.dart';
 import 'package:yide/src/tools/sqlite_manager.dart';
 import 'package:yide/src/models/task_data.dart';
 import 'package:yide/src/screens/edit_main_screen.dart';
@@ -53,6 +55,9 @@ class DetailListScreen extends StatefulWidget implements Navigatable {
       },
     );
   }
+
+  @override
+  bool get withMene => false;
 }
 
 class _DetailListScreenState extends State<DetailListScreen>
@@ -95,7 +100,8 @@ class _DetailListScreenState extends State<DetailListScreen>
     );
     _dragAnim.addListener(() {
       setState(() {
-        _dragOffset = _dragOffsetStart * (1 - _dragAnim.value); // lerp from _dragOffsetStart to 0.0
+        _dragOffset = _dragOffsetStart *
+            (1 - _dragAnim.value); // lerp from _dragOffsetStart to 0.0
       });
     });
 
@@ -167,7 +173,7 @@ class _DetailListScreenState extends State<DetailListScreen>
                 }
                 _isDragging = false;
                 if (detail.primaryVelocity > 700.0 || _dragOffset >= 0.2) {
-                  Navigator.of(context).maybePop();
+                  PopRouteNotification().dispatch(context);
                 } else {
                   _dragController.forward(from: 0);
                 }
@@ -178,22 +184,23 @@ class _DetailListScreenState extends State<DetailListScreen>
                 }
                 _isDragging = false;
                 if (_dragOffset >= 0.2) {
-                  Navigator.of(context).maybePop();
+                  PopRouteNotification().dispatch(context);
                 } else {
                   _dragController.forward(from: 0);
                 }
               },
               onHorizontalDragUpdate: (detail) {
                 if (_isDragging) {
-                  final frac = (detail.globalPosition.dx - _dragDelta) /
-                      _screenWidth;
+                  final frac =
+                      (detail.globalPosition.dx - _dragDelta) / _screenWidth;
                   if (frac >= 0.6) {
                     _isDragging = false;
-                    Navigator.of(context).maybePop();
+                    PopRouteNotification().dispatch(context);
                   } else {
                     setState(() {
                       final factor = 0.6 * frac;
-                      _dragOffsetStart = _dragOffset = factor - factor * factor * factor;
+                      _dragOffsetStart =
+                          _dragOffset = factor - factor * factor * factor;
                     });
                   }
                 }
@@ -206,8 +213,9 @@ class _DetailListScreenState extends State<DetailListScreen>
                       color: Color(0xFFD7CAFF),
                       size: 30.0,
                     ),
-                    actionIcon: _isLoading ? CupertinoActivityIndicator() : null,
-                    onLeadingAction: Navigator.of(context).maybePop,
+                    actionIcon:
+                        _isLoading ? CupertinoActivityIndicator() : null,
+                    onLeadingAction: () => PopRouteNotification().dispatch(context),
                   ),
                   _HeaderPanel(
                     content: _data.content,
@@ -216,10 +224,12 @@ class _DetailListScreenState extends State<DetailListScreen>
                     tagName: _tag.name,
                     tagColor: _tag.iconColor,
                     onTap: () async {
-                      final pack = await Navigator.of(context)
-                          .push<TaskPack>(EditMainScreen(
-                        taskPack: TaskPack(_data, _tag),
-                      ).route);
+                      final packAsync = Completer<TaskPack>();
+                      PushRouteNotification(
+                        EditMainScreen(taskPack: TaskPack(_data, _tag)),
+                        callback: (ret) => packAsync.complete(ret as TaskPack),
+                      ).dispatch(context);
+                      final pack = await packAsync.future;
                       if (pack != null) {
                         setState(() {
                           _data = pack.data;
@@ -251,11 +261,14 @@ class _DetailListScreenState extends State<DetailListScreen>
                                   style: nocontentStyle,
                                 ),
                           onTap: () async {
-                            final code = await Navigator.of(context)
-                                .push<int>(DetailReminderScreen(
-                              stateCode:
-                                  _savedDetail.reminderBitMap.bitMap ?? 0,
-                            ).route);
+                            final codeAsync = Completer<int>();
+                            PushRouteNotification(
+                              DetailReminderScreen(
+                                  stateCode:
+                                      _savedDetail.reminderBitMap.bitMap ?? 0),
+                              callback: (ret) => codeAsync.complete(ret as int),
+                            ).dispatch(context);
+                            final code = await codeAsync.future;
                             if (code != null) {
                               setState(() {
                                 _savedDetail.reminderBitMap.bitMap = code;
@@ -286,10 +299,14 @@ class _DetailListScreenState extends State<DetailListScreen>
                                   style: nocontentStyle,
                                 ),
                           onTap: () async {
-                            final code = await Navigator.of(context)
-                                .push<int>(DetailRepeatScreen(
-                              stateCode: _savedDetail.repeatBitMap.bitMap ?? 0,
-                            ).route);
+                            final codeAsync = Completer<int>();
+                            PushRouteNotification(
+                              DetailRepeatScreen(
+                                  stateCode:
+                                      _savedDetail.repeatBitMap.bitMap ?? 0),
+                              callback: (ret) => codeAsync.complete(ret as int),
+                            ).dispatch(context);
+                            final code = await codeAsync.future;
                             if (code != null) {
                               setState(() {
                                 _savedDetail.repeatBitMap.bitMap = code;
@@ -316,10 +333,13 @@ class _DetailListScreenState extends State<DetailListScreen>
                                   style: nocontentStyle,
                                 ),
                           onTap: () async {
-                            final address = await Navigator.of(context)
-                                .push<AroundData>(DetailMapScreen(
-                              address: _savedDetail.address,
-                            ).route);
+                            final addressAsync = Completer<AroundData>();
+                            PushRouteNotification(
+                              DetailMapScreen(address: _savedDetail.address),
+                              callback: (ret) =>
+                                  addressAsync.complete(ret as AroundData),
+                            ).dispatch(context);
+                            final address = await addressAsync.future;
                             if (address != null) {
                               setState(() {
                                 _savedDetail.address = address;
@@ -361,10 +381,13 @@ class _DetailListScreenState extends State<DetailListScreen>
                                 )
                               : Text('点击添加备注', style: nocontentStyle),
                           onTap: () async {
-                            final value = await Navigator.of(context)
-                                .push<String>(
-                                    DetailCommentsScreen(value: _data.remark)
-                                        .route);
+                            final valueAsync = Completer<String>();
+                            PushRouteNotification(
+                              DetailCommentsScreen(value: _data.remark),
+                              callback: (ret) =>
+                                  valueAsync.complete(ret as String),
+                            ).dispatch(context);
+                            final value = await valueAsync.future;
                             if (value != null) {
                               setState(() {
                                 _data.remark = value;
@@ -388,7 +411,7 @@ class _DetailListScreenState extends State<DetailListScreen>
                         final isDelete = await showCupertinoDialog<bool>(
                           context: context,
                           builder: (context) => CupertinoAlertDialog(
-                            title: Text('将要删除本事项，请您确认'),
+                            title: Text('将要删除本事项，请您��认'),
                             content: Text('删除事项后将无法恢复，请确认此次操作是您的真实意图'),
                             actions: <Widget>[
                               CupertinoDialogAction(
@@ -408,7 +431,7 @@ class _DetailListScreenState extends State<DetailListScreen>
                         );
                         if (isDelete) {
                           await _deleteTask();
-                          Navigator.of(context).maybePop();
+                          PopRouteNotification().dispatch(context);
                         }
                       },
                     ),
@@ -496,8 +519,10 @@ class _HeaderPanel extends StatelessWidget {
               Text(
                 dateTimeString,
                 textAlign: TextAlign.end,
-                style:
-                    const TextStyle(fontSize: 14.0, color: Color(0xFFEDE7FF), fontWeight: FontWeight.w200),
+                style: const TextStyle(
+                    fontSize: 14.0,
+                    color: Color(0xFFEDE7FF),
+                    fontWeight: FontWeight.w200),
               ),
               const SizedBox(
                 height: 20.0,

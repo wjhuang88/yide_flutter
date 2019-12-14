@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:yide/src/config.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
+import 'package:yide/src/notification.dart';
 import 'package:yide/src/screens/single_day_list_screen.dart';
 
 class SplashScreen extends StatefulWidget implements Navigatable {
@@ -15,6 +16,9 @@ class SplashScreen extends StatefulWidget implements Navigatable {
       pageBuilder: (context, anim1, anim2) => this,
     );
   }
+
+  @override
+  bool get withMene => false;
 }
 
 class _SplashScreenState extends State<SplashScreen>
@@ -51,7 +55,7 @@ class _SplashScreenState extends State<SplashScreen>
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () {
-          Navigator.of(context).pushReplacement(SingleDayListScreen().route);
+          PushRouteNotification(SingleDayListScreen(), isReplacement: true).dispatch(context);
         },
         child: FractionalTranslation(
           translation: Offset(0.0, 0.2 - 0.2 * _moveAnimation.value),

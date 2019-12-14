@@ -15,32 +15,59 @@ void main() {
   runApp(MyApp());
 }
 
-class MyApp extends StatelessWidget {
-  final ScreenContainerController _screenController =
-      ScreenContainerController();
+class MyApp extends StatefulWidget {
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  ScreenContainerController _screenController = ScreenContainerController();
+
+  bool _lastRouteWithMenu = false;
 
   @override
   Widget build(BuildContext context) {
     return CupertinoApp(
       color: const Color(0xFF472478),
-      home: NotificationListener<AppNotification>(
-        onNotification: (AppNotification n) {
-          switch (n.type) {
-            case NotificationType.openMenu:
-              _screenController.openMenu();
-              break;
-            case NotificationType.closeMenu:
-              _screenController.closeMenu();
-              break;
-            case NotificationType.dragMenu:
-              final dist = n.value as double ?? 0.0;
-              _screenController.dragMenu(dist);
-              break;
-            case NotificationType.dragMenuEnd:
-              final v = n.value as double ?? 0.0;
-              _screenController.dragMenuEnd(v);
-              break;
-            default:
+      home: NotificationListener<Notification>(
+        onNotification: (Notification n) {
+          if (n is MenuNotification) {
+            switch (n.type) {
+              case MenuNotificationType.openMenu:
+                _screenController.openMenu();
+                break;
+              case MenuNotificationType.closeMenu:
+                _screenController.closeMenu();
+                break;
+              default:
+            }
+          } else if (n is PushRouteNotification) {
+            (() async {
+              final temp = _lastRouteWithMenu;
+              _lastRouteWithMenu = n.page.withMene;
+              if (_lastRouteWithMenu) {
+                _screenController.menuOn();
+              } else {
+                _screenController.menuOff();
+              }
+              var result;
+              if (n.isReplacement) {
+                result = await _screenController.replaceRoute(n.page.route);
+              } else {
+                result = await _screenController.pushRoute(n.page.route);
+              }
+              _lastRouteWithMenu = temp;
+              if (_lastRouteWithMenu) {
+                _screenController.menuOn();
+              } else {
+                _screenController.menuOff();
+              }
+              (n.callback ?? (arg) {})(result);
+            })();
+          } else if (n is PopRouteNotification) {
+            _screenController.popRoute(n.result).then((ret) {
+              (n.callback ?? (arg) {})(ret);
+            });
           }
           return true;
         },

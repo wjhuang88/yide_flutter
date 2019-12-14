@@ -4,6 +4,7 @@ import 'package:dotted_border/dotted_border.dart';
 import 'package:yide/src/components/header_bar.dart';
 import 'package:yide/src/config.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
+import 'package:yide/src/notification.dart';
 
 class FeedbackScreen extends StatelessWidget implements Navigatable {
   @override
@@ -23,7 +24,7 @@ class FeedbackScreen extends StatelessWidget implements Navigatable {
                 color: Color(0xFFD7CAFF),
                 size: 30.0,
               ),
-              onLeadingAction: Navigator.of(context).maybePop,
+              onLeadingAction: () => PopRouteNotification().dispatch(context),
               actionIcon: const Text(
                 '提交',
                 style: const TextStyle(
@@ -163,4 +164,7 @@ class FeedbackScreen extends StatelessWidget implements Navigatable {
       },
     );
   }
+
+  @override
+  bool get withMene => false;
 }

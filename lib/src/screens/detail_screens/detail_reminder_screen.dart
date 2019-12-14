@@ -37,6 +37,9 @@ class DetailReminderScreen extends StatefulWidget implements Navigatable {
       },
     );
   }
+
+  @override
+  bool get withMene => false;
 }
 
 class _DetailReminderScreenState extends State<DetailReminderScreen> {

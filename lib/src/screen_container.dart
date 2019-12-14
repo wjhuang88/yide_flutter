@@ -1,10 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:yide/src/components/slide_drag_detector.dart';
 import 'package:yide/src/tools/common_tools.dart';
 
 import 'config.dart';
 import 'main_menu.dart';
-import 'notification.dart';
 import 'screens/splash_screen.dart';
 import 'tools/sqlite_manager.dart';
 
@@ -22,6 +22,9 @@ class ScreenContainer extends StatefulWidget {
 
 class ScreenContainerController {
   _ScreenContainerState _state;
+
+  NavigatorState get nav => navigateKey.currentState;
+
   Future<void> openMenu() async {
     return _state?._openMenu();
   }
@@ -30,12 +33,24 @@ class ScreenContainerController {
     return _state?._closeMenu();
   }
 
-  void dragMenu(double dist) {
-    _state?._dragMenu(dist);
+  Future<T> pushRoute<T>(Route route) {
+    return nav?.push<T>(route);
   }
 
-  Future<void> dragMenuEnd(double v) async {
-    return _state?._dragMenuEnd(v);
+  Future<T> replaceRoute<T>(Route route) {
+    return nav?.pushReplacement(route);
+  }
+
+  Future<bool> popRoute<T>(T result) {
+    return nav?.maybePop(result);
+  }
+
+  void menuOn() {
+    _state?._slideDragController?.setOn();
+  }
+
+  void menuOff() {
+    _state?._slideDragController?.setOff();
   }
 }
 
@@ -47,18 +62,19 @@ class _ScreenContainerState extends State<ScreenContainer>
   AnimationController _animationController;
   Animation _animation;
 
+  SlideDragController _slideDragController;
+
   double _offsetValue;
   double _animValue;
   double _animStartValue;
   double _animEndValue;
-  double _animDragDelta;
-  double _screenWidth;
 
   bool _menuOpen = false;
   bool _menuMoving = false;
-  bool _isMenuDragging = false;
 
   DateTime _backPressedAt;
+
+  NavigatorObserver _navigatorObserver;
 
   @override
   void initState() {
@@ -67,8 +83,9 @@ class _ScreenContainerState extends State<ScreenContainer>
     _animValue = 0.0;
     _animStartValue = 0.0;
     _animEndValue = 1.0;
-    _animDragDelta = 0.0;
-    _screenWidth = 1.0;
+
+    _slideDragController = SlideDragController();
+    _navigatorObserver = NavigatorObserver();
 
     _controller ??= ScreenContainerController();
     _controller._state = this;
@@ -93,6 +110,8 @@ class _ScreenContainerState extends State<ScreenContainer>
   @override
   void dispose() {
     _animationController.dispose();
+    _navigatorObserver.navigator?.dispose();
+    _navigatorObserver = null;
     SqliteManager.instance.dispose();
     super.dispose();
   }
@@ -101,13 +120,11 @@ class _ScreenContainerState extends State<ScreenContainer>
     if (_menuMoving) {
       return;
     }
-    _menuMoving = true;
     _menuOpen = true;
-    _animStartValue = _offsetValue + 0.3;
-    _animEndValue = 1.0;
-    await _animationController.forward(from: 0.0);
-    _animStartValue = 0.0;
+    _menuMoving = true;
+    await _slideDragController.forward();
     _menuMoving = false;
+    return;
   }
 
   Future<void> _closeMenu() async {
@@ -115,117 +132,153 @@ class _ScreenContainerState extends State<ScreenContainer>
       return;
     }
     _menuMoving = true;
-    _animStartValue = 0.0;
-    _animEndValue = _offsetValue;
-    await _animationController.reverse(from: 1.0);
-    _animEndValue = 1.0;
-    setState(() {
-      _menuOpen = false;
-    });
+    await _slideDragController.reverse();
     _menuMoving = false;
+    _menuOpen = false;
+    return;
   }
 
   void _dragMenu(double dist) {
     setState(() {
-      _menuOpen = true;
       _animValue = dist;
-      _offsetValue = dist - 0.3;
+      _offsetValue = dist;
     });
   }
 
-  Future<void> _dragMenuEnd(double v) async {
-    if (v > 700.0) {
-      return _openMenu();
-    } else if (v < -700.0) {
-      return _closeMenu();
-    } else if (_offsetValue >= 0.4) {
-      return _openMenu();
-    } else {
-      return _closeMenu();
+  WillPopScope _popScopeValue;
+  WillPopScope get _popScope {
+    if (_popScopeValue == null) {
+      _popScopeValue = _buildPopScope(context);
     }
+    return _popScopeValue;
   }
 
-  NavigatorObserver _navigatorObserver = NavigatorObserver();
+  WillPopScope _buildPopScope(BuildContext context) {
+    final nav = _buildNavigator(_navigatorObserver);
+    final scope = WillPopScope(
+      key: const ValueKey('main_page_willPopScope'),
+      onWillPop: () async {
+        final nav = _navigatorObserver.navigator;
+        // 拦截返回按钮
+        // 可以后退则后退
+        if (nav.canPop()) {
+          await nav.maybePop();
+          return false;
+        }
+        // 无法后退则检测是否连续按返回键，连续则推出app
+        if (_backPressedAt == null ||
+            DateTime.now().difference(_backPressedAt) > Duration(seconds: 1)) {
+          _backPressedAt = DateTime.now();
+          showToast('再次点击退出应用', context, Duration(seconds: 1));
+          return false;
+        }
+        return true;
+      },
+      child: nav,
+    );
+    return scope;
+  }
+
+  Navigator _buildNavigator(NavigatorObserver observer) {
+    return Navigator(
+      key: navigateKey,
+      initialRoute: '/',
+      observers: [observer],
+      onGenerateRoute: (RouteSettings settings) {
+        final String name = settings.name;
+        if ('/' == name) {
+          return SplashScreen().route;
+        } else {
+          throw FlutterError(
+              'The builder for route "${settings.name}" returned null.\n'
+              'Route builders must never return null.');
+        }
+      },
+    );
+  }
+
+  @override
+  void didUpdateWidget(ScreenContainer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: <Widget>[
-        Material(
-          color: const Color(0xFF483667),
-          child: Offstage(
-            offstage: !_menuOpen,
-            child: MainMenu(
-              transformValue: _animValue,
-              navigatorObserver: _navigatorObserver,
+    return SlideDragDetector(
+      startBarrier: 0.0,
+      endBarrier: 0.7,
+      controller: _slideDragController,
+      onUpdate: (frac) {
+        _menuOpen = true;
+        _dragMenu(frac);
+      },
+      onForward: (frac) {
+        setState(() {
+          _menuOpen = true;
+        });
+        _menuMoving = true;
+      },
+      onForwardComplete: (frac) {
+        _menuMoving = false;
+      },
+      onReverse: (frac) {
+        _menuMoving = true;
+      },
+      onReverseComplete: (frac) {
+        setState(() {
+          _menuOpen = false;
+        });
+        _menuMoving = false;
+      },
+      child: Stack(
+        children: <Widget>[
+          Material(
+            color: const Color(0xFF483667),
+            child: Offstage(
+              offstage: !_menuOpen,
+              child: MainMenu(
+                transformValue: _animValue / 0.7,
+                navigatorObserver: _navigatorObserver,
+              ),
             ),
           ),
-        ),
-        Transform(
-          alignment: Alignment.centerRight,
-          transform: Matrix4.identity()..scale(1.0 - _offsetValue * 0.3),
-          child: FractionalTranslation(
-            translation: Offset(_offsetValue, 0.0),
-            child: Stack(
-              children: <Widget>[
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: backgroundGradient,
-                    borderRadius: BorderRadius.circular(25 * _animValue),
-                    boxShadow: [
-                      BoxShadow(
-                        blurRadius: 17.0,
-                        color: Color(0x8A37256D),
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(25 * _animValue),
-                    child: Opacity(
-                      opacity: 1 - (_offsetValue / 0.7).clamp(0.0, 1.0),
-                      child: WillPopScope(
-                        onWillPop: () async {
-                          final nav = _navigatorObserver.navigator;
-                          // 拦截返回按钮
-                          // 可以后退则后退
-                          if (nav.canPop()) {
-                            nav.maybePop();
-                            return false;
-                          }
-                          // 无法后退则检测是否连续按返回键，连续则推出app
-                          if (_backPressedAt == null ||
-                              DateTime.now().difference(_backPressedAt) >
-                                  Duration(seconds: 1)) {
-                            _backPressedAt = DateTime.now();
-                            showToast('再次点击退出应用', context, Duration(seconds: 1));
-                            return false;
-                          }
-                          return true;
-                        },
-                        child: Navigator(
-                          initialRoute: '/',
-                          observers: [_navigatorObserver],
-                          onGenerateRoute: (RouteSettings settings) {
-                            final String name = settings.name;
-                            if ('/' == name) {
-                              return SplashScreen().route;
-                            } else {
-                              throw FlutterError(
-                                  'The builder for route "${settings.name}" returned null.\n'
-                                  'Route builders must never return null.');
-                            }
-                          },
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                _buildPageCover(context),
-              ],
+          Transform(
+            alignment: Alignment.centerRight,
+            transform: Matrix4.identity()..scale(1.0 - (_offsetValue < 0.0 ? _offsetValue * 2 : _offsetValue) * 0.3),
+            child: FractionalTranslation(
+              translation: Offset(_offsetValue < 0.0 ? 0.0 : _offsetValue, 0.0),
+              child: Stack(
+                children: <Widget>[
+                  _buildPageContainer(context),
+                  _buildPageCover(context),
+                ],
+              ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Container _buildPageContainer(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: backgroundGradient,
+        borderRadius: BorderRadius.circular(25 * _animValue),
+        boxShadow: [
+          BoxShadow(
+            blurRadius: 17.0,
+            color: Color(0x8A37256D),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(25 * _animValue),
+        child: Opacity(
+          opacity: 1 - (_offsetValue / 0.7).clamp(0.0, 1.0),
+          child: _popScope,
         ),
-      ],
+      ),
     );
   }
 
@@ -238,43 +291,7 @@ class _ScreenContainerState extends State<ScreenContainer>
           color: Colors.transparent,
         ),
         onTap: () {
-          AppNotification(NotificationType.closeMenu).dispatch(context);
-        },
-        onHorizontalDragStart: (detail) {
-          final x = detail.globalPosition.dx;
-          if (x > 0) {
-            _isMenuDragging = true;
-            _animDragDelta = x;
-            _screenWidth = MediaQuery.of(context).size.width;
-          }
-        },
-        onHorizontalDragEnd: (detail) {
-          if (!_isMenuDragging) {
-            return;
-          }
-          _isMenuDragging = false;
-          AppNotification(NotificationType.dragMenuEnd,
-                  value: detail.primaryVelocity)
-              .dispatch(context);
-        },
-        onHorizontalDragCancel: () {
-          if (!_isMenuDragging) {
-            return;
-          }
-          _isMenuDragging = false;
-          AppNotification(NotificationType.dragMenuEnd).dispatch(context);
-        },
-        onHorizontalDragUpdate: (detail) {
-          if (_isMenuDragging) {
-            final frac =
-                (detail.globalPosition.dx - _animDragDelta) / _screenWidth +
-                    1.0;
-            if (frac < 0.3) {
-              return;
-            }
-            AppNotification(NotificationType.dragMenu, value: frac)
-                .dispatch(context);
-          }
+          _closeMenu();
         },
       ),
     );

@@ -37,6 +37,9 @@ class DetailMapScreen extends StatefulWidget implements Navigatable {
       },
     );
   }
+
+  @override
+  bool get withMene => false;
 }
 
 const _gradient = const LinearGradient(

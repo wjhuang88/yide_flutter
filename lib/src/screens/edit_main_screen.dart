@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
@@ -10,6 +11,8 @@ import 'package:yide/src/components/panel_switcher.dart';
 import 'package:yide/src/components/tap_animator.dart';
 import 'package:yide/src/config.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
+import 'package:yide/src/notification.dart';
+import 'package:yide/src/tools/common_tools.dart';
 import 'package:yide/src/tools/date_tools.dart';
 import 'package:yide/src/tools/sqlite_manager.dart';
 import 'package:yide/src/models/task_data.dart';
@@ -29,19 +32,22 @@ class EditMainScreen extends StatefulWidget implements Navigatable {
 
   @override
   Route get route => PageRouteBuilder<TaskPack>(
-      pageBuilder: (context, anim1, anim2) => this,
-      transitionDuration: Duration(milliseconds: 400),
-      transitionsBuilder: (context, anim1, anim2, child) {
-        final anim1Curved = CurvedAnimation(
-          parent: anim1,
-          curve: Curves.easeOutCubic,
-          reverseCurve: Curves.easeInCubic,
-        );
-        final offset = 1 - anim1Curved.value;
-        controller.updateTransition(offset);
-        return child;
-      },
-    );
+        pageBuilder: (context, anim1, anim2) => this,
+        transitionDuration: Duration(milliseconds: 400),
+        transitionsBuilder: (context, anim1, anim2, child) {
+          final anim1Curved = CurvedAnimation(
+            parent: anim1,
+            curve: Curves.easeOutCubic,
+            reverseCurve: Curves.easeInCubic,
+          );
+          final offset = 1 - anim1Curved.value;
+          controller.updateTransition(offset);
+          return child;
+        },
+      );
+
+  @override
+  bool get withMene => false;
 }
 
 class _EditMainScreenState extends State<EditMainScreen>
@@ -111,9 +117,6 @@ class _EditMainScreenState extends State<EditMainScreen>
     _controller ??= EditScreenController();
     _controller._state = this;
     _textEditingController = TextEditingController(text: _taskData.content);
-    _textEditingController.addListener(() {
-      _taskData.content = _textEditingController.text;
-    });
     _focusNode = FocusNode();
     _focusNode.addListener(() {
       if (_focusNode.hasFocus) {
@@ -164,9 +167,19 @@ class _EditMainScreenState extends State<EditMainScreen>
 
   Future<bool> _saveAndBack(
       BuildContext context, TaskData data, TaskTag tag) async {
+    data.content = _textEditingController.text;
+    if (data.content.isEmpty) {
+      _focus();
+      return false;
+    }
     data.tagId = tag.id;
     final pack = TaskPack(data, tag);
-    return Navigator.of(context).maybePop<TaskPack>(pack);
+    final callback = Completer<bool>();
+    PopRouteNotification(
+      result: pack,
+      callback: callback.complete,
+    ).dispatch(context);
+    return callback.future;
   }
 
   void _updateTransition(double value) {
@@ -626,7 +639,7 @@ class _EditMainScreenState extends State<EditMainScreen>
           Expanded(
             child: TapAnimator(
               behavior: HitTestBehavior.opaque,
-              onTap: () => Navigator.of(context).maybePop(),
+              onTap: () => PopRouteNotification().dispatch(context),
               builder: (factor) {
                 final color =
                     const Color(0xFFBBADE7).withOpacity(1 - factor * 0.5);

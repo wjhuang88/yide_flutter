@@ -37,6 +37,9 @@ class DetailRepeatScreen extends StatefulWidget implements Navigatable {
       },
     );
   }
+
+  @override
+  bool get withMene => false;
 }
 
 const _colorList = const [const Color(0xFFE6A800), const Color(0xFFBD8A00)];

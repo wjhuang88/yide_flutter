@@ -78,4 +78,7 @@ class DetailCommentsScreen extends StatelessWidget implements Navigatable {
       },
     );
   }
+
+  @override
+  bool get withMene => false;
 }
