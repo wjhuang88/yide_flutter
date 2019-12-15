@@ -4,8 +4,9 @@ import 'package:yide/src/interfaces/navigatable.dart';
 class MenuNotification extends Notification {
   final MenuNotificationType type;
   final dynamic value;
+  final VoidCallback callback;
 
-  MenuNotification(this.type, {this.value});
+  MenuNotification(this.type, {this.value, this.callback});
 }
 
 enum MenuNotificationType {

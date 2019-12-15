@@ -32,15 +32,18 @@ class _MyAppState extends State<MyApp> {
       home: NotificationListener<Notification>(
         onNotification: (Notification n) {
           if (n is MenuNotification) {
-            switch (n.type) {
-              case MenuNotificationType.openMenu:
-                _screenController.openMenu();
-                break;
-              case MenuNotificationType.closeMenu:
-                _screenController.closeMenu();
-                break;
-              default:
-            }
+            () async {
+              switch (n.type) {
+                case MenuNotificationType.openMenu:
+                  await _screenController.openMenu();
+                  break;
+                case MenuNotificationType.closeMenu:
+                  await _screenController.closeMenu();
+                  break;
+                default:
+              }
+              if (n.callback != null) n.callback();
+            }();
           } else if (n is PushRouteNotification) {
             (() async {
               final temp = _lastRouteWithMenu;
@@ -85,10 +88,14 @@ class _MyAppState extends State<MyApp> {
       supportedLocales: [
         const Locale.fromSubtags(languageCode: 'zh'),
       ],
-      theme: CupertinoThemeData(
-        primaryColor: const Color(0xFFFFFFFF),
-        scaffoldBackgroundColor: const Color(0xFF8346C8),
-        brightness: Brightness.dark,
+      theme: const CupertinoThemeData(
+        primaryColor: Color(0xFF523F88),
+        primaryContrastingColor: Color(0xFF483667),
+        scaffoldBackgroundColor: Color(0xFF8346C8),
+        brightness: Brightness.light,
+        textTheme: CupertinoTextThemeData(
+          primaryColor: Color(0xFFFFFFFF),
+        )
       ),
     );
   }

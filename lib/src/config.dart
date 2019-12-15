@@ -17,13 +17,13 @@ final menuConfig = [
     {
       'name': '今天',
       'route': null,
-      'icon': const Icon(FontAwesomeIcons.solidStar, size: 20.0),
+      'icon': const Icon(FontAwesomeIcons.solidStar, size: 18.0, color: Color(0xFFEDE7FF),),
       'level': 0
     },
     {
       'name': '日程',
       'route': () => MultipleDayListScreen(),
-      'icon': const Icon(FontAwesomeIcons.calendar, size: 20.0),
+      'icon': const Icon(FontAwesomeIcons.calendar, size: 18.0, color: Color(0xFFEDE7FF),),
       'level': 0
     },
     // {
@@ -33,43 +33,43 @@ final menuConfig = [
     //   'level': 0
     // },
   ],
-  // [
-  //   {
-  //     'name': '添加项目',
-  //     'route': null,
-  //     'icon': const Icon(FontAwesomeIcons.plusCircle, size: 20.0),
-  //     'level': 0
-  //   },
-  //   {
-  //     'name': '项目一',
-  //     'route': null,
-  //     'icon': const Icon(FontAwesomeIcons.minusCircle, size: 20.0),
-  //     'level': 1
-  //   },
-  //   {
-  //     'name': '项目二',
-  //     'route': null,
-  //     'icon': const Icon(FontAwesomeIcons.minusCircle, size: 20.0),
-  //     'level': 1
-  //   },
-  // ],
+  [
+    {
+      'name': '添加项目',
+      'route': null,
+      'icon': const Icon(FontAwesomeIcons.plusCircle, size: 18.0, color: Color(0xFFEDE7FF),),
+      'level': 0
+    },
+    {
+      'name': '项目一',
+      'route': null,
+      'icon': const Icon(FontAwesomeIcons.minusCircle, size: 18.0, color: Color(0xFFEDE7FF),),
+      'level': 1
+    },
+    {
+      'name': '项目二',
+      'route': null,
+      'icon': const Icon(FontAwesomeIcons.minusCircle, size: 18.0, color: Color(0xFFEDE7FF),),
+      'level': 1
+    },
+  ],
   [
     {
       'name': '归档内容',
       'route': null,
-      'icon': const Icon(FontAwesomeIcons.archive, size: 20.0),
+      'icon': const Icon(FontAwesomeIcons.archive, size: 18.0, color: Color(0xFFEDE7FF),),
       'level': 0
     },
     {
       'name': '更多推荐',
       'route': null,
-      'icon': const Icon(FontAwesomeIcons.ellipsisH, size: 20.0),
+      'icon': const Icon(FontAwesomeIcons.ellipsisH, size: 18.0, color: Color(0xFFEDE7FF),),
       'level': 0
     },
     {
       'name': '建议反馈',
       'route': () => FeedbackScreen(),
-      'icon': const Icon(FontAwesomeIcons.solidCommentDots, size: 20.0),
+      'icon': const Icon(FontAwesomeIcons.solidCommentDots, size: 18.0, color: Color(0xFFEDE7FF),),
       'level': 0
     },
   ],
@@ -77,7 +77,7 @@ final menuConfig = [
     {
       'name': '设置',
       'route': null,
-      'icon': const Icon(FontAwesomeIcons.cogs, size: 20.0),
+      'icon': const Icon(FontAwesomeIcons.cogs, size: 18.0, color: Color(0xFFEDE7FF),),
       'level': 0
     },
   ]

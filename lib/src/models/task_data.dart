@@ -183,6 +183,8 @@ class RepeatBitMap {
   RepeatBitMap.selectYear() : bitMap = (1 << 10) + (1 << 12) + (1 << 14);
   RepeatBitMap.selectDaily() : bitMap = (1 << 11) + (1 << 12) + (1 << 14);
 
+  static int get noneBitmap => (1 << 8) + (1 << 12) + (1 << 14);
+
   static const _weekdayMask =
       (1 << 1) + (1 << 2) + (1 << 3) + (1 << 4) + (1 << 5);
   static const _weekendMask = (1 << 6) + (1 << 7);

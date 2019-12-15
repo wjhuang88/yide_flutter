@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:math' as Math;
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:yide/src/config.dart';
@@ -86,14 +88,27 @@ class MainMenu extends StatelessWidget {
         ),
       );
       for (var item in group) {
-        final tile = ListTile(
-          contentPadding: contentPadding +
+        final tile = CupertinoButton(
+          color: const Color(0x00000000),
+          padding: contentPadding +
               EdgeInsets.only(left: 40.0 * (item['level'] as int)),
-          leading: item['icon'],
-          title: Text(
-            item['name'] as String,
+          child: Row(
+            children: <Widget>[
+              item['icon'],
+              const SizedBox(
+                width: 20.0,
+              ),
+              Text(
+                item['name'] as String,
+                style: const TextStyle(
+                  color: Color(0xFFEDE7FF),
+                  fontWeight: FontWeight.w300,
+                  fontSize: 15.0,
+                ),
+              ),
+            ],
           ),
-          onTap: () {
+          onPressed: () async {
             MenuNotification(MenuNotificationType.closeMenu).dispatch(context);
             final route = item['route'] as Function;
             if (route != null) {

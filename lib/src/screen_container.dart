@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:yide/src/components/slide_drag_detector.dart';
 import 'package:yide/src/tools/common_tools.dart';
 
@@ -69,7 +68,6 @@ class _ScreenContainerState extends State<ScreenContainer>
   double _animStartValue;
   double _animEndValue;
 
-  bool _menuOpen = false;
   bool _menuMoving = false;
 
   DateTime _backPressedAt;
@@ -100,7 +98,6 @@ class _ScreenContainerState extends State<ScreenContainer>
       final value = _animStartValue +
           (_animEndValue - _animStartValue) * _animation.value;
       setState(() {
-        _menuOpen = true;
         _animValue = value;
         _offsetValue = value * 0.7;
       });
@@ -120,7 +117,6 @@ class _ScreenContainerState extends State<ScreenContainer>
     if (_menuMoving) {
       return;
     }
-    _menuOpen = true;
     _menuMoving = true;
     await _slideDragController.forward();
     _menuMoving = false;
@@ -134,7 +130,6 @@ class _ScreenContainerState extends State<ScreenContainer>
     _menuMoving = true;
     await _slideDragController.reverse();
     _menuMoving = false;
-    _menuOpen = false;
     return;
   }
 
@@ -209,13 +204,9 @@ class _ScreenContainerState extends State<ScreenContainer>
       endBarrier: 0.7,
       controller: _slideDragController,
       onUpdate: (frac) {
-        _menuOpen = true;
         _dragMenu(frac);
       },
       onForward: (frac) {
-        setState(() {
-          _menuOpen = true;
-        });
         _menuMoving = true;
       },
       onForwardComplete: (frac) {
@@ -225,21 +216,15 @@ class _ScreenContainerState extends State<ScreenContainer>
         _menuMoving = true;
       },
       onReverseComplete: (frac) {
-        setState(() {
-          _menuOpen = false;
-        });
         _menuMoving = false;
       },
       child: Stack(
         children: <Widget>[
-          Material(
+          Container(
             color: const Color(0xFF483667),
-            child: Offstage(
-              offstage: !_menuOpen,
-              child: MainMenu(
-                transformValue: _animValue / 0.7,
-                navigatorObserver: _navigatorObserver,
-              ),
+            child: MainMenu(
+              transformValue: _animValue / 0.7,
+              navigatorObserver: _navigatorObserver,
             ),
           ),
           Transform(
@@ -288,7 +273,7 @@ class _ScreenContainerState extends State<ScreenContainer>
       child: GestureDetector(
         child: Container(
           alignment: Alignment.centerLeft,
-          color: Colors.transparent,
+          color: const Color(0x00000000),
         ),
         onTap: () {
           _closeMenu();

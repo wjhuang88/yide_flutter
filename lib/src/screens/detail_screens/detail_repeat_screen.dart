@@ -5,6 +5,7 @@ import 'package:yide/src/components/flipping_tile.dart';
 import 'package:yide/src/components/header_bar.dart';
 import 'package:yide/src/components/tap_animator.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
+import 'package:yide/src/notification.dart';
 import 'package:yide/src/tools/date_tools.dart';
 import 'package:yide/src/models/task_data.dart';
 
@@ -52,6 +53,31 @@ class _DetailRepeatScreenState extends State<DetailRepeatScreen> {
   RepeatBitMap _repeatState;
   RepeatBitMap _repeatLastState;
 
+  ScrollController _scrollController;
+  bool _backProcessing = false;
+
+  @override
+  void initState() {
+    _scrollController = ScrollController();
+    _scrollController.addListener(() {
+      if (_scrollController.offset <
+          _scrollController.position.minScrollExtent - 100) {
+        if (_backProcessing) {
+          return;
+        }
+        _backProcessing = true;
+        PopRouteNotification().dispatch(context);
+      }
+    });
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
@@ -64,18 +90,23 @@ class _DetailRepeatScreenState extends State<DetailRepeatScreen> {
               color: Color(0xFFD7CAFF),
               size: 40.0,
             ),
-            onLeadingAction: Navigator.of(context).maybePop,
+            onLeadingAction: () => PopRouteNotification().dispatch(context),
             actionIcon: const Text(
               '完成',
               style: const TextStyle(
                   fontSize: 15.0, color: const Color(0xFFEDE7FF)),
             ),
-            onAction: () =>
-                Navigator.of(context).maybePop<int>(_repeatState.bitMap),
+            onAction: () {
+              PopRouteNotification(result: _repeatState.bitMap)
+                  .dispatch(context);
+            },
             title: '设置重复',
           ),
           Expanded(
             child: ListView(
+              physics: AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics()),
+              controller: _scrollController,
               padding: const EdgeInsets.only(
                   top: 15.0, bottom: 50.0, left: 15.0, right: 15.0),
               children: <Widget>[

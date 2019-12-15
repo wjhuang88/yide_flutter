@@ -134,7 +134,12 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
                 size: 30.0,
               ),
               actionIcon: _isLoading
-                  ? CupertinoActivityIndicator()
+                  ? CupertinoTheme(
+                      data: CupertinoThemeData(
+                        brightness: Brightness.dark,
+                      ),
+                      child: CupertinoActivityIndicator(),
+                    )
                   : const Text(
                       '编辑',
                       style:
@@ -183,7 +188,10 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
           color: Color(0xFF9051DC),
           child: Text(
             timeLabel,
-            style: const TextStyle(fontSize: 18.0, fontWeight: FontWeight.w200),
+            style: const TextStyle(
+                fontSize: 18.0,
+                fontWeight: FontWeight.w200,
+                color: Color(0xFFFFFFFF)),
           ),
         );
       },

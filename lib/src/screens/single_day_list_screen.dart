@@ -57,15 +57,14 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
   Widget _savedList;
   Widget _placeholder;
 
+  int _taskCount = 0;
+  int _doingCount = 0;
+
   Future<List<TaskPack>> _taskList;
 
   String _cityName = ' - ';
   String _temp = ' - ';
   String _weather = ' - ';
-
-  // bool _isDragging = false;
-  // double _animDragDelta = 0.0;
-  // double _screenWidth = 1.0;
 
   DateTime _dateTime = DateTime.now();
 
@@ -78,7 +77,11 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
   }
 
   Future<void> _updateLocAndTemp() async {
-    _isLoading = true;
+    setState(() {
+      _cityName = ' - ';
+      _temp = ' - ';
+      _weather = ' - ';
+    });
     final location = await LocationMethods.getLocation();
     if (location.adcode?.isEmpty ?? false) {
       _cityName = location.city.isEmpty ? ' - ' : location.city;
@@ -88,12 +91,14 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
       _temp = weather.temperature ?? ' - ';
       _weather = weather.weather ?? ' - ';
     }
-    _isLoading = false;
+    setState(() {});
   }
 
   Future<List<TaskPack>> _updateListData() async {
     _isLoading = true;
     final result = await TaskDBAction.getTaskListByDate(_dateTime);
+    _taskCount = result.length;
+    _doingCount = result.where((pack) => !pack.data.isFinished).length;
     _isLoading = false;
     return result;
   }
@@ -174,7 +179,12 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
                         _isLoading
                             ? Container(
                                 padding: const EdgeInsets.only(right: 17.0),
-                                child: CupertinoActivityIndicator(),
+                                child: CupertinoTheme(
+                                  data: CupertinoThemeData(
+                                    brightness: Brightness.dark,
+                                  ),
+                                  child: CupertinoActivityIndicator(),
+                                ),
                               )
                             : const SizedBox(),
                       ],
@@ -207,14 +217,22 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
                             right: 5.0,
                             top: 0.0,
                             child: weatherImageMap[_weather] != null
-                                ? Container(
-                                    height: 32.0,
-                                    width: 32,
-                                    child:
-                                        Image.asset(weatherImageMap[_weather]))
+                                ? GestureDetector(
+                                    onTap: _updateLocAndTemp,
+                                    child: Container(
+                                        height: 32.0,
+                                        width: 32,
+                                        child: Image.asset(
+                                            weatherImageMap[_weather])),
+                                  )
                                 //? Container(height: 32.0, width: 32, child: Image.asset('assets/images/weather/test1.png'))
-                                : CupertinoActivityIndicator(
-                                    radius: 16.0,
+                                : CupertinoTheme(
+                                    data: CupertinoThemeData(
+                                      brightness: Brightness.dark,
+                                    ),
+                                    child: CupertinoActivityIndicator(
+                                      radius: 12.0,
+                                    ),
                                   ),
                           ),
                         ],
@@ -300,9 +318,7 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
                                         DetailListScreen(taskPack: item),
                                         callback: (pack) {
                                           setState(() {
-                                            _taskList =
-                                                TaskDBAction.getTaskListByDate(
-                                                    _dateTime);
+                                            _taskList = _updateListData();
                                           });
                                         },
                                       ).dispatch(context);
@@ -358,8 +374,7 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
                             if (newTask != null) {
                               await TaskDBAction.saveTask(newTask.data);
                               setState(() {
-                                _taskList =
-                                    TaskDBAction.getTaskListByDate(_dateTime);
+                                _taskList = _updateListData();
                               });
                             }
                           },
@@ -382,7 +397,7 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
         Text(
-          '总共10件事项还剩',
+          '总共$_taskCount件事项还剩',
           style: const TextStyle(
               fontSize: 14.0,
               color: Color(0xFFDEC0FF),
@@ -398,7 +413,7 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
                 width: 50.0,
               ),
               Text(
-                '5',
+                '$_doingCount',
                 style: const TextStyle(
                   fontSize: 75.0,
                   color: Color(0xFFFFFFFF),

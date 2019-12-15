@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:yide/src/components/location_map_view.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
 import 'package:yide/src/models/geo_data.dart';
+import 'package:yide/src/notification.dart';
 import 'package:yide/src/tools/icon_tools.dart';
 
 class DetailMapScreen extends StatefulWidget implements Navigatable {
@@ -183,101 +184,106 @@ class _DetailMapScreenState extends State<DetailMapScreen>
     return CupertinoPageScaffold(
       backgroundColor: const Color(0x00000000),
       resizeToAvoidBottomInset: false,
-      child: Stack(
-        children: <Widget>[
-          Container(
-            height: MediaQuery.of(context).size.height,
-            child: LocationMapView(
-              controller: _locationMapController,
-              initCenter: _selectedAddress?.coordinate,
-              cameraDegree: 30.0,
-              zoomLevel: 16.0,
-              showsCompass: true,
-              compassOffset: const Offset(-10.0, 40.0),
-              showsScale: false,
-              showsUserLocation: true,
-              centerOffset: const FractionalOffset(0.5, 0.3),
-              onRegionStartChanging: () async {
-                _isLoading = true;
-                _focusNode.unfocus();
-                _textEditingController.clear();
-                await _pinJumpController.forward();
-                await _pinJumpController.reverse();
-              },
-              onRegionChanged: (around, coord) async {
-                setState(() {
-                  _arounds = around;
-                  _isLoadingValue = false;
-                });
-              },
-              onTips: (tips) {
-                //print("get tips: $tips");
-              },
-              onMapTap: (coord) {
-                _focusNode.unfocus();
-              },
-            ),
-          ),
-          Container(
-            height: 50.0,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0x55000000), Color(0x00000000)],
+      child: CupertinoTheme(
+        data: const CupertinoThemeData(
+            brightness: Brightness.dark,
+            textTheme: CupertinoTextThemeData(primaryColor: Color(0xFFFAB807))),
+        child: Stack(
+          children: <Widget>[
+            Container(
+              height: MediaQuery.of(context).size.height,
+              child: LocationMapView(
+                controller: _locationMapController,
+                initCenter: _selectedAddress?.coordinate,
+                cameraDegree: 30.0,
+                zoomLevel: 16.0,
+                showsCompass: true,
+                compassOffset: const Offset(-10.0, 40.0),
+                showsScale: false,
+                showsUserLocation: true,
+                centerOffset: const FractionalOffset(0.5, 0.3),
+                onRegionStartChanging: () async {
+                  _isLoading = true;
+                  _focusNode.unfocus();
+                  _textEditingController.clear();
+                  await _pinJumpController.forward();
+                  await _pinJumpController.reverse();
+                },
+                onRegionChanged: (around, coord) async {
+                  setState(() {
+                    _arounds = around;
+                    _isLoadingValue = false;
+                  });
+                },
+                onTips: (tips) {
+                  //print("get tips: $tips");
+                },
+                onMapTap: (coord) {
+                  _focusNode.unfocus();
+                },
               ),
             ),
-          ),
-          Positioned(
-            top: screenHeight * 0.3 - 40.0,
-            left: screenWidth * 0.5 - 20.0,
-            child: Transform.translate(
-                offset: Offset(0.0, -10.0 * _pinJumpAnim.value),
-                child: const Icon(
-                  CupertinoIcons.location_solid,
-                  color: Color(0xFFFAB807),
-                  size: 40.0,
-                )),
-          ),
-          Positioned(
-            bottom: 10.0,
-            left: 10.0,
-            right: 10.0,
-            child: SafeArea(
-              maintainBottomViewPadding: true,
-              child: Column(
-                children: <Widget>[
-                  _buildSearchBar(),
-                  const SizedBox(
-                    height: 10.0,
-                  ),
-                  _LocationListPanel(
-                    isLoading: _isLoading,
-                    panelHeight: _panelHeight,
-                    values: _arounds,
-                    controller: _listController,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          SafeArea(
-            child: Container(
-              margin: const EdgeInsets.only(top: 10.0, left: 10.0),
-              decoration: _iconDecoration,
-              child: CupertinoButton(
-                padding: EdgeInsets.zero,
-                minSize: 55.0,
-                child: const Icon(
-                  CupertinoIcons.left_chevron,
-                  color: Color(0x99FFFFFF),
-                  size: 25.0,
+            Container(
+              height: 50.0,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0x55000000), Color(0x00000000)],
                 ),
-                onPressed: Navigator.of(context).maybePop,
               ),
             ),
-          ),
-        ],
+            Positioned(
+              top: screenHeight * 0.3 - 40.0,
+              left: screenWidth * 0.5 - 20.0,
+              child: Transform.translate(
+                  offset: Offset(0.0, -10.0 * _pinJumpAnim.value),
+                  child: const Icon(
+                    CupertinoIcons.location_solid,
+                    color: Color(0xFFFAB807),
+                    size: 40.0,
+                  )),
+            ),
+            Positioned(
+              bottom: 10.0,
+              left: 10.0,
+              right: 10.0,
+              child: SafeArea(
+                maintainBottomViewPadding: true,
+                child: Column(
+                  children: <Widget>[
+                    _buildSearchBar(),
+                    const SizedBox(
+                      height: 10.0,
+                    ),
+                    _LocationListPanel(
+                      isLoading: _isLoading,
+                      panelHeight: _panelHeight,
+                      values: _arounds,
+                      controller: _listController,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SafeArea(
+              child: Container(
+                margin: const EdgeInsets.only(top: 10.0, left: 10.0),
+                decoration: _iconDecoration,
+                child: CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  minSize: 55.0,
+                  child: const Icon(
+                    CupertinoIcons.left_chevron,
+                    color: Color(0x99FFFFFF),
+                    size: 25.0,
+                  ),
+                  onPressed: () => PopRouteNotification().dispatch(context),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -302,24 +308,30 @@ class _DetailMapScreenState extends State<DetailMapScreen>
               style: const TextStyle(fontSize: 16.0, color: Color(0xFFFFFFFF)),
               placeholderStyle:
                   const TextStyle(fontSize: 16.0, color: Color(0x66FFFFFF)),
-              clearButtonMode: OverlayVisibilityMode.editing,
-              prefix: Icon(CupertinoIcons.search),
+              suffixMode: OverlayVisibilityMode.editing,
+              suffix: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  final bool textChanged =
+                      _textEditingController.text.isNotEmpty;
+                  _textEditingController.clear();
+                  if (textChanged)
+                    _onKeywordChange(_textEditingController.text);
+                },
+                child: Center(
+                  child: const Icon(
+                    CupertinoIcons.clear,
+                    color: Color(0xFFFFFFFF),
+                  ),
+                ),
+              ),
+              prefix: const Icon(
+                CupertinoIcons.search,
+                color: Color(0xFFFFFFFF),
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 10.0),
               decoration: BoxDecoration(color: Colors.transparent),
-              onChanged: (keyword) async {
-                _inputTime?.cancel();
-                _inputTime = Timer(const Duration(milliseconds: 500), () async {
-                  if (keyword?.isEmpty ?? false) {
-                    _locationMapController.forceTriggerRegionChange();
-                    return;
-                  }
-                  final list =
-                      await _locationMapController.searchAround(keyword);
-                  setState(() {
-                    _arounds = list;
-                  });
-                });
-              },
+              onChanged: _onKeywordChange,
               onSubmitted: (keyword) async {
                 if (keyword?.isEmpty ?? false) {
                   _locationMapController.forceTriggerRegionChange();
@@ -369,6 +381,20 @@ class _DetailMapScreenState extends State<DetailMapScreen>
               )
       ],
     );
+  }
+
+  Future<void> _onKeywordChange(String keyword) async {
+    _inputTime?.cancel();
+    _inputTime = Timer(const Duration(milliseconds: 500), () async {
+      if (keyword?.isEmpty ?? false) {
+        _locationMapController.forceTriggerRegionChange();
+        return;
+      }
+      final list = await _locationMapController.searchAround(keyword);
+      setState(() {
+        _arounds = list;
+      });
+    });
   }
 }
 
@@ -433,7 +459,9 @@ class _LocationListPanel extends StatelessWidget {
         }
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: () => Navigator.of(context).maybePop<AroundData>(_arounds[i]),
+          onTap: () {
+            PopRouteNotification(result: _arounds[i]).dispatch(context);
+          },
           child: Container(
             height: 70.0,
             alignment: Alignment.centerLeft,

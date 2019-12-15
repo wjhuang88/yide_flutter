@@ -215,7 +215,8 @@ class _DetailListScreenState extends State<DetailListScreen>
                     ),
                     actionIcon:
                         _isLoading ? CupertinoActivityIndicator() : null,
-                    onLeadingAction: () => PopRouteNotification().dispatch(context),
+                    onLeadingAction: () =>
+                        PopRouteNotification().dispatch(context),
                   ),
                   _HeaderPanel(
                     content: _data.content,
@@ -241,10 +242,11 @@ class _DetailListScreenState extends State<DetailListScreen>
                     },
                   ),
                   const SizedBox(
-                    height: 25.0,
+                    height: 20.0,
                   ),
                   Expanded(
                     child: ListView(
+                      padding: const EdgeInsets.only(top: 20.0),
                       children: <Widget>[
                         _ListItem(
                           iconData: buildCupertinoIconData(0xf3c8),
@@ -260,21 +262,18 @@ class _DetailListScreenState extends State<DetailListScreen>
                                   '点击设置提醒',
                                   style: nocontentStyle,
                                 ),
-                          onTap: () async {
-                            final codeAsync = Completer<int>();
-                            PushRouteNotification(
-                              DetailReminderScreen(
-                                  stateCode:
-                                      _savedDetail.reminderBitMap.bitMap ?? 0),
-                              callback: (ret) => codeAsync.complete(ret as int),
-                            ).dispatch(context);
-                            final code = await codeAsync.future;
-                            if (code != null) {
-                              setState(() {
-                                _savedDetail.reminderBitMap.bitMap = code;
-                              });
-                              _saveDetail();
-                            }
+                          onTap: _reminderForward,
+                          onLongPress: () {
+                            _popup(
+                              context,
+                              onEdit: _reminderForward,
+                              onClear: () {
+                                setState(() {
+                                  _savedDetail.reminderBitMap.bitMap = 0;
+                                });
+                                _saveDetail();
+                              },
+                            );
                           },
                         ),
                         const SizedBox(
@@ -298,21 +297,19 @@ class _DetailListScreenState extends State<DetailListScreen>
                                   '点击设置重复',
                                   style: nocontentStyle,
                                 ),
-                          onTap: () async {
-                            final codeAsync = Completer<int>();
-                            PushRouteNotification(
-                              DetailRepeatScreen(
-                                  stateCode:
-                                      _savedDetail.repeatBitMap.bitMap ?? 0),
-                              callback: (ret) => codeAsync.complete(ret as int),
-                            ).dispatch(context);
-                            final code = await codeAsync.future;
-                            if (code != null) {
-                              setState(() {
-                                _savedDetail.repeatBitMap.bitMap = code;
-                              });
-                              _saveDetail();
-                            }
+                          onTap: _repeatForward,
+                          onLongPress: () {
+                            _popup(
+                              context,
+                              onEdit: _repeatForward,
+                              onClear: () {
+                                setState(() {
+                                  _savedDetail.repeatBitMap.bitMap =
+                                      RepeatBitMap.noneBitmap;
+                                });
+                                _saveDetail();
+                              },
+                            );
                           },
                         ),
                         const SizedBox(
@@ -332,20 +329,18 @@ class _DetailListScreenState extends State<DetailListScreen>
                                   '点击添加地址',
                                   style: nocontentStyle,
                                 ),
-                          onTap: () async {
-                            final addressAsync = Completer<AroundData>();
-                            PushRouteNotification(
-                              DetailMapScreen(address: _savedDetail.address),
-                              callback: (ret) =>
-                                  addressAsync.complete(ret as AroundData),
-                            ).dispatch(context);
-                            final address = await addressAsync.future;
-                            if (address != null) {
-                              setState(() {
-                                _savedDetail.address = address;
-                              });
-                              _saveDetail();
-                            }
+                          onTap: _addressForward,
+                          onLongPress: () {
+                            _popup(
+                              context,
+                              onEdit: _addressForward,
+                              onClear: () {
+                                setState(() {
+                                  _savedDetail.address = null;
+                                });
+                                _saveDetail();
+                              },
+                            );
                           },
                         ),
                         const SizedBox(
@@ -380,20 +375,18 @@ class _DetailListScreenState extends State<DetailListScreen>
                                   style: contentStyle,
                                 )
                               : Text('点击添加备注', style: nocontentStyle),
-                          onTap: () async {
-                            final valueAsync = Completer<String>();
-                            PushRouteNotification(
-                              DetailCommentsScreen(value: _data.remark),
-                              callback: (ret) =>
-                                  valueAsync.complete(ret as String),
-                            ).dispatch(context);
-                            final value = await valueAsync.future;
-                            if (value != null) {
-                              setState(() {
-                                _data.remark = value;
-                              });
-                              _saveTask();
-                            }
+                          onTap: _remarkForward,
+                          onLongPress: () {
+                            _popup(
+                              context,
+                              onEdit: _remarkForward,
+                              onClear: () {
+                                setState(() {
+                                  _data.remark = null;
+                                });
+                                _saveTask();
+                              },
+                            );
                           },
                         ),
                       ],
@@ -411,7 +404,7 @@ class _DetailListScreenState extends State<DetailListScreen>
                         final isDelete = await showCupertinoDialog<bool>(
                           context: context,
                           builder: (context) => CupertinoAlertDialog(
-                            title: Text('将要删除本事项，请您��认'),
+                            title: Text('将要删除本事项，请您确认'),
                             content: Text('删除事项后将无法恢复，请确认此次操作是您的真实意图'),
                             actions: <Widget>[
                               CupertinoDialogAction(
@@ -443,6 +436,117 @@ class _DetailListScreenState extends State<DetailListScreen>
         ),
       ),
     );
+  }
+
+  Future<void> _reminderForward() async {
+    final codeAsync = Completer<int>();
+    PushRouteNotification(
+      DetailReminderScreen(stateCode: _savedDetail.reminderBitMap.bitMap ?? 0),
+      callback: (ret) => codeAsync.complete(ret as int),
+    ).dispatch(context);
+    final code = await codeAsync.future;
+    if (code != null) {
+      setState(() {
+        _savedDetail.reminderBitMap.bitMap = code;
+      });
+      _saveDetail();
+    }
+  }
+
+  Future<void> _repeatForward() async {
+    final codeAsync = Completer<int>();
+    PushRouteNotification(
+      DetailRepeatScreen(stateCode: _savedDetail.repeatBitMap.bitMap ?? 0),
+      callback: (ret) => codeAsync.complete(ret as int),
+    ).dispatch(context);
+    final code = await codeAsync.future;
+    if (code != null) {
+      setState(() {
+        _savedDetail.repeatBitMap.bitMap = code;
+      });
+      _saveDetail();
+    }
+  }
+
+  Future<void> _addressForward() async {
+    final addressAsync = Completer<AroundData>();
+    PushRouteNotification(
+      DetailMapScreen(address: _savedDetail.address),
+      callback: (ret) => addressAsync.complete(ret as AroundData),
+    ).dispatch(context);
+    final address = await addressAsync.future;
+    if (address != null) {
+      setState(() {
+        _savedDetail.address = address;
+      });
+      _saveDetail();
+    }
+  }
+
+  Future<void> _remarkForward() async {
+    final valueAsync = Completer<String>();
+    PushRouteNotification(
+      DetailCommentsScreen(value: _data.remark),
+      callback: (ret) => valueAsync.complete(ret as String),
+    ).dispatch(context);
+    final value = await valueAsync.future;
+    if (value != null) {
+      setState(() {
+        _data.remark = value;
+      });
+      _saveTask();
+    }
+  }
+
+  Future<void> _popup(BuildContext context,
+      {VoidCallback onCancel,
+      VoidCallback onEdit,
+      VoidCallback onClear}) async {
+    final act = await showCupertinoModalPopup<bool>(
+      context: context,
+      builder: (context) => CupertinoActionSheet(
+        actions: <Widget>[
+          CupertinoActionSheetAction(
+            child: Text(
+              '编辑内容',
+              style: const TextStyle(
+                fontSize: 16.0,
+                color: Color(0xFF000000),
+              ),
+            ),
+            onPressed: () => Navigator.of(context).maybePop(true),
+          ),
+          CupertinoActionSheetAction(
+            isDestructiveAction: true,
+            child: Text(
+              '清除内容',
+              style: const TextStyle(
+                fontSize: 16.0,
+                color: Color(0xFF000000),
+              ),
+            ),
+            onPressed: () => Navigator.of(context).maybePop(false),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          child: Text(
+            '取消',
+            style: const TextStyle(
+              fontSize: 16.0,
+              color: Color(0xFF000000),
+            ),
+          ),
+          onPressed: Navigator.of(context).maybePop,
+        ),
+      ),
+    );
+    if (act == null) {
+      (onCancel ?? () {})();
+    } else if (act) {
+      (onEdit ?? () {})();
+    } else {
+      (onClear ?? () {})();
+    }
   }
 }
 
@@ -546,17 +650,20 @@ class _ListItem extends StatelessWidget {
     @required this.iconData,
     @required this.child,
     @required this.onTap,
+    this.onLongPress,
   });
 
   final IconData iconData;
   final Widget child;
   final VoidCallback onTap;
+  final VoidCallback onLongPress;
 
   @override
   Widget build(BuildContext context) {
     return TapAnimator(
       behavior: HitTestBehavior.opaque,
       onTap: onTap ?? () {},
+      onLongPress: onLongPress,
       builder: (animValue) {
         final _factor = 1 - animValue * 0.2;
         return Transform(

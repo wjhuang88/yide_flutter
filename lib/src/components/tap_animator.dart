@@ -5,6 +5,7 @@ class TapAnimator extends StatefulWidget {
   final Widget Function(double animValue) builder;
   final VoidCallback onTap;
   final VoidCallback onComplete;
+  final VoidCallback onLongPress;
   final HitTestBehavior behavior;
   final Duration duration;
 
@@ -13,6 +14,7 @@ class TapAnimator extends StatefulWidget {
       @required this.builder,
       this.onTap,
       this.onComplete,
+      this.onLongPress,
       this.duration = const Duration(milliseconds: 100),
       this.behavior = HitTestBehavior.deferToChild})
       : assert(onTap != null || onComplete != null),
@@ -91,6 +93,7 @@ class _TapAnimatorState extends State<TapAnimator>
           widget.onComplete();
         }
       },
+      onLongPress: widget.onLongPress,
       child: widget.builder(_factor),
     );
   }

@@ -5,6 +5,7 @@ import 'package:yide/src/components/flipping_tile.dart';
 import 'package:yide/src/components/header_bar.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
 import 'package:yide/src/models/task_data.dart';
+import 'package:yide/src/notification.dart';
 
 class DetailReminderScreen extends StatefulWidget implements Navigatable {
   DetailReminderScreen({this.stateCode = 0});
@@ -47,6 +48,25 @@ class _DetailReminderScreenState extends State<DetailReminderScreen> {
       : _reminderState = ReminderBitMap(bitMap: _bitMap);
   ReminderBitMap _reminderState;
 
+  ScrollController _scrollController;
+  bool _backProcessing = false;
+
+  @override
+  void initState() {
+    _scrollController = ScrollController();
+    _scrollController.addListener(() {
+      if (_scrollController.offset <
+          _scrollController.position.minScrollExtent - 100) {
+        if (_backProcessing) {
+          return;
+        }
+        _backProcessing = true;
+        PopRouteNotification().dispatch(context);
+      }
+    });
+    super.initState();
+  }
+
   @override
   void didUpdateWidget(DetailReminderScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -67,18 +87,23 @@ class _DetailReminderScreenState extends State<DetailReminderScreen> {
               color: Color(0xFFD7CAFF),
               size: 40.0,
             ),
-            onLeadingAction: Navigator.of(context).maybePop,
+            onLeadingAction: () => PopRouteNotification().dispatch(context),
             actionIcon: const Text(
               '完成',
               style: const TextStyle(
                   fontSize: 15.0, color: const Color(0xFFEDE7FF)),
             ),
-            onAction: () =>
-                Navigator.of(context).maybePop<int>(_reminderState.bitMap),
+            onAction: () {
+              PopRouteNotification(result: _reminderState.bitMap)
+                  .dispatch(context);
+            },
             title: '设置提醒',
           ),
           Expanded(
             child: ListView(
+              physics: AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics()),
+              controller: _scrollController,
               padding: const EdgeInsets.only(
                   top: 15.0, bottom: 50.0, left: 15.0, right: 15.0),
               children: <Widget>[
