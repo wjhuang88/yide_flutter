@@ -1,13 +1,16 @@
+import 'dart:math' as Math;
+
 import 'package:flutter/cupertino.dart';
 import 'package:yide/src/components/slide_drag_detector.dart';
+import 'package:yide/src/interfaces/navigatable.dart';
 import 'package:yide/src/tools/common_tools.dart';
 
-import 'config.dart';
+import 'config.dart' as Config;
 import 'main_menu.dart';
 import 'screens/splash_screen.dart';
 import 'tools/sqlite_manager.dart';
 
-class ScreenContainer extends StatefulWidget {
+class ScreenContainer extends StatefulWidget implements Navigatable {
   const ScreenContainer({
     Key key,
     this.controller,
@@ -17,6 +20,40 @@ class ScreenContainer extends StatefulWidget {
 
   @override
   _ScreenContainerState createState() => _ScreenContainerState(controller);
+
+  @override
+  Route get route {
+    return PageRouteBuilder(
+      pageBuilder: (context, anim1, anim2) => this,
+      transitionDuration: Duration(milliseconds: 400),
+      transitionsBuilder: (context, anim1, anim2, child) {
+        final anim2Curved = CurvedAnimation(
+          parent: anim2,
+          curve: const ElasticOutCurve(1.0),
+          reverseCurve: const ElasticInCurve(1.0)
+        ).value;
+        final angle = -anim2Curved * Math.pi / 6;
+        return Container(
+          color: const Color(0xFF483667),
+          child: Opacity(
+            opacity: (1 - anim2Curved).clamp(0.0, 1.0),
+            child: Transform(
+              alignment: Alignment(1.0, 0.0),
+              transform: Matrix4.identity()
+                ..setEntry(3, 2, 0.002)
+                ..rotateY(angle)
+                ..translate(150 * anim2Curved)
+                ..scale(1 - anim2Curved, 0.7 + (1 - anim2Curved) * 0.3),
+              child: child,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  bool get withMene => false;
 }
 
 class ScreenContainerController {
@@ -135,11 +172,11 @@ class _ScreenContainerState extends State<ScreenContainer>
   }
 
   WillPopScope _buildPopScope(BuildContext context) {
-    final nav = _buildNavigator(_navigatorObserver);
+    final nav = _buildNavigator();
     final scope = WillPopScope(
       key: const ValueKey('main_page_willPopScope'),
       onWillPop: () async {
-        final nav = _navigatorObserver.navigator;
+        final nav = Config.mainNavigatorKey.currentState;
         // 拦截返回按钮
         // 可以后退则后退
         if (nav.canPop()) {
@@ -160,11 +197,10 @@ class _ScreenContainerState extends State<ScreenContainer>
     return scope;
   }
 
-  Navigator _buildNavigator(NavigatorObserver observer) {
+  Navigator _buildNavigator() {
     return Navigator(
-      key: mainNavigatorKey,
+      key: Config.mainNavigatorKey,
       initialRoute: '/',
-      observers: [observer],
       onGenerateRoute: (RouteSettings settings) {
         final String name = settings.name;
         if ('/' == name) {
@@ -209,13 +245,15 @@ class _ScreenContainerState extends State<ScreenContainer>
           Container(
             color: const Color(0xFF483667),
             child: MainMenu(
+              menuConfig: Config.menuConfig,
               transformValue: _animValue / 0.7,
-              navigatorObserver: _navigatorObserver,
             ),
           ),
           Transform(
             alignment: Alignment.centerRight,
-            transform: Matrix4.identity()..scale(1.0 - (_offsetValue < 0.0 ? _offsetValue * 2 : _offsetValue) * 0.3),
+            transform: Matrix4.identity()
+              ..scale(1.0 -
+                  (_offsetValue < 0.0 ? _offsetValue * 2 : _offsetValue) * 0.3),
             child: FractionalTranslation(
               translation: Offset(_offsetValue < 0.0 ? 0.0 : _offsetValue, 0.0),
               child: Stack(
@@ -234,7 +272,7 @@ class _ScreenContainerState extends State<ScreenContainer>
   Container _buildPageContainer(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        gradient: backgroundGradient,
+        gradient: Config.backgroundGradient,
         borderRadius: BorderRadius.circular(25 * _animValue),
         boxShadow: [
           BoxShadow(

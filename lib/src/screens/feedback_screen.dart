@@ -6,7 +6,7 @@ import 'package:yide/src/config.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
 import 'package:yide/src/notification.dart';
 
-class FeedbackScreen extends StatelessWidget implements Navigatable {
+class FeedbackScreen extends StatelessWidget with SlideNavigatable {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
@@ -24,7 +24,7 @@ class FeedbackScreen extends StatelessWidget implements Navigatable {
                 color: Color(0xFFD7CAFF),
                 size: 30.0,
               ),
-              onLeadingAction: () => PopRouteNotification().dispatch(context),
+              onLeadingAction: () => PopRouteNotification(isSide: true).dispatch(context),
               actionIcon: const Text(
                 '提交',
                 style: const TextStyle(
@@ -133,38 +133,4 @@ class FeedbackScreen extends StatelessWidget implements Navigatable {
       ),
     );
   }
-
-  @override
-  Route get route {
-    return PageRouteBuilder(
-      pageBuilder: (context, anim1, anim2) {
-        return Container(
-          decoration: const BoxDecoration(
-            gradient: const LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xFF8346C8), Color(0xFF523F88)]),
-          ),
-          child: this,
-        );
-      },
-      transitionDuration: Duration(milliseconds: 500),
-      transitionsBuilder: (context, anim1, anim2, child) {
-        final anim1Curved = Tween<double>(begin: 0.0, end: 1.0).animate(
-          CurvedAnimation(
-            parent: anim1,
-            curve: Curves.easeOutCubic,
-            reverseCurve: Curves.easeInCubic,
-          ),
-        );
-        return Opacity(
-          opacity: anim1Curved.value,
-          child: child,
-        );
-      },
-    );
-  }
-
-  @override
-  bool get withMene => false;
 }

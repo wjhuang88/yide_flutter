@@ -100,7 +100,7 @@ class _EditMainScreenState extends State<EditMainScreen>
   void initState() {
     super.initState();
 
-    _taskData = widget.taskPack?.data ?? TaskData.defultNull();
+    _taskData = TaskData.copy(widget.taskPack?.data ?? TaskData.defultNull());
     _tagData = widget.taskPack?.tag;
     if (_tagData == null) {
       TaskDBAction.getFirstTag().then((tag) {
@@ -128,10 +128,10 @@ class _EditMainScreenState extends State<EditMainScreen>
     _bottomBarController = AnimationController(
         vsync: this, duration: Duration(milliseconds: 250), value: 0.0);
     _bottomBarAnimation = CurvedAnimation(
-        parent: _bottomBarController,
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.easeInCubic)
-      ..addListener(() => setState(() {}));
+      parent: _bottomBarController,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    )..addListener(() => setState(() {}));
 
     _dateListController = AnimationController(
         vsync: this,

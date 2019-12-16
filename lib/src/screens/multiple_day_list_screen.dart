@@ -255,7 +255,8 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
       (f) {
         if (_scrollController.offset == 0) {
           _scrollController
-              .jumpTo(_todayOffset - MediaQuery.of(context).size.height / 4);
+              .jumpTo(_todayOffset.clamp(_scrollController.position.minScrollExtent,
+            _scrollController.position.maxScrollExtent));
         }
       },
     );

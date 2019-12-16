@@ -6,6 +6,13 @@ import 'package:yide/src/tools/date_tools.dart';
 enum DateTimeType { fullday, someday, datetime }
 
 class TaskTag {
+  TaskTag.copy(TaskTag tag)
+      : this.id = tag.id,
+        this.backgroundColor = tag.backgroundColor,
+        this.icon = tag.icon,
+        this.iconColor = tag.iconColor,
+        this.name = tag.name;
+
   const TaskTag({
     this.id,
     this.backgroundColor,
@@ -29,6 +36,18 @@ class TaskTag {
 }
 
 class TaskData {
+  TaskData.copy(TaskData data)
+      : this.id = data.id,
+        this.createTime = data.createTime,
+        this.taskTime = data.taskTime,
+        this.tagId = data.tagId,
+        this.isFinished = data.isFinished,
+        this.content = data.content,
+        this.remark = data.remark,
+        this.catalog = data.catalog,
+        this.timeTypeCode = data.timeTypeCode,
+        this.alarmTime = data.alarmTime;
+
   TaskData({
     this.id,
     this.createTime,

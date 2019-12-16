@@ -2,11 +2,14 @@ import 'package:flutter/widgets.dart';
 
 class SlideDragDetector extends StatefulWidget {
   final Widget child;
+  final VoidCallback onStartDrag;
   final ValueChanged<double> onUpdate;
   final ValueChanged<double> onForward;
   final ValueChanged<double> onReverse;
   final ValueChanged<double> onForwardComplete;
   final ValueChanged<double> onReverseComplete;
+  final ValueChanged<double> onForwardHalf;
+  final ValueChanged<double> onReverseHalf;
   final Duration transitionDuration;
   final Curve curve;
   final Curve reversCurve;
@@ -17,6 +20,7 @@ class SlideDragDetector extends StatefulWidget {
   const SlideDragDetector({
     Key key,
     @required this.child,
+    this.onStartDrag,
     this.onUpdate,
     this.transitionDuration = const Duration(milliseconds: 500),
     this.onForward,
@@ -26,7 +30,9 @@ class SlideDragDetector extends StatefulWidget {
     this.startBarrier = 0.0,
     this.endBarrier = 1.0,
     this.onForwardComplete,
+    this.onForwardHalf,
     this.onReverseComplete,
+    this.onReverseHalf,
     this.controller,
   }) : super(key: key);
 
@@ -69,6 +75,8 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
   double _startFraction = 0.0;
   double _endFraction = 1.0;
 
+  double get _centerPoint => (widget.startBarrier + widget.endBarrier) / 2;
+
   SlideDragController _controller;
 
   bool _activeValue = true;
@@ -78,6 +86,9 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
       _activeValue = value;
     });
   }
+
+  bool _isForwardOverHalf = false;
+  bool _isReverseOverHalf = false;
 
   @override
   void initState() {
@@ -131,6 +142,12 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
                 _isDragging = true;
                 _animDragDelta = x;
                 _screenWidth = MediaQuery.of(context).size.width;
+                _isForwardOverHalf = false;
+                _isReverseOverHalf = false;
+                _animationController.stop(canceled: false);
+                if (widget.onStartDrag != null) {
+                  widget.onStartDrag();
+                }
               }
             },
             onHorizontalDragEnd: (detail) async {
@@ -146,7 +163,7 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
                 (widget.onReverse ?? (frac) {})(_fraction);
                 await _reverse();
                 (widget.onReverseComplete ?? (frac) {})(_fraction);
-              } else if (_fraction >= 0.5) {
+              } else if (_fraction >= _centerPoint) {
                 (widget.onForward ?? (frac) {})(_fraction);
                 await _forward();
                 (widget.onForwardComplete ?? (frac) {})(_fraction);
@@ -161,7 +178,7 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
                 return;
               }
               _isDragging = false;
-              if (_fraction >= 0.5) {
+              if (_fraction >= _centerPoint) {
                 (widget.onForward ?? (frac) {})(_fraction);
                 await _forward();
                 (widget.onForwardComplete ?? (frac) {})(_fraction);
@@ -191,6 +208,16 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
                 }
                 _fraction = frac;
                 (widget.onUpdate ?? (frac) {})(_fraction);
+                if (!_flip &&
+                    !_isForwardOverHalf &&
+                    _fraction >= _centerPoint) {
+                  (widget.onForwardHalf ?? (frac) {})(_fraction);
+                  _isForwardOverHalf = true;
+                }
+                if (_flip && !_isReverseOverHalf && _fraction <= _centerPoint) {
+                  (widget.onReverseHalf ?? (frac) {})(_fraction);
+                  _isReverseOverHalf = true;
+                }
               }
             },
           )

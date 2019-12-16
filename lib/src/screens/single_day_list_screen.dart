@@ -264,7 +264,7 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
                                   final rows = <Widget>[
                                     Text(
                                       item.data.content,
-                                      maxLines: 1,
+                                      maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
                                         color: Color(0xFFD7CAFF),
@@ -298,19 +298,26 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
                                         ),
                                       );
                                   }
+                                  var remarkVisable;
                                   if (item.data.remark != null &&
                                       item.data.remark.isNotEmpty) {
-                                    rows
-                                      ..add(const SizedBox(height: 10.0))
-                                      ..add(Text(
-                                        item.data.remark,
+                                    remarkVisable = item.data.remark;
+                                  } else {
+                                    remarkVisable = ' - ';
+                                  }
+                                  rows
+                                    ..add(const SizedBox(height: 10.0))
+                                    ..add(
+                                      Text(
+                                        remarkVisable,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: const TextStyle(
                                             color: Color(0xFFC9A2F5),
                                             fontSize: 12.0),
-                                      ));
-                                  }
+                                      ),
+                                    );
+                                  rows.add(const SizedBox(height: 20.0));
                                   return TimelineTile(
                                     rows: rows,
                                     onTap: () async {

@@ -7,11 +7,13 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:yide/src/components/header_bar.dart';
+import 'package:yide/src/components/slide_drag_detector.dart';
 import 'package:yide/src/components/tap_animator.dart';
 import 'package:yide/src/config.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
 import 'package:yide/src/models/geo_data.dart';
 import 'package:yide/src/notification.dart';
+import 'package:yide/src/tools/common_tools.dart';
 import 'package:yide/src/tools/sqlite_manager.dart';
 import 'package:yide/src/models/task_data.dart';
 import 'package:yide/src/screens/edit_main_screen.dart';
@@ -69,9 +71,7 @@ class _DetailListScreenState extends State<DetailListScreen>
 
   double _dragOffset;
   double _dragOffsetStart = 1.0;
-  bool _isDragging;
-  double _dragDelta = 0.0;
-  double _screenWidth = 1.0;
+  bool _isPoping = false;
 
   bool _isLoadingValue = true;
   bool get _isLoading => _isLoadingValue;
@@ -91,7 +91,6 @@ class _DetailListScreenState extends State<DetailListScreen>
     _tag = widget.taskPack.tag;
 
     _dragOffset = 0.0;
-    _isDragging = false;
     _dragController = AnimationController(
         vsync: this, value: 0.0, duration: Duration(milliseconds: 500));
     _dragAnim = CurvedAnimation(
@@ -158,52 +157,24 @@ class _DetailListScreenState extends State<DetailListScreen>
           child: Transform(
             alignment: Alignment.centerLeft,
             transform: Matrix4.identity()..scale(1 - _dragOffset * 0.3),
-            child: GestureDetector(
-              onHorizontalDragStart: (detail) {
-                final x = detail.globalPosition.dx;
-                if (x > 0) {
-                  _isDragging = true;
-                  _dragDelta = x;
-                  _screenWidth = MediaQuery.of(context).size.width;
-                }
+            child: SlideDragDetector(
+              onUpdate: (offset) {
+                final factor = 0.6 * offset;
+                setState(() {
+                  _dragOffset = factor - factor * factor * factor;
+                });
               },
-              onHorizontalDragEnd: (detail) {
-                if (!_isDragging) {
-                  return;
-                }
-                _isDragging = false;
-                if (detail.primaryVelocity > 700.0 || _dragOffset >= 0.2) {
-                  PopRouteNotification().dispatch(context);
-                } else {
-                  _dragController.forward(from: 0);
-                }
+              onForward: (f) {
+                if (_isPoping) return;
+                PopRouteNotification().dispatch(context);
+                haptic();
+                _isPoping = true;
               },
-              onHorizontalDragCancel: () {
-                if (!_isDragging) {
-                  return;
-                }
-                _isDragging = false;
-                if (_dragOffset >= 0.2) {
-                  PopRouteNotification().dispatch(context);
-                } else {
-                  _dragController.forward(from: 0);
-                }
-              },
-              onHorizontalDragUpdate: (detail) {
-                if (_isDragging) {
-                  final frac =
-                      (detail.globalPosition.dx - _dragDelta) / _screenWidth;
-                  if (frac >= 0.6) {
-                    _isDragging = false;
-                    PopRouteNotification().dispatch(context);
-                  } else {
-                    setState(() {
-                      final factor = 0.6 * frac;
-                      _dragOffsetStart =
-                          _dragOffset = factor - factor * factor * factor;
-                    });
-                  }
-                }
+              onForwardHalf: (f) {
+                if (_isPoping) return;
+                PopRouteNotification().dispatch(context);
+                haptic();
+                _isPoping = true;
               },
               child: Column(
                 children: <Widget>[
@@ -218,36 +189,37 @@ class _DetailListScreenState extends State<DetailListScreen>
                     onLeadingAction: () =>
                         PopRouteNotification().dispatch(context),
                   ),
-                  _HeaderPanel(
-                    content: _data.content,
-                    dateTime: _data.taskTime,
-                    timeType: _data.timeType,
-                    tagName: _tag.name,
-                    tagColor: _tag.iconColor,
-                    onTap: () async {
-                      final packAsync = Completer<TaskPack>();
-                      PushRouteNotification(
-                        EditMainScreen(taskPack: TaskPack(_data, _tag)),
-                        callback: (ret) => packAsync.complete(ret as TaskPack),
-                      ).dispatch(context);
-                      final pack = await packAsync.future;
-                      if (pack != null) {
-                        setState(() {
-                          _data = pack.data;
-                          _tag = pack.tag;
-                          _data.tagId = _tag.id;
-                        });
-                        _saveTask();
-                      }
-                    },
-                  ),
-                  const SizedBox(
-                    height: 20.0,
-                  ),
                   Expanded(
                     child: ListView(
-                      padding: const EdgeInsets.only(top: 20.0),
+                      padding: EdgeInsets.zero,
                       children: <Widget>[
+                        _HeaderPanel(
+                          content: _data.content,
+                          dateTime: _data.taskTime,
+                          timeType: _data.timeType,
+                          tagName: _tag.name,
+                          tagColor: _tag.iconColor,
+                          onTap: () async {
+                            final packAsync = Completer<TaskPack>();
+                            PushRouteNotification(
+                              EditMainScreen(taskPack: TaskPack(_data, _tag)),
+                              callback: (ret) =>
+                                  packAsync.complete(ret as TaskPack),
+                            ).dispatch(context);
+                            final pack = await packAsync.future;
+                            if (pack != null) {
+                              setState(() {
+                                _data = pack.data;
+                                _tag = pack.tag;
+                                _data.tagId = _tag.id;
+                              });
+                              _saveTask();
+                            }
+                          },
+                        ),
+                        const SizedBox(
+                          height: 40.0,
+                        ),
                         _ListItem(
                           iconData: buildCupertinoIconData(0xf3c8),
                           child: _savedDetail.reminderBitMap != null &&

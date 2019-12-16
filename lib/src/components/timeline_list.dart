@@ -122,7 +122,7 @@ class TimelineTile extends StatelessWidget {
       onTap: onTap ?? () {},
       builder: (_factor) => Container(
         width: double.infinity,
-        padding: const EdgeInsets.only(left: 27.5, bottom: 30.0),
+        padding: const EdgeInsets.only(left: 27.5, bottom: 0.0),
         transform: Matrix4.identity()
           ..setEntry(3, 2, 0.002)
           ..rotateY(-_factor * Math.pi / 24)

@@ -70,6 +70,7 @@ class _TapAnimatorState extends State<TapAnimator>
   @override
   void dispose() {
     _animationController.dispose();
+    _tapAnimationController.dispose();
     super.dispose();
   }
 
