@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math' as Math;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -109,13 +108,17 @@ class MainMenu extends StatelessWidget {
             ],
           ),
           onPressed: () async {
-            MenuNotification(MenuNotificationType.closeMenu).dispatch(context);
             final route = item['route'] as Function;
+            final isSide = item['side'] as bool;
+            if (!isSide) {
+              MenuNotification(MenuNotificationType.closeMenu)
+                  .dispatch(context);
+            }
             if (route != null) {
               final page = route();
               if (page is Navigatable) {
-                PushRouteNotification(page)
-                    .dispatch(navigateKey.currentContext ?? context);
+                PushRouteNotification(page, isSide: isSide)
+                    .dispatch(notificationContext ?? context);
               }
             }
           },

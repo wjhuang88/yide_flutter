@@ -18,13 +18,16 @@ class PushRouteNotification extends Notification {
   final Navigatable page;
   final ValueChanged callback;
   final bool isReplacement;
+  final bool isSide;
 
-  PushRouteNotification(this.page, {this.isReplacement = false, this.callback});
+  PushRouteNotification(this.page,
+      {this.isSide = false, this.isReplacement = false, this.callback});
 }
 
 class PopRouteNotification extends Notification {
   final ValueChanged<bool> callback;
   final dynamic result;
+  final bool isSide;
 
-  PopRouteNotification({this.result, this.callback});
+  PopRouteNotification({this.isSide = false, this.result, this.callback});
 }

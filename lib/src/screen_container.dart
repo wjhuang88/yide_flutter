@@ -22,26 +22,12 @@ class ScreenContainer extends StatefulWidget {
 class ScreenContainerController {
   _ScreenContainerState _state;
 
-  NavigatorState get nav => navigateKey.currentState;
-
   Future<void> openMenu() async {
     return _state?._openMenu();
   }
 
   Future<void> closeMenu() async {
     return _state?._closeMenu();
-  }
-
-  Future<T> pushRoute<T>(Route route) {
-    return nav?.push<T>(route);
-  }
-
-  Future<T> replaceRoute<T>(Route route) {
-    return nav?.pushReplacement(route);
-  }
-
-  Future<bool> popRoute<T>(T result) {
-    return nav?.maybePop(result);
   }
 
   void menuOn() {
@@ -176,7 +162,7 @@ class _ScreenContainerState extends State<ScreenContainer>
 
   Navigator _buildNavigator(NavigatorObserver observer) {
     return Navigator(
-      key: navigateKey,
+      key: mainNavigatorKey,
       initialRoute: '/',
       observers: [observer],
       onGenerateRoute: (RouteSettings settings) {

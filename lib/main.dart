@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:yide/src/config.dart';
 
 import 'src/screen_container.dart';
 import 'src/notification.dart';
@@ -28,6 +29,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return CupertinoApp(
+      navigatorKey: sideNavigatorKey,
       color: const Color(0xFF472478),
       home: NotificationListener<Notification>(
         onNotification: (Notification n) {
@@ -53,11 +55,17 @@ class _MyAppState extends State<MyApp> {
               } else {
                 _screenController.menuOff();
               }
+              NavigatorState nav;
+              if (n.isSide) {
+                nav = sideNavigatorKey.currentState;
+              } else {
+                nav = mainNavigatorKey.currentState;
+              }
               var result;
               if (n.isReplacement) {
-                result = await _screenController.replaceRoute(n.page.route);
+                result = await nav.pushReplacement(n.page.route);
               } else {
-                result = await _screenController.pushRoute(n.page.route);
+                result = await nav.push(n.page.route);
               }
               _lastRouteWithMenu = temp;
               if (_lastRouteWithMenu) {
@@ -68,7 +76,13 @@ class _MyAppState extends State<MyApp> {
               (n.callback ?? (arg) {})(result);
             })();
           } else if (n is PopRouteNotification) {
-            _screenController.popRoute(n.result).then((ret) {
+            NavigatorState nav;
+            if (n.isSide) {
+              nav = sideNavigatorKey.currentState;
+            } else {
+              nav = mainNavigatorKey.currentState;
+            }
+            nav.maybePop(n.result).then((ret) {
               (n.callback ?? (arg) {})(ret);
             });
           }
@@ -89,14 +103,13 @@ class _MyAppState extends State<MyApp> {
         const Locale.fromSubtags(languageCode: 'zh'),
       ],
       theme: const CupertinoThemeData(
-        primaryColor: Color(0xFF523F88),
-        primaryContrastingColor: Color(0xFF483667),
-        scaffoldBackgroundColor: Color(0xFF8346C8),
-        brightness: Brightness.light,
-        textTheme: CupertinoTextThemeData(
-          primaryColor: Color(0xFFFFFFFF),
-        )
-      ),
+          primaryColor: Color(0xFF523F88),
+          primaryContrastingColor: Color(0xFF483667),
+          scaffoldBackgroundColor: Color(0xFF8346C8),
+          brightness: Brightness.light,
+          textTheme: CupertinoTextThemeData(
+            primaryColor: Color(0xFFFFFFFF),
+          )),
     );
   }
 }
