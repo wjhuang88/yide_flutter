@@ -55,7 +55,8 @@ class _SplashScreenState extends State<SplashScreen>
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () {
-          PushRouteNotification(SingleDayListScreen(), isReplacement: true).dispatch(context);
+          PushRouteNotification(SingleDayListScreen(), isReplacement: true)
+              .dispatch(context);
         },
         child: FractionalTranslation(
           translation: Offset(0.0, 0.2 - 0.2 * _moveAnimation.value),

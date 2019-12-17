@@ -49,7 +49,7 @@ mixin SlideNavigatable on Widget implements Navigatable {
                 Opacity(
                   opacity: anim1Curved.clamp(0.0, 1.0),
                   child: Transform(
-                    alignment: Alignment(-0.6, 0.0),
+                    alignment: const Alignment(-0.6, 0.0),
                     transform: Matrix4.identity()
                       ..setEntry(3, 2, 0.002)
                       ..rotateY(angle)
@@ -78,30 +78,31 @@ class _DragBuilder extends StatefulWidget {
   const _DragBuilder({Key key, @required this.builder}) : super(key: key);
 
   @override
-  __DragBuilderState createState() => __DragBuilderState();
+  _DragBuilderState createState() => _DragBuilderState();
 }
 
-class __DragBuilderState extends State<_DragBuilder> {
+class _DragBuilderState extends State<_DragBuilder> {
   double _slideValue = 0.0;
   bool _isPoping = false;
   @override
   Widget build(BuildContext context) {
     return SlideDragDetector(
-      startBarrier: -1.0,
-      endBarrier: 0.0,
+      leftBarrier: -1.0,
+      rightBarrier: 0.0,
+      transitionDuration: const Duration(milliseconds: 800),
       onUpdate: (value) {
         setState(() {
           _slideValue = value;
         });
       },
       onStartDrag: () => _isPoping = false,
-      onReverse: (f) {
+      onLeftDragEnd: (f) {
         if (_isPoping) return;
         PopRouteNotification(isSide: true).dispatch(context);
         haptic();
         _isPoping = true;
       },
-      onReverseHalf: (f) {
+      onLeftMoveHalf: (f) {
         if (_isPoping) return;
         PopRouteNotification(isSide: true).dispatch(context);
         haptic();

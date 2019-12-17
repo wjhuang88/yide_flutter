@@ -7,13 +7,11 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:yide/src/components/header_bar.dart';
-import 'package:yide/src/components/slide_drag_detector.dart';
 import 'package:yide/src/components/tap_animator.dart';
 import 'package:yide/src/config.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
 import 'package:yide/src/models/geo_data.dart';
 import 'package:yide/src/notification.dart';
-import 'package:yide/src/tools/common_tools.dart';
 import 'package:yide/src/tools/sqlite_manager.dart';
 import 'package:yide/src/models/task_data.dart';
 import 'package:yide/src/screens/edit_main_screen.dart';
@@ -41,14 +39,13 @@ class DetailListScreen extends StatefulWidget implements Navigatable {
         final anim1Curved = Tween<double>(begin: 0.0, end: 1.0).animate(
           CurvedAnimation(
             parent: anim1,
-            curve: const ElasticOutCurve(1.0),
+            curve: Curves.easeOutCubic,
             reverseCurve: Curves.easeInToLinear,
           ),
         );
         final opacity = (anim1Curved.value - anim2.value).clamp(0.0, 1.0);
-        return Transform.scale(
-          alignment: Alignment.centerRight,
-          scale: anim1Curved.value,
+        return FractionalTranslation(
+          translation: Offset(0.0, 1.0 - anim1Curved.value),
           child: Opacity(
             opacity: opacity * opacity,
             child: child,
@@ -69,10 +66,6 @@ class _DetailListScreenState extends State<DetailListScreen>
 
   TaskDetail _savedDetail;
 
-  double _dragOffset;
-  double _dragOffsetStart = 1.0;
-  bool _isPoping = false;
-
   bool _isLoadingValue = true;
   bool get _isLoading => _isLoadingValue;
   set _isLoading(bool value) {
@@ -81,8 +74,8 @@ class _DetailListScreenState extends State<DetailListScreen>
     });
   }
 
-  AnimationController _dragController;
-  Animation _dragAnim;
+  ScrollController _scrollController;
+  bool _backProcessing = false;
 
   @override
   void initState() {
@@ -90,22 +83,26 @@ class _DetailListScreenState extends State<DetailListScreen>
     _data = widget.taskPack.data;
     _tag = widget.taskPack.tag;
 
-    _dragOffset = 0.0;
-    _dragController = AnimationController(
-        vsync: this, value: 0.0, duration: Duration(milliseconds: 500));
-    _dragAnim = CurvedAnimation(
-      parent: _dragController,
-      curve: const ElasticOutCurve(0.9),
-    );
-    _dragAnim.addListener(() {
-      setState(() {
-        _dragOffset = _dragOffsetStart *
-            (1 - _dragAnim.value); // lerp from _dragOffsetStart to 0.0
-      });
+    _scrollController = ScrollController();
+    _scrollController.addListener(() {
+      if (_scrollController.offset <
+          _scrollController.position.minScrollExtent - 100) {
+        if (_backProcessing) {
+          return;
+        }
+        _backProcessing = true;
+        PopRouteNotification().dispatch(context);
+      }
     });
 
     _savedDetail ??= TaskDetail.defultNull();
     _updateDetailData();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _updateDetailData() async {
@@ -152,259 +149,227 @@ class _DetailListScreenState extends State<DetailListScreen>
       ),
       child: CupertinoPageScaffold(
         backgroundColor: Colors.transparent,
-        child: FractionalTranslation(
-          translation: Offset(_dragOffset, 0.0),
-          child: Transform(
-            alignment: Alignment.centerLeft,
-            transform: Matrix4.identity()..scale(1 - _dragOffset * 0.3),
-            child: SlideDragDetector(
-              onUpdate: (offset) {
-                final factor = 0.6 * offset;
-                setState(() {
-                  _dragOffset = factor - factor * factor * factor;
-                });
-              },
-              onForward: (f) {
-                if (_isPoping) return;
-                PopRouteNotification().dispatch(context);
-                haptic();
-                _isPoping = true;
-              },
-              onForwardHalf: (f) {
-                if (_isPoping) return;
-                PopRouteNotification().dispatch(context);
-                haptic();
-                _isPoping = true;
-              },
-              child: Column(
-                children: <Widget>[
-                  HeaderBar(
-                    leadingIcon: const Icon(
-                      CupertinoIcons.left_chevron,
+        child: Column(
+          children: <Widget>[
+            HeaderBar(
+              leadingIcon: const Icon(
+                CupertinoIcons.clear,
+                color: Color(0xFFD7CAFF),
+                size: 40.0,
+              ),
+              onLeadingAction: () => PopRouteNotification().dispatch(context),
+              actionIcon: _isLoading
+                  ? CupertinoActivityIndicator()
+                  : const Icon(
+                      CupertinoIcons.minus_circled,
                       color: Color(0xFFD7CAFF),
-                      size: 30.0,
+                      size: 25.0,
                     ),
-                    actionIcon:
-                        _isLoading ? CupertinoActivityIndicator() : null,
-                    onLeadingAction: () =>
-                        PopRouteNotification().dispatch(context),
+              onAction: _isLoading
+                  ? null
+                  : () async {
+                      final isDelete = await showCupertinoDialog<bool>(
+                        context: context,
+                        builder: (context) => CupertinoAlertDialog(
+                          title: Text('将要删除本事项，请您确认'),
+                          content: Text('删除事项后将无法恢复，请确认此次操作是您的真实意图'),
+                          actions: <Widget>[
+                            CupertinoDialogAction(
+                              child: Text('取消'),
+                              isDefaultAction: true,
+                              onPressed: () =>
+                                  Navigator.of(context).maybePop(false),
+                            ),
+                            CupertinoDialogAction(
+                              child: Text('确定删除'),
+                              isDestructiveAction: true,
+                              onPressed: () =>
+                                  Navigator.of(context).maybePop(true),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (isDelete) {
+                        await _deleteTask();
+                        PopRouteNotification().dispatch(context);
+                      }
+                    },
+            ),
+            Expanded(
+              child: ListView(
+                controller: _scrollController,
+                physics: AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics()),
+                padding: EdgeInsets.zero,
+                children: <Widget>[
+                  _HeaderPanel(
+                    content: _data.content,
+                    dateTime: _data.taskTime,
+                    timeType: _data.timeType,
+                    tagName: _tag.name,
+                    tagColor: _tag.iconColor,
+                    onTap: () async {
+                      final packAsync = Completer<TaskPack>();
+                      PushRouteNotification(
+                        EditMainScreen(taskPack: TaskPack(_data, _tag)),
+                        callback: (ret) => packAsync.complete(ret as TaskPack),
+                      ).dispatch(context);
+                      final pack = await packAsync.future;
+                      if (pack != null) {
+                        setState(() {
+                          _data = pack.data;
+                          _tag = pack.tag;
+                          _data.tagId = _tag.id;
+                        });
+                        _saveTask();
+                      }
+                    },
                   ),
-                  Expanded(
-                    child: ListView(
-                      padding: EdgeInsets.zero,
-                      children: <Widget>[
-                        _HeaderPanel(
-                          content: _data.content,
-                          dateTime: _data.taskTime,
-                          timeType: _data.timeType,
-                          tagName: _tag.name,
-                          tagColor: _tag.iconColor,
-                          onTap: () async {
-                            final packAsync = Completer<TaskPack>();
-                            PushRouteNotification(
-                              EditMainScreen(taskPack: TaskPack(_data, _tag)),
-                              callback: (ret) =>
-                                  packAsync.complete(ret as TaskPack),
-                            ).dispatch(context);
-                            final pack = await packAsync.future;
-                            if (pack != null) {
-                              setState(() {
-                                _data = pack.data;
-                                _tag = pack.tag;
-                                _data.tagId = _tag.id;
-                              });
-                              _saveTask();
-                            }
-                          },
-                        ),
-                        const SizedBox(
-                          height: 40.0,
-                        ),
-                        _ListItem(
-                          iconData: buildCupertinoIconData(0xf3c8),
-                          child: _savedDetail.reminderBitMap != null &&
-                                  _savedDetail.reminderBitMap.bitMap != 0
-                              ? Text(
-                                  _savedDetail.reminderBitMap.makeLabel(),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: contentStyle,
-                                )
-                              : Text(
-                                  '点击设置提醒',
-                                  style: nocontentStyle,
-                                ),
-                          onTap: _reminderForward,
-                          onLongPress: () {
-                            _popup(
-                              context,
-                              onEdit: _reminderForward,
-                              onClear: () {
-                                setState(() {
-                                  _savedDetail.reminderBitMap.bitMap = 0;
-                                });
-                                _saveDetail();
-                              },
-                            );
-                          },
-                        ),
-                        const SizedBox(
-                          height: 10.0,
-                        ),
-                        _ListItem(
-                          iconData: CupertinoIcons.restart,
-                          child: _savedDetail.repeatBitMap != null &&
-                                  !(_savedDetail.repeatBitMap.isNoneRepeat)
-                              ? Text(
-                                  _savedDetail.repeatBitMap
-                                          .makeRepeatModeLabel() +
-                                      ' - ' +
-                                      _savedDetail.repeatBitMap
-                                          .makeRepeatTimeLabel(),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: contentStyle,
-                                )
-                              : Text(
-                                  '点击设置重复',
-                                  style: nocontentStyle,
-                                ),
-                          onTap: _repeatForward,
-                          onLongPress: () {
-                            _popup(
-                              context,
-                              onEdit: _repeatForward,
-                              onClear: () {
-                                setState(() {
-                                  _savedDetail.repeatBitMap.bitMap =
-                                      RepeatBitMap.noneBitmap;
-                                });
-                                _saveDetail();
-                              },
-                            );
-                          },
-                        ),
-                        const SizedBox(
-                          height: 10.0,
-                        ),
-                        _ListItem(
-                          iconData: buildCupertinoIconData(0xf3a3),
-                          child: _savedDetail.address != null &&
-                                  _savedDetail.address.name?.isNotEmpty == true
-                              ? Text(
-                                  _savedDetail.address.name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: contentStyle,
-                                )
-                              : Text(
-                                  '点击添加地址',
-                                  style: nocontentStyle,
-                                ),
-                          onTap: _addressForward,
-                          onLongPress: () {
-                            _popup(
-                              context,
-                              onEdit: _addressForward,
-                              onClear: () {
-                                setState(() {
-                                  _savedDetail.address = null;
-                                });
-                                _saveDetail();
-                              },
-                            );
-                          },
-                        ),
-                        const SizedBox(
-                          height: 10.0,
-                        ),
-                        _ListItem(
-                          iconData: CupertinoIcons.folder_solid,
-                          child:
-                              _data.catalog != null && _data.catalog.isNotEmpty
-                                  ? Text(
-                                      _data.catalog,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: contentStyle,
-                                    )
-                                  : Text(
-                                      '没有所属项目',
-                                      style: nocontentStyle,
-                                    ),
-                          onTap: () {},
-                        ),
-                        const SizedBox(
-                          height: 10.0,
-                        ),
-                        _ListItem(
-                          iconData: buildCupertinoIconData(0xf418),
-                          child: _data.remark != null && _data.remark.isNotEmpty
-                              ? Text(
-                                  _data.remark,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: contentStyle,
-                                )
-                              : Text('点击添加备注', style: nocontentStyle),
-                          onTap: _remarkForward,
-                          onLongPress: () {
-                            _popup(
-                              context,
-                              onEdit: _remarkForward,
-                              onClear: () {
-                                setState(() {
-                                  _data.remark = null;
-                                });
-                                _saveTask();
-                              },
-                            );
-                          },
-                        ),
-                      ],
-                    ),
+                  const SizedBox(
+                    height: 40.0,
                   ),
-                  SafeArea(
-                    top: false,
-                    child: CupertinoButton(
-                      child: const Icon(
-                        FontAwesomeIcons.trashAlt,
-                        color: Color(0x88EDE7FF),
-                        size: 25.0,
-                      ),
-                      onPressed: () async {
-                        final isDelete = await showCupertinoDialog<bool>(
-                          context: context,
-                          builder: (context) => CupertinoAlertDialog(
-                            title: Text('将要删除本事项，请您确认'),
-                            content: Text('删除事项后将无法恢复，请确认此次操作是您的真实意图'),
-                            actions: <Widget>[
-                              CupertinoDialogAction(
-                                child: Text('取消'),
-                                isDefaultAction: true,
-                                onPressed: () =>
-                                    Navigator.of(context).maybePop(false),
-                              ),
-                              CupertinoDialogAction(
-                                child: Text('确定删除'),
-                                isDestructiveAction: true,
-                                onPressed: () =>
-                                    Navigator.of(context).maybePop(true),
-                              ),
-                            ],
+                  _ListItem(
+                    iconData: buildCupertinoIconData(0xf3c8),
+                    child: _savedDetail.reminderBitMap != null &&
+                            _savedDetail.reminderBitMap.bitMap != 0
+                        ? Text(
+                            _savedDetail.reminderBitMap.makeLabel(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: contentStyle,
+                          )
+                        : Text(
+                            '点击设置提醒',
+                            style: nocontentStyle,
                           ),
-                        );
-                        if (isDelete) {
-                          await _deleteTask();
-                          PopRouteNotification().dispatch(context);
-                        }
-                      },
-                    ),
+                    onTap: _reminderForward,
+                    onLongPress: () {
+                      _popup(
+                        context,
+                        onEdit: _reminderForward,
+                        onClear: () {
+                          setState(() {
+                            _savedDetail.reminderBitMap.bitMap = 0;
+                          });
+                          _saveDetail();
+                        },
+                      );
+                    },
+                  ),
+                  const SizedBox(
+                    height: 10.0,
+                  ),
+                  _ListItem(
+                    iconData: CupertinoIcons.restart,
+                    child: _savedDetail.repeatBitMap != null &&
+                            !(_savedDetail.repeatBitMap.isNoneRepeat)
+                        ? Text(
+                            _savedDetail.repeatBitMap.makeRepeatModeLabel() +
+                                ' - ' +
+                                _savedDetail.repeatBitMap.makeRepeatTimeLabel(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: contentStyle,
+                          )
+                        : Text(
+                            '点击设置重复',
+                            style: nocontentStyle,
+                          ),
+                    onTap: _repeatForward,
+                    onLongPress: () {
+                      _popup(
+                        context,
+                        onEdit: _repeatForward,
+                        onClear: () {
+                          setState(() {
+                            _savedDetail.repeatBitMap.bitMap =
+                                RepeatBitMap.noneBitmap;
+                          });
+                          _saveDetail();
+                        },
+                      );
+                    },
+                  ),
+                  const SizedBox(
+                    height: 10.0,
+                  ),
+                  _ListItem(
+                    iconData: buildCupertinoIconData(0xf3a3),
+                    child: _savedDetail.address != null &&
+                            _savedDetail.address.name?.isNotEmpty == true
+                        ? Text(
+                            _savedDetail.address.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: contentStyle,
+                          )
+                        : Text(
+                            '点击添加地址',
+                            style: nocontentStyle,
+                          ),
+                    onTap: _addressForward,
+                    onLongPress: () {
+                      _popup(
+                        context,
+                        onEdit: _addressForward,
+                        onClear: () {
+                          setState(() {
+                            _savedDetail.address = null;
+                          });
+                          _saveDetail();
+                        },
+                      );
+                    },
+                  ),
+                  const SizedBox(
+                    height: 10.0,
+                  ),
+                  _ListItem(
+                    iconData: CupertinoIcons.folder_solid,
+                    child: _data.catalog != null && _data.catalog.isNotEmpty
+                        ? Text(
+                            _data.catalog,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: contentStyle,
+                          )
+                        : Text(
+                            '没有所属项目',
+                            style: nocontentStyle,
+                          ),
+                    onTap: () {},
+                  ),
+                  const SizedBox(
+                    height: 10.0,
+                  ),
+                  _ListItem(
+                    iconData: buildCupertinoIconData(0xf418),
+                    child: _data.remark != null && _data.remark.isNotEmpty
+                        ? Text(
+                            _data.remark,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: contentStyle,
+                          )
+                        : Text('点击添加备注', style: nocontentStyle),
+                    onTap: _remarkForward,
+                    onLongPress: () {
+                      _popup(
+                        context,
+                        onEdit: _remarkForward,
+                        onClear: () {
+                          setState(() {
+                            _data.remark = null;
+                          });
+                          _saveTask();
+                        },
+                      );
+                    },
                   ),
                 ],
               ),
             ),
-          ),
+          ],
         ),
       ),
     );

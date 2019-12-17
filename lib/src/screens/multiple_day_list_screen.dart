@@ -4,11 +4,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_tableview/flutter_tableview.dart';
 import 'package:intl/intl.dart';
 import 'package:yide/src/components/header_bar.dart';
+import 'package:yide/src/components/slide_drag_detector.dart';
 import 'package:yide/src/components/timeline_list.dart';
 import 'package:yide/src/config.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
 import 'package:yide/src/models/task_data.dart';
 import 'package:yide/src/notification.dart';
+import 'package:yide/src/tools/common_tools.dart';
 import 'package:yide/src/tools/sqlite_manager.dart';
 
 import 'detail_list_screen.dart';
@@ -20,27 +22,23 @@ class MultipleDayListScreen extends StatefulWidget implements Navigatable {
   @override
   Route get route => PageRouteBuilder(
         pageBuilder: (context, anim1, anim2) => this,
-        transitionDuration: Duration(milliseconds: 400),
+        transitionDuration: Duration(milliseconds: 1000),
         transitionsBuilder: (context, anim1, anim2, child) {
           final anim1Curved = Tween<double>(begin: 0.0, end: 1.0)
               .animate(
                 CurvedAnimation(
                   parent: anim1,
                   curve: const ElasticOutCurve(1.0),
-                  reverseCurve: Curves.easeInToLinear,
+                  reverseCurve: const ElasticInCurve(1.0),
                 ),
               )
               .value;
           final anim2Curved = const ElasticInCurve(1.0).transform(anim2.value);
           return Opacity(
             opacity: anim1Curved.clamp(0.0, 1.0),
-            child: Transform.scale(
-              alignment: Alignment.centerRight,
-              scale: anim1Curved,
-              child: FractionalTranslation(
-                translation: Offset(-anim2Curved, 0.0),
-                child: child,
-              ),
+            child: FractionalTranslation(
+              translation: Offset(1 - anim1Curved - anim2Curved, 0.0),
+              child: child,
             ),
           );
         },
@@ -60,6 +58,9 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
   }
 
   ScrollController _scrollController;
+
+  double _dragOffset = 0.0;
+  bool _isPoping = false;
 
   static const _cellHeight = 110.0;
   static const _headerHeight = 35.0;
@@ -123,40 +124,71 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
     final _counts = _sectionCount.toList();
 
     return CupertinoPageScaffold(
+      backgroundColor: const Color(0x00000000),
       child: DecoratedBox(
-        decoration: BoxDecoration(gradient: backgroundGradient),
-        child: Column(
-          children: <Widget>[
-            HeaderBar(
-              leadingIcon: const Icon(
-                CupertinoIcons.left_chevron,
-                color: Color(0xFFD7CAFF),
-                size: 30.0,
-              ),
-              actionIcon: _isLoading
-                  ? CupertinoTheme(
-                      data: CupertinoThemeData(
-                        brightness: Brightness.dark,
-                      ),
-                      child: CupertinoActivityIndicator(),
-                    )
-                  : const Text(
-                      '编辑',
-                      style:
-                          TextStyle(fontSize: 16.0, color: Color(0xFFD7CAFF)),
-                    ),
-              onLeadingAction: () => PopRouteNotification().dispatch(context),
-              title: '日程',
+        decoration: BoxDecoration(
+          gradient: backgroundGradient,
+        ),
+        child: SlideDragDetector(
+          leftBarrier: 0.0,
+          leftSecondBarrier: 0.0,
+          rightBarrier: 1.0,
+          onUpdate: (frac) {
+            setState(() {
+              frac = frac * 0.5;
+              _dragOffset = frac - frac * frac * frac;
+            });
+          },
+          onStartDrag: () => _isPoping = false,
+          onRightDragEnd: (f) {
+            if (_isPoping) return;
+            PopRouteNotification().dispatch(context);
+            haptic();
+            _isPoping = true;
+          },
+          onRightMoveHalf: (f) {
+            if (_isPoping) return;
+            PopRouteNotification().dispatch(context);
+            haptic();
+            _isPoping = true;
+          },
+          child: FractionalTranslation(
+            translation: Offset(_dragOffset, 0.0),
+            child: Column(
+              children: <Widget>[
+                HeaderBar(
+                  leadingIcon: const Icon(
+                    CupertinoIcons.left_chevron,
+                    color: Color(0xFFD7CAFF),
+                    size: 30.0,
+                  ),
+                  onLeadingAction: () =>
+                      PopRouteNotification().dispatch(context),
+                  actionIcon: _isLoading
+                      ? CupertinoTheme(
+                          data: CupertinoThemeData(
+                            brightness: Brightness.dark,
+                          ),
+                          child: CupertinoActivityIndicator(),
+                        )
+                      : const Text(
+                          '编辑',
+                          style: TextStyle(
+                              fontSize: 16.0, color: Color(0xFFD7CAFF)),
+                        ),
+                  title: '日程',
+                ),
+                const SizedBox(
+                  height: 20.0,
+                ),
+                Expanded(
+                  child: _sections.length > 0
+                      ? _buildSectionList(_sections, _counts)
+                      : const SizedBox(),
+                )
+              ],
             ),
-            const SizedBox(
-              height: 20.0,
-            ),
-            Expanded(
-              child: _sections.length > 0
-                  ? _buildSectionList(_sections, _counts)
-                  : const SizedBox(),
-            )
-          ],
+          ),
         ),
       ),
     );
@@ -254,9 +286,9 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
     _updating?.then(
       (f) {
         if (_scrollController.offset == 0) {
-          _scrollController
-              .jumpTo(_todayOffset.clamp(_scrollController.position.minScrollExtent,
-            _scrollController.position.maxScrollExtent));
+          _scrollController.jumpTo(_todayOffset.clamp(
+              _scrollController.position.minScrollExtent,
+              _scrollController.position.maxScrollExtent));
         }
       },
     );

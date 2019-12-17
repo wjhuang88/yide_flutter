@@ -55,8 +55,8 @@ class NotificationContainer extends StatefulWidget {
 }
 
 class _NotificationContainerState extends State<NotificationContainer> {
-
   bool _lastRouteWithMenu = false;
+  Type _lastPageType;
 
   @override
   Widget build(BuildContext context) {
@@ -76,6 +76,10 @@ class _NotificationContainerState extends State<NotificationContainer> {
             if (n.callback != null) n.callback();
           }();
         } else if (n is PushRouteNotification) {
+          if (n.page.runtimeType == _lastPageType) {
+            return true;
+          }
+          _lastPageType = n.page.runtimeType;
           (() async {
             final temp = _lastRouteWithMenu;
             _lastRouteWithMenu = n.page.withMene;
@@ -113,6 +117,7 @@ class _NotificationContainerState extends State<NotificationContainer> {
           }
           nav.maybePop(n.result).then((ret) {
             (n.callback ?? (arg) {})(ret);
+            _lastPageType = null;
           });
         }
         return true;

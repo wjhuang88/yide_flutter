@@ -1,4 +1,3 @@
-import 'dart:math' as Math;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -8,14 +7,13 @@ import 'package:yide/src/interfaces/navigatable.dart';
 import 'notification.dart';
 
 class MainMenu extends StatefulWidget {
-  final double transformValue;
   final List<List<Map<String, Object>>> menuConfig;
 
   static const contentPadding =
       EdgeInsets.symmetric(horizontal: 25.0, vertical: 14.0);
 
   const MainMenu(
-      {Key key, this.transformValue = 1.0, @required this.menuConfig})
+      {Key key, @required this.menuConfig})
       : super(key: key);
 
   @override
@@ -42,58 +40,46 @@ class _MainMenuState extends State<MainMenu> {
 
   @override
   Widget build(BuildContext context) {
-    final angle = (1 - widget.transformValue) * Math.pi / 6;
-    return SafeArea(
-      child: Transform(
-        transform: Matrix4.identity()
-          ..setEntry(3, 2, 0.002)
-          ..rotateY(angle),
-        alignment: const FractionalOffset(0.0, 0.5),
-        child: Opacity(
-          opacity: widget.transformValue.clamp(0.0, 1.0),
-          child: ListTileTheme(
-            iconColor: const Color(0xFFC19EFD),
-            textColor: const Color(0xFFC19EFD),
-            contentPadding: MainMenu.contentPadding,
-            style: ListTileStyle.drawer,
-            child: ListView(
-              padding: EdgeInsets.symmetric(vertical: 16.0),
+    return ListTileTheme(
+      iconColor: const Color(0xFFC19EFD),
+      textColor: const Color(0xFFC19EFD),
+      contentPadding: MainMenu.contentPadding,
+      style: ListTileStyle.drawer,
+      child: ListView(
+        padding: EdgeInsets.symmetric(vertical: 16.0),
+        children: <Widget>[
+          Container(
+            height: 120.0,
+            padding: MainMenu.contentPadding,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
                 Container(
-                  height: 120.0,
-                  padding: MainMenu.contentPadding,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: <Widget>[
-                      Container(
-                        height: 70.0,
-                        width: 70.0,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFE4C8FF),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          FontAwesomeIcons.solidUser,
-                          color: Color(0xFF9A76D1),
-                          size: 35.0,
-                        ),
-                      ),
-                      const SizedBox(
-                        width: 20.0,
-                      ),
-                      const Text(
-                        '点击登录',
-                        style: TextStyle(color: Color(0xFFC19EFD)),
-                      ),
-                    ],
+                  height: 70.0,
+                  width: 70.0,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFE4C8FF),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    FontAwesomeIcons.solidUser,
+                    color: Color(0xFF9A76D1),
+                    size: 35.0,
                   ),
                 ),
-              ]..addAll(
-                  _buildMenuItems(context),
+                const SizedBox(
+                  width: 20.0,
                 ),
+                const Text(
+                  '点击登录',
+                  style: TextStyle(color: Color(0xFFC19EFD)),
+                ),
+              ],
             ),
           ),
-        ),
+        ]..addAll(
+            _buildMenuItems(context),
+          ),
       ),
     );
   }

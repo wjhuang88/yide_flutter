@@ -1,6 +1,5 @@
 import 'package:flutter/widgets.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:yide/src/screens/multiple_day_list_screen.dart';
 
 import 'screens/feedback_screen.dart';
 import 'setup_screen.dart';
@@ -23,13 +22,13 @@ final menuConfig = [
       'level': 0,
       'side': false,
     },
-    {
-      'name': '日程',
-      'route': () => MultipleDayListScreen(),
-      'icon': const Icon(FontAwesomeIcons.calendar, size: 18.0, color: Color(0x88EDE7FF),),
-      'level': 0,
-      'side': false,
-    },
+    // {
+    //   'name': '日程',
+    //   'route': () => MultipleDayListScreen(),
+    //   'icon': const Icon(FontAwesomeIcons.calendar, size: 18.0, color: Color(0x88EDE7FF),),
+    //   'level': 0,
+    //   'side': false,
+    // },
     // {
     //   'name': '收集箱',
     //   'route': null,

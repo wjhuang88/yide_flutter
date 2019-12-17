@@ -7,6 +7,7 @@ import 'package:yide/src/components/location_methods.dart';
 import 'package:yide/src/components/timeline_list.dart';
 import 'package:yide/src/config.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
+import 'package:yide/src/screens/multiple_day_list_screen.dart';
 import 'package:yide/src/tools/date_tools.dart';
 import 'package:yide/src/models/geo_data.dart';
 import 'package:yide/src/tools/sqlite_manager.dart';
@@ -19,7 +20,7 @@ import 'package:yide/src/tools/icon_tools.dart';
 class SingleDayListScreen extends StatefulWidget implements Navigatable {
   const SingleDayListScreen({Key key}) : super(key: key);
 
-  static TimelineScreenController controller = TimelineScreenController();
+  static SingleDayScreenController controller = SingleDayScreenController();
 
   @override
   _SingleDayListScreenState createState() =>
@@ -28,11 +29,22 @@ class SingleDayListScreen extends StatefulWidget implements Navigatable {
   @override
   Route get route {
     return PageRouteBuilder(
-      pageBuilder: (context, anim1, anim2) => this,
+      pageBuilder: (context, anim1, anim2) {
+        anim2.addStatusListener((status) {
+          if (status == AnimationStatus.dismissed) {
+            controller.setVerticalMove(false);
+          }
+        });
+        return this;
+      },
       transitionDuration: Duration(milliseconds: 400),
       transitionsBuilder: (context, anim1, anim2, child) {
         final anim1Curved = Curves.easeOutCubic.transform(anim1.value);
-        final anim2Curved = const ElasticInCurve(1.0).transform(anim2.value);
+        final anim2Curved = CurvedAnimation(
+          parent: anim2,
+          curve: const ElasticOutCurve(1.0),
+          reverseCurve: const ElasticInCurve(1.0),
+        ).value;
         controller.updateTransition(1 - anim2Curved);
         return Opacity(
           opacity: anim1Curved,
@@ -53,7 +65,10 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
   _SingleDayListScreenState(this._controller);
 
   double transitionFactor;
-  TimelineScreenController _controller;
+  double transitionExt;
+  bool _isVertical = false;
+
+  SingleDayScreenController _controller;
   Widget _savedList;
   Widget _placeholder;
 
@@ -107,7 +122,8 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
   void initState() {
     super.initState();
     transitionFactor = 0.0;
-    _controller ??= TimelineScreenController();
+    transitionExt = 0.0;
+    _controller ??= SingleDayScreenController();
 
     _savedList = _placeholder = Container();
 
@@ -129,6 +145,12 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
     });
   }
 
+  void _updateTransitionExt(double value) {
+    setState(() {
+      this.transitionExt = value;
+    });
+  }
+
   String _makeTimeLabel(TaskData data) {
     switch (data?.timeType) {
       case DateTimeType.fullday:
@@ -147,7 +169,10 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final opacity = (transitionFactor).clamp(0.0, 1.0);
+    final opacity = (transitionFactor + transitionExt).clamp(0.0, 1.0);
+    final offset = _isVertical
+        ? Offset(0.0, transitionFactor + transitionExt - 1)
+        : Offset(transitionFactor + transitionExt - 1, 0.0);
     return CupertinoPageScaffold(
       backgroundColor: Colors.transparent,
       resizeToAvoidBottomInset: false,
@@ -186,12 +211,23 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
                                   child: CupertinoActivityIndicator(),
                                 ),
                               )
-                            : const SizedBox(),
+                            : CupertinoButton(
+                                padding: const EdgeInsets.all(17.0),
+                                child: Icon(
+                                  buildCupertinoIconData(0xf2d1),
+                                  color: Color(0xFFD7CAFF),
+                                  size: 30.0,
+                                ),
+                                onPressed: () {
+                                  PushRouteNotification(MultipleDayListScreen())
+                                      .dispatch(context);
+                                },
+                              ),
                       ],
                     ),
                   ),
                   FractionalTranslation(
-                    translation: Offset(0.0, transitionFactor - 1),
+                    translation: offset,
                     child: Container(
                       margin: const EdgeInsets.symmetric(horizontal: 17.0),
                       padding: const EdgeInsets.symmetric(
@@ -244,7 +280,7 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
                   ),
                   Expanded(
                     child: FractionalTranslation(
-                      translation: Offset(transitionFactor - 1, 0.0),
+                      translation: offset,
                       child: FutureBuilder<List<TaskPack>>(
                         future: _taskList,
                         initialData: null,
@@ -321,6 +357,7 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
                                   return TimelineTile(
                                     rows: rows,
                                     onTap: () async {
+                                      _isVertical = true;
                                       PushRouteNotification(
                                         DetailListScreen(taskPack: item),
                                         callback: (pack) {
@@ -374,6 +411,7 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
                         color: Colors.white,
                       ),
                       onPressed: () async {
+                        _isVertical = true;
                         PushRouteNotification(
                           EditMainScreen(),
                           callback: (pack) async {
@@ -494,10 +532,18 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
   }
 }
 
-class TimelineScreenController {
+class SingleDayScreenController {
   _SingleDayListScreenState _state;
 
   void updateTransition(double value) {
     _state?._updateTransition(value);
+  }
+
+  void updateTransitionExt(double value) {
+    _state?._updateTransitionExt(value);
+  }
+
+  void setVerticalMove(bool value) {
+    _state?._isVertical = value;
   }
 }

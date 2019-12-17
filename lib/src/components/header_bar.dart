@@ -23,12 +23,7 @@ class HeaderBar extends StatelessWidget {
 
     final leading = CupertinoButton(
       padding: EdgeInsets.zero,
-      child: leadingIcon ??
-          const Icon(
-            CupertinoIcons.left_chevron,
-            color: Color(0xFFD7CAFF),
-            size: 40.0,
-          ),
+      child: leadingIcon ?? const SizedBox(),
       onPressed: onLeadingAction ?? () {},
     );
     children.add(leading);

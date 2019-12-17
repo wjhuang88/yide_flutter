@@ -3,9 +3,12 @@ import 'dart:math' as Math;
 import 'package:flutter/cupertino.dart';
 import 'package:yide/src/components/slide_drag_detector.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
+import 'package:yide/src/notification.dart';
+import 'package:yide/src/screens/multiple_day_list_screen.dart';
 import 'package:yide/src/tools/common_tools.dart';
 
 import 'config.dart' as Config;
+import 'globle_variable.dart';
 import 'main_menu.dart';
 import 'screens/splash_screen.dart';
 import 'tools/sqlite_manager.dart';
@@ -30,7 +33,7 @@ class ScreenContainer extends StatefulWidget implements Navigatable {
         final anim2Curved = CurvedAnimation(
           parent: anim2,
           curve: const ElasticOutCurve(1.0),
-          reverseCurve: const ElasticInCurve(1.0)
+          reverseCurve: const ElasticInCurve(1.0),
         ).value;
         final angle = -anim2Curved * Math.pi / 6;
         return Container(
@@ -38,12 +41,12 @@ class ScreenContainer extends StatefulWidget implements Navigatable {
           child: Opacity(
             opacity: (1 - anim2Curved).clamp(0.0, 1.0),
             child: Transform(
-              alignment: Alignment(1.0, 0.0),
+              alignment: const Alignment(1.0, 0.0),
               transform: Matrix4.identity()
                 ..setEntry(3, 2, 0.002)
                 ..rotateY(angle)
                 ..translate(150 * anim2Curved)
-                ..scale(1 - anim2Curved, 0.7 + (1 - anim2Curved) * 0.3),
+                ..scale(1 - anim2Curved * 0.5, 0.7 + (1 - anim2Curved) * 0.3),
               child: child,
             ),
           ),
@@ -76,60 +79,43 @@ class ScreenContainerController {
   }
 }
 
-class _ScreenContainerState extends State<ScreenContainer>
-    with SingleTickerProviderStateMixin {
+class _ScreenContainerState extends State<ScreenContainer> {
   _ScreenContainerState(this._controller);
   ScreenContainerController _controller;
-
-  AnimationController _animationController;
-  Animation _animation;
 
   SlideDragController _slideDragController;
 
   double _offsetValue;
   double _animValue;
-  double _animStartValue;
-  double _animEndValue;
 
   bool _menuMoving = false;
+  bool _menuOpened = false;
+
+  bool _pageMoving = false;
 
   DateTime _backPressedAt;
 
   NavigatorObserver _navigatorObserver;
+
+  var menuData = Config.menuConfig;
+  Widget _mainMenuWidget = MainMenu(
+      menuConfig: Config.menuConfig, key: ValueKey(Config.menuConfig.hashCode));
 
   @override
   void initState() {
     super.initState();
     _offsetValue = 0.0;
     _animValue = 0.0;
-    _animStartValue = 0.0;
-    _animEndValue = 1.0;
 
     _slideDragController = SlideDragController();
     _navigatorObserver = NavigatorObserver();
 
     _controller ??= ScreenContainerController();
     _controller._state = this;
-    _animationController = AnimationController(
-        value: 0.0, duration: Duration(milliseconds: 500), vsync: this);
-    _animation = CurvedAnimation(
-      parent: _animationController,
-      curve: const ElasticOutCurve(0.9),
-      reverseCurve: const ElasticInCurve(0.9),
-    );
-    _animation.addListener(() {
-      final value = _animStartValue +
-          (_animEndValue - _animStartValue) * _animation.value;
-      setState(() {
-        _animValue = value;
-        _offsetValue = value * 0.7;
-      });
-    });
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
     _navigatorObserver.navigator?.dispose();
     _navigatorObserver = null;
     SqliteManager.instance.dispose();
@@ -141,7 +127,7 @@ class _ScreenContainerState extends State<ScreenContainer>
       return;
     }
     _menuMoving = true;
-    await _slideDragController.forward();
+    await _slideDragController.moveRight();
     _menuMoving = false;
     return;
   }
@@ -151,7 +137,7 @@ class _ScreenContainerState extends State<ScreenContainer>
       return;
     }
     _menuMoving = true;
-    await _slideDragController.reverse();
+    await _slideDragController.moveLeft();
     _menuMoving = false;
     return;
   }
@@ -160,19 +146,24 @@ class _ScreenContainerState extends State<ScreenContainer>
     setState(() {
       _animValue = dist;
       _offsetValue = dist;
+      if (dist < 0.05) {
+        _menuOpened = false;
+      } else {
+        _menuOpened = true;
+      }
     });
   }
 
   WillPopScope _popScopeValue;
-  WillPopScope get _popScope {
+  Widget get _popScope {
     if (_popScopeValue == null) {
-      _popScopeValue = _buildPopScope(context);
+      _popScopeValue = _buildPopScope(context, (context) => SplashScreen());
     }
     return _popScopeValue;
   }
 
-  WillPopScope _buildPopScope(BuildContext context) {
-    final nav = _buildNavigator();
+  WillPopScope _buildPopScope(BuildContext context,
+      Navigatable Function(BuildContext context) initialPage) {
     final scope = WillPopScope(
       key: const ValueKey('main_page_willPopScope'),
       onWillPop: () async {
@@ -192,85 +183,150 @@ class _ScreenContainerState extends State<ScreenContainer>
         }
         return true;
       },
-      child: nav,
+      child: Navigator(
+        key: Config.mainNavigatorKey,
+        initialRoute: '/',
+        onGenerateRoute: (RouteSettings settings) {
+          final String name = settings.name;
+          if ('/' == name) {
+            return initialPage(context).route;
+          } else {
+            throw FlutterError(
+                'The builder for route "${settings.name}" returned null.\n'
+                'Route builders must never return null.');
+          }
+        },
+      ),
     );
     return scope;
-  }
-
-  Navigator _buildNavigator() {
-    return Navigator(
-      key: Config.mainNavigatorKey,
-      initialRoute: '/',
-      onGenerateRoute: (RouteSettings settings) {
-        final String name = settings.name;
-        if ('/' == name) {
-          return SplashScreen().route;
-        } else {
-          throw FlutterError(
-              'The builder for route "${settings.name}" returned null.\n'
-              'Route builders must never return null.');
-        }
-      },
-    );
   }
 
   @override
   void didUpdateWidget(ScreenContainer oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if ((_mainMenuWidget.key as ValueKey).value as int !=
+        Config.menuConfig.hashCode) {
+      _mainMenuWidget = MainMenu(
+          menuConfig: Config.menuConfig,
+          key: ValueKey(Config.menuConfig.hashCode));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return SlideDragDetector(
-      startBarrier: 0.0,
-      endBarrier: 0.7,
+      leftBarrier: 0.0,
+      rightBarrier: 0.7,
+      leftSecondBarrier: -0.7,
+      isActive: false,
+      transitionDuration: const Duration(milliseconds: 1000),
       controller: _slideDragController,
       onUpdate: (frac) {
         _dragMenu(frac);
       },
-      onForward: (frac) {
+      onRightDragEnd: (frac) {
         _menuMoving = true;
+        _menuOpened = true;
       },
-      onForwardComplete: (frac) {
+      onRightMoveComplete: (frac) {
         _menuMoving = false;
       },
-      onReverse: (frac) {
+      onLeftDragEnd: (frac) {
         _menuMoving = true;
       },
-      onReverseComplete: (frac) {
+      onLeftMoveComplete: (frac) {
         _menuMoving = false;
+        _menuOpened = false;
       },
-      child: Stack(
-        children: <Widget>[
-          Container(
-            color: const Color(0xFF483667),
-            child: MainMenu(
-              menuConfig: Config.menuConfig,
-              transformValue: _animValue / 0.7,
-            ),
-          ),
-          Transform(
-            alignment: Alignment.centerRight,
-            transform: Matrix4.identity()
-              ..scale(1.0 -
-                  (_offsetValue < 0.0 ? _offsetValue * 2 : _offsetValue) * 0.3),
-            child: FractionalTranslation(
-              translation: Offset(_offsetValue < 0.0 ? 0.0 : _offsetValue, 0.0),
-              child: Stack(
-                children: <Widget>[
-                  _buildPageContainer(context),
-                  _buildPageCover(context),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+      onLeftOutBoundUpdate: (frac) {
+        frac = frac * 0.5;
+        final offset = frac - frac * frac * frac;
+        setState(() {
+          singleDayController?.updateTransitionExt(offset);
+        });
+      },
+      onStartDrag: () => _pageMoving = false,
+      onLeftSecondMoveHalf: (frac) {
+        if (_pageMoving) return;
+        PushRouteNotification(MultipleDayListScreen(), callback: (d) {
+          _slideDragController.moveLeftOutbound();
+        }).dispatch(context);
+        haptic();
+        _pageMoving = true;
+      },
+      onLeftSecondDragEnd: (frac) {
+        if (_pageMoving) return;
+        PushRouteNotification(MultipleDayListScreen(), callback: (d) {
+          _slideDragController.moveLeftOutbound();
+        }).dispatch(context);
+        haptic();
+        _pageMoving = true;
+      },
+      child: _buildMenuContainer(context),
     );
   }
 
-  Container _buildPageContainer(BuildContext context) {
+  Widget _buildMenuContainer(BuildContext context) {
+    double scale = _offsetValue < 0.0 ? 1.0 : 1.0 - _offsetValue * 0.3;
+    double translate = _offsetValue;
+    final transform = Matrix4.identity();
+    transform.scale(scale);
+    double menuTransformValue = _animValue / 0.7;
+    final menuAngle = (1 - menuTransformValue) * Math.pi / 4;
+    final pagePart = Transform(
+      alignment: Alignment.centerRight,
+      transform: transform,
+      child: FractionalTranslation(
+        translation: Offset(translate, 0.0),
+        child: Stack(
+          children: <Widget>[
+            _buildPageContainer(context),
+            _buildPageCover(context),
+          ],
+        ),
+      ),
+    );
+    if (_menuOpened) {
+      return Stack(
+        children: <Widget>[
+          SafeArea(
+            child: Transform(
+              transform: Matrix4.identity()
+                ..setEntry(3, 2, 0.002)
+                ..scale(0.5 + menuTransformValue * 0.5,
+                    0.9 + menuTransformValue * 0.1)
+                ..rotateY(menuAngle),
+              alignment: const FractionalOffset(0.0, 0.5),
+              child: FractionalTranslation(
+                translation: Offset((menuTransformValue - 1) * 0.2, 0.0),
+                child: Opacity(
+                  opacity: menuTransformValue.clamp(0.0, 1.0),
+                  child: _mainMenuWidget,
+                ),
+              ),
+            ),
+          ),
+          pagePart,
+        ],
+      );
+    } else {
+      return pagePart;
+    }
+  }
+
+  Widget _buildPageContainer(BuildContext context) {
+    final opacity = 1 - (_offsetValue / 0.7).clamp(0.0, 1.0);
+    Widget inner;
+    if (opacity > 0.95) {
+      inner = _popScope;
+    } else {
+      inner = Opacity(
+        opacity: opacity,
+        child: _popScope,
+      );
+    }
     return Container(
+      alignment: Alignment.center,
       decoration: BoxDecoration(
         gradient: Config.backgroundGradient,
         borderRadius: BorderRadius.circular(25 * _animValue),
@@ -283,10 +339,7 @@ class _ScreenContainerState extends State<ScreenContainer>
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(25 * _animValue),
-        child: Opacity(
-          opacity: 1 - (_offsetValue / 0.7).clamp(0.0, 1.0),
-          child: _popScope,
-        ),
+        child: inner,
       ),
     );
   }
