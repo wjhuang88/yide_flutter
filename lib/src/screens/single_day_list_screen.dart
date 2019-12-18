@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:yide/src/components/location_methods.dart';
 import 'package:yide/src/components/timeline_list.dart';
 import 'package:yide/src/config.dart';
+import 'package:yide/src/globle_variable.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
 import 'package:yide/src/screens/multiple_day_list_screen.dart';
 import 'package:yide/src/tools/date_tools.dart';
@@ -39,17 +40,21 @@ class SingleDayListScreen extends StatefulWidget implements Navigatable {
       },
       transitionDuration: Duration(milliseconds: 400),
       transitionsBuilder: (context, anim1, anim2, child) {
-        final anim1Curved = Curves.easeOutCubic.transform(anim1.value);
+        final anim1Curved = CurvedAnimation(
+          parent: anim1,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        );
         final anim2Curved = CurvedAnimation(
           parent: anim2,
           curve: const ElasticOutCurve(1.0),
           reverseCurve: const ElasticInCurve(1.0),
         ).value;
         controller.updateTransition(1 - anim2Curved);
-        return Opacity(
+        return FadeTransition(
           opacity: anim1Curved,
           child: Transform.scale(
-            scale: 2 - anim1Curved,
+            scale: 2 - anim1Curved.value,
             child: child,
           ),
         );
@@ -64,120 +69,28 @@ class SingleDayListScreen extends StatefulWidget implements Navigatable {
 class _SingleDayListScreenState extends State<SingleDayListScreen> {
   _SingleDayListScreenState(this._controller);
 
-  double transitionFactor;
-  double transitionExt;
-  bool _isVertical = false;
-
   SingleDayScreenController _controller;
-  Widget _savedList;
-  Widget _placeholder;
-
-  int _taskCount = 0;
-  int _doingCount = 0;
-
-  Future<List<TaskPack>> _taskList;
-
-  String _cityName = ' - ';
-  String _temp = ' - ';
-  String _weather = ' - ';
 
   DateTime _dateTime = DateTime.now();
-
-  bool _isLoadingValue = true;
-  bool get _isLoading => _isLoadingValue;
-  set _isLoading(bool value) {
-    setState(() {
-      _isLoadingValue = value;
-    });
-  }
-
-  Future<void> _updateLocAndTemp() async {
-    setState(() {
-      _cityName = ' - ';
-      _temp = ' - ';
-      _weather = ' - ';
-    });
-    final location = await LocationMethods.getLocation();
-    if (location.adcode?.isEmpty ?? false) {
-      _cityName = location.city.isEmpty ? ' - ' : location.city;
-    } else {
-      final weather = await LocationMethods.getWeather(location.adcode);
-      _cityName = weather.city ?? ' - ';
-      _temp = weather.temperature ?? ' - ';
-      _weather = weather.weather ?? ' - ';
-    }
-    setState(() {});
-  }
-
-  Future<List<TaskPack>> _updateListData() async {
-    _isLoading = true;
-    final result = await TaskDBAction.getTaskListByDate(_dateTime);
-    _taskCount = result.length;
-    _doingCount = result.where((pack) => !pack.data.isFinished).length;
-    _isLoading = false;
-    return result;
-  }
 
   @override
   void initState() {
     super.initState();
-    transitionFactor = 0.0;
-    transitionExt = 0.0;
     _controller ??= SingleDayScreenController();
-
-    _savedList = _placeholder = Container();
-
-    _taskList = _updateListData();
-    _updateLocAndTemp();
-
-    _controller._state = this;
   }
 
   @override
   void dispose() {
-    _controller._state = null;
     super.dispose();
-  }
-
-  void _updateTransition(double value) {
-    setState(() {
-      this.transitionFactor = value;
-    });
-  }
-
-  void _updateTransitionExt(double value) {
-    setState(() {
-      this.transitionExt = value;
-    });
-  }
-
-  String _makeTimeLabel(TaskData data) {
-    switch (data?.timeType) {
-      case DateTimeType.fullday:
-        return '全天';
-      case DateTimeType.someday:
-        return '某天';
-      case DateTimeType.datetime:
-        final date = data?.taskTime;
-        return date == null || date.millisecondsSinceEpoch == 0
-            ? ' - '
-            : DateFormat('h:mm a').format(date);
-      default:
-        return ' - ';
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final opacity = (transitionFactor + transitionExt).clamp(0.0, 1.0);
-    final offset = _isVertical
-        ? Offset(0.0, transitionFactor + transitionExt - 1)
-        : Offset(transitionFactor + transitionExt - 1, 0.0);
     return CupertinoPageScaffold(
       backgroundColor: Colors.transparent,
       resizeToAvoidBottomInset: false,
-      child: Opacity(
-        opacity: opacity,
+      child: _FadeContainer(
+        controller: _controller,
         child: Container(
           decoration: BoxDecoration(gradient: backgroundGradient),
           child: Stack(
@@ -201,33 +114,19 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
                                 .dispatch(context);
                           },
                         ),
-                        _isLoading
-                            ? Container(
-                                padding: const EdgeInsets.only(right: 17.0),
-                                child: CupertinoTheme(
-                                  data: CupertinoThemeData(
-                                    brightness: Brightness.dark,
-                                  ),
-                                  child: CupertinoActivityIndicator(),
-                                ),
-                              )
-                            : CupertinoButton(
-                                padding: const EdgeInsets.all(17.0),
-                                child: Icon(
-                                  buildCupertinoIconData(0xf2d1),
-                                  color: Color(0xFFD7CAFF),
-                                  size: 30.0,
-                                ),
-                                onPressed: () {
-                                  PushRouteNotification(MultipleDayListScreen())
-                                      .dispatch(context);
-                                },
-                              ),
+                        _ButtonAndLoadingIcon(
+                          controller: _controller,
+                          isLoading: true,
+                          onPressed: () {
+                            PushRouteNotification(MultipleDayListScreen())
+                                .dispatch(context);
+                          },
+                        ),
                       ],
                     ),
                   ),
-                  FractionalTranslation(
-                    translation: offset,
+                  _TranslateContainer(
+                    controller: _controller,
                     child: Container(
                       margin: const EdgeInsets.symmetric(horizontal: 17.0),
                       padding: const EdgeInsets.symmetric(
@@ -246,32 +145,9 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
                               color: Color(0x8A4F3A8C),
                             )
                           ]),
-                      child: Stack(
-                        children: <Widget>[
-                          _buildHeaderColumn(),
-                          Positioned(
-                            right: 5.0,
-                            top: 0.0,
-                            child: weatherImageMap[_weather] != null
-                                ? GestureDetector(
-                                    onTap: _updateLocAndTemp,
-                                    child: Container(
-                                        height: 32.0,
-                                        width: 32,
-                                        child: Image.asset(
-                                            weatherImageMap[_weather])),
-                                  )
-                                //? Container(height: 32.0, width: 32, child: Image.asset('assets/images/weather/test1.png'))
-                                : CupertinoTheme(
-                                    data: CupertinoThemeData(
-                                      brightness: Brightness.dark,
-                                    ),
-                                    child: CupertinoActivityIndicator(
-                                      radius: 12.0,
-                                    ),
-                                  ),
-                          ),
-                        ],
+                      child: _HeaderPanel(
+                        dateTime: _dateTime,
+                        controller: _controller,
                       ),
                     ),
                   ),
@@ -279,108 +155,12 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
                     height: 20.0,
                   ),
                   Expanded(
-                    child: FractionalTranslation(
-                      translation: offset,
-                      child: FutureBuilder<List<TaskPack>>(
-                        future: _taskList,
-                        initialData: null,
-                        builder: (context, snapshot) {
-                          switch (snapshot.connectionState) {
-                            case ConnectionState.none:
-                            case ConnectionState.waiting:
-                              return _savedList;
-                            case ConnectionState.active:
-                            case ConnectionState.done:
-                              final dataList = snapshot.data;
-                              _savedList = TimelineListView.build(
-                                placeholder: _placeholder,
-                                itemCount: dataList.length,
-                                tileBuilder: (context, index) {
-                                  final item = dataList[index];
-                                  final rows = <Widget>[
-                                    Text(
-                                      item.data.content,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: Color(0xFFD7CAFF),
-                                        fontSize: 15.0,
-                                      ),
-                                    ),
-                                    const SizedBox(
-                                      height: 10.0,
-                                    ),
-                                    Text(
-                                      item.tag.name ?? '默认',
-                                      style: TextStyle(
-                                          color: item.tag.iconColor,
-                                          fontSize: 12.0),
-                                    ),
-                                  ];
-                                  if (item.data.catalog != null &&
-                                      item.data.catalog.isNotEmpty) {
-                                    rows
-                                      ..add(
-                                        const SizedBox(
-                                          height: 10.0,
-                                        ),
-                                      )
-                                      ..add(
-                                        Text(
-                                          item.data.catalog,
-                                          style: const TextStyle(
-                                              color: Color(0xFFC9A2F5),
-                                              fontSize: 12.0),
-                                        ),
-                                      );
-                                  }
-                                  var remarkVisable;
-                                  if (item.data.remark != null &&
-                                      item.data.remark.isNotEmpty) {
-                                    remarkVisable = item.data.remark;
-                                  } else {
-                                    remarkVisable = ' - ';
-                                  }
-                                  rows
-                                    ..add(const SizedBox(height: 10.0))
-                                    ..add(
-                                      Text(
-                                        remarkVisable,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                            color: Color(0xFFC9A2F5),
-                                            fontSize: 12.0),
-                                      ),
-                                    );
-                                  rows.add(const SizedBox(height: 20.0));
-                                  return TimelineTile(
-                                    rows: rows,
-                                    onTap: () async {
-                                      _isVertical = true;
-                                      PushRouteNotification(
-                                        DetailListScreen(taskPack: item),
-                                        callback: (pack) {
-                                          setState(() {
-                                            _taskList = _updateListData();
-                                          });
-                                        },
-                                      ).dispatch(context);
-                                    },
-                                  );
-                                },
-                                onGenerateLabel: (index) =>
-                                    _makeTimeLabel(dataList[index]?.data),
-                                onGenerateDotColor: (index) =>
-                                    dataList[index]?.tag?.iconColor,
-                              );
-                              return _savedList;
-                            default:
-                              return _placeholder;
-                          }
-                        },
-                      ),
-                    ),
+                    child: _TranslateContainer(
+                        controller: _controller,
+                        child: _ListBody(
+                          controller: _controller,
+                          date: _dateTime,
+                        )),
                   ),
                 ],
               ),
@@ -411,7 +191,7 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
                         color: Colors.white,
                       ),
                       onPressed: () async {
-                        _isVertical = true;
+                        isSingleDayScreenTransitionVertical = true;
                         PushRouteNotification(
                           EditMainScreen(),
                           callback: (pack) async {
@@ -419,7 +199,7 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
                             if (newTask != null) {
                               await TaskDBAction.saveTask(newTask.data);
                               setState(() {
-                                _taskList = _updateListData();
+                                _controller.updateListData();
                               });
                             }
                           },
@@ -435,8 +215,87 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
       ),
     );
   }
+}
 
-  Widget _buildHeaderColumn() {
+class _HeaderPanel extends StatefulWidget {
+  final int taskCount;
+  final int doingTaskCount;
+  final DateTime dateTime;
+  final SingleDayScreenController controller;
+
+  const _HeaderPanel({
+    Key key,
+    this.taskCount,
+    this.doingTaskCount,
+    this.dateTime,
+    this.controller,
+  }) : super(key: key);
+
+  @override
+  _HeaderPanelState createState() => _HeaderPanelState();
+}
+
+class _HeaderPanelState extends State<_HeaderPanel> {
+  String _cityName = ' - ';
+  String _temp = ' - ';
+  String _weather = ' - ';
+
+  int _taskCount;
+  int _doingTaskCount;
+  DateTime _dateTime;
+
+  SingleDayScreenController _controller;
+
+  Future<void> _updateLocAndTemp() async {
+    setState(() {
+      _cityName = ' - ';
+      _temp = ' - ';
+      _weather = ' - ';
+    });
+    final location = await LocationMethods.getLocation();
+    if (location.adcode?.isEmpty ?? false) {
+      _cityName = location.city.isEmpty ? ' - ' : location.city;
+    } else {
+      final weather = await LocationMethods.getWeather(location.adcode);
+      _cityName = weather.city ?? ' - ';
+      _temp = weather.temperature ?? ' - ';
+      _weather = weather.weather ?? ' - ';
+    }
+    setState(() {});
+  }
+
+  void _updateCountInfo(int count, int doingCount) {
+    if (_taskCount == count && _doingTaskCount == doingCount) {
+      return;
+    }
+    setState(() {
+      _taskCount = count;
+      _doingTaskCount = doingCount;
+    });
+  }
+
+  @override
+  void initState() {
+    _taskCount = widget.taskCount ?? 0;
+    _doingTaskCount = widget.doingTaskCount ?? 0;
+    _dateTime = widget.dateTime;
+    _controller = widget.controller ?? SingleDayScreenController();
+    _controller._headerState = this;
+    _updateLocAndTemp();
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: <Widget>[
+        _buildContentPanel(),
+        _buildWeatherIcon(),
+      ],
+    );
+  }
+
+  Widget _buildContentPanel() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -458,7 +317,7 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
                 width: 50.0,
               ),
               Text(
-                '$_doingCount',
+                '$_doingTaskCount',
                 style: const TextStyle(
                   fontSize: 75.0,
                   color: Color(0xFFFFFFFF),
@@ -517,7 +376,7 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
                   height: 5.0,
                 ),
                 Text(
-                  '气温：$_temp℃',
+                  '气温：$_temp ℃',
                   style: const TextStyle(
                       fontSize: 12.0,
                       color: Color(0xFFDEC0FF),
@@ -530,20 +389,351 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
       ],
     );
   }
+
+  Widget _buildWeatherIcon() {
+    return Positioned(
+      right: 5.0,
+      top: 0.0,
+      child: weatherImageMap[_weather] != null
+          ? GestureDetector(
+              onTap: _updateLocAndTemp,
+              child: Container(
+                  height: 32.0,
+                  width: 32,
+                  child: Image.asset(weatherImageMap[_weather])),
+            )
+          //? Container(height: 32.0, width: 32, child: Image.asset('assets/images/weather/test1.png'))
+          : CupertinoTheme(
+              data: CupertinoThemeData(
+                brightness: Brightness.dark,
+              ),
+              child: CupertinoActivityIndicator(
+                radius: 12.0,
+              ),
+            ),
+    );
+  }
+}
+
+class _ListBody extends StatefulWidget {
+  final SingleDayScreenController controller;
+  final DateTime date;
+
+  const _ListBody({Key key, this.controller, this.date}) : super(key: key);
+  @override
+  _ListBodyState createState() => _ListBodyState();
+}
+
+class _ListBodyState extends State<_ListBody> {
+  Widget _placeholder = Container();
+  List<TaskPack> _taskList;
+  DateTime _dateTime;
+
+  SingleDayScreenController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _dateTime = widget.date ?? DateTime.now();
+    _controller = widget.controller ?? SingleDayScreenController();
+    _controller._listState = this;
+    _execUpdateListData().then((d) {
+      _controller.isLoading = false;
+    });
+  }
+
+  Future<void> _updateListData() async {
+    _controller.isLoading = true;
+    await _execUpdateListData();
+    _controller.isLoading = false;
+  }
+
+  Future<void> _execUpdateListData() async {
+    _taskList = await TaskDBAction.getTaskListByDate(_dateTime);
+    final taskCount = _taskList.length;
+    final doingCount = _taskList.where((pack) => !pack.data.isFinished).length;
+    setState(() {});
+    _controller.updateCountInfo(taskCount, doingCount);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_taskList == null || _taskList.isEmpty) {
+      return _placeholder;
+    }
+    return TimelineListView.build(
+      placeholder: _placeholder,
+      itemCount: _taskList.length,
+      tileBuilder: (context, index) {
+        final item = _taskList[index];
+        final rows = <Widget>[
+          Text(
+            item.data.content,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Color(0xFFD7CAFF),
+              fontSize: 15.0,
+            ),
+          ),
+          const SizedBox(
+            height: 10.0,
+          ),
+          Text(
+            item.tag.name ?? '默认',
+            style: TextStyle(color: item.tag.iconColor, fontSize: 12.0),
+          ),
+        ];
+        if (item.data.catalog != null && item.data.catalog.isNotEmpty) {
+          rows
+            ..add(
+              const SizedBox(
+                height: 10.0,
+              ),
+            )
+            ..add(
+              Text(
+                item.data.catalog,
+                style:
+                    const TextStyle(color: Color(0xFFC9A2F5), fontSize: 12.0),
+              ),
+            );
+        }
+        var remarkVisable;
+        if (item.data.remark != null && item.data.remark.isNotEmpty) {
+          remarkVisable = item.data.remark;
+        } else {
+          remarkVisable = ' - ';
+        }
+        rows
+          ..add(const SizedBox(height: 10.0))
+          ..add(
+            Text(
+              remarkVisable,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Color(0xFFC9A2F5), fontSize: 12.0),
+            ),
+          );
+        rows.add(const SizedBox(height: 20.0));
+        return TimelineTile(
+          rows: rows,
+          onTap: () async {
+            isSingleDayScreenTransitionVertical = true;
+            PushRouteNotification(
+              DetailListScreen(taskPack: item),
+              callback: (pack) {
+                setState(() {
+                  _updateListData();
+                });
+              },
+            ).dispatch(context);
+          },
+        );
+      },
+      onGenerateLabel: (index) => _makeTimeLabel(_taskList[index]?.data),
+      onGenerateDotColor: (index) => _taskList[index]?.tag?.iconColor,
+    );
+  }
+
+  String _makeTimeLabel(TaskData data) {
+    switch (data?.timeType) {
+      case DateTimeType.fullday:
+        return '全天';
+      case DateTimeType.someday:
+        return '某天';
+      case DateTimeType.datetime:
+        final date = data?.taskTime;
+        return date == null || date.millisecondsSinceEpoch == 0
+            ? ' - '
+            : DateFormat('h:mm a').format(date);
+      default:
+        return ' - ';
+    }
+  }
+}
+
+class _ButtonAndLoadingIcon extends StatefulWidget {
+  final bool isLoading;
+  final SingleDayScreenController controller;
+  final VoidCallback onPressed;
+
+  const _ButtonAndLoadingIcon({
+    Key key,
+    this.isLoading,
+    this.controller,
+    this.onPressed,
+  }) : super(key: key);
+  @override
+  _ButtonAndLoadingIconState createState() => _ButtonAndLoadingIconState();
+}
+
+class _ButtonAndLoadingIconState extends State<_ButtonAndLoadingIcon> {
+  bool _isLoadingValue;
+  bool get _isLoading => _isLoadingValue;
+  set _isLoading(bool value) {
+    if (value == null) {
+      return;
+    }
+    setState(() {
+      _isLoadingValue = value;
+    });
+  }
+
+  SingleDayScreenController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _isLoadingValue = widget.isLoading ?? true;
+    _controller = widget.controller ?? SingleDayScreenController();
+    _controller._loadingState = this;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _isLoading
+        ? Container(
+            padding: const EdgeInsets.only(right: 17.0),
+            child: CupertinoTheme(
+              data: CupertinoThemeData(
+                brightness: Brightness.dark,
+              ),
+              child: CupertinoActivityIndicator(),
+            ),
+          )
+        : CupertinoButton(
+            padding: const EdgeInsets.all(17.0),
+            child: Icon(
+              buildCupertinoIconData(0xf2d1),
+              color: Color(0xFFD7CAFF),
+              size: 30.0,
+            ),
+            onPressed: widget.onPressed,
+          );
+  }
+}
+
+class _TranslateContainer extends StatefulWidget {
+  final double initOffset;
+  final Widget child;
+  final SingleDayScreenController controller;
+
+  const _TranslateContainer({
+    Key key,
+    this.initOffset,
+    @required this.child,
+    this.controller,
+  }) : super(key: key);
+  @override
+  _TranslateContainerState createState() => _TranslateContainerState();
+}
+
+class _TranslateContainerState extends State<_TranslateContainer> {
+  double _offsetValue;
+  double get offset => _offsetValue;
+  set offset(double value) => setState(() => _offsetValue = value);
+
+  SingleDayScreenController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _offsetValue = widget.initOffset ?? 0.0;
+    _controller = widget.controller ?? SingleDayScreenController();
+    _controller._transStates.add(this);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final offsetObject = isSingleDayScreenTransitionVertical
+        ? Offset(0.0, offset)
+        : Offset(offset, 0.0);
+    return FractionalTranslation(
+      translation: offsetObject,
+      child: widget.child,
+    );
+  }
+}
+
+class _FadeContainer extends StatefulWidget {
+  final double initOpacity;
+  final Widget child;
+  final SingleDayScreenController controller;
+
+  const _FadeContainer({
+    Key key,
+    this.initOpacity,
+    @required this.child,
+    this.controller,
+  }) : super(key: key);
+  @override
+  _FadeContainerState createState() => _FadeContainerState();
+}
+
+class _FadeContainerState extends State<_FadeContainer> {
+  double _opacityValue;
+  double get opacity => _opacityValue;
+  set opacity(double value) => setState(() => _opacityValue = value);
+
+  SingleDayScreenController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _opacityValue = widget.initOpacity ?? 0.0;
+    _controller = widget.controller ?? SingleDayScreenController();
+    _controller._fadeStates.add(this);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedOpacity(
+      duration: Duration.zero,
+      opacity: opacity,
+      child: widget.child,
+    );
+  }
 }
 
 class SingleDayScreenController {
-  _SingleDayListScreenState _state;
+  _ListBodyState _listState;
+  _HeaderPanelState _headerState;
+  _ButtonAndLoadingIconState _loadingState;
+  List<_TranslateContainerState> _transStates = List();
+  List<_FadeContainerState> _fadeStates = List();
+
+  double _transitionFactor = 0.0;
+  double _transitionExt = 0.0;
+
+  bool get isLoading => _loadingState?._isLoading ?? false;
+  set isLoading(bool value) => _loadingState?._isLoading = value;
+
+  void updateListData() {
+    _listState?._updateListData();
+  }
 
   void updateTransition(double value) {
-    _state?._updateTransition(value);
+    _transitionFactor = value;
+    _transStates.forEach(
+        (state) => state.offset = _transitionFactor + _transitionExt - 1);
+    _fadeStates.forEach((state) =>
+        state.opacity = (_transitionFactor + _transitionExt).clamp(0.0, 1.0));
   }
 
   void updateTransitionExt(double value) {
-    _state?._updateTransitionExt(value);
+    _transitionExt = value;
+    _transStates.forEach(
+        (state) => state.offset = _transitionFactor + _transitionExt - 1);
+    _fadeStates.forEach((state) =>
+        state.opacity = (_transitionFactor + _transitionExt).clamp(0.0, 1.0));
   }
 
   void setVerticalMove(bool value) {
-    _state?._isVertical = value;
+    isSingleDayScreenTransitionVertical = value;
+  }
+
+  void updateCountInfo(int count, int doingCount) {
+    _headerState?._updateCountInfo(count, doingCount);
   }
 }

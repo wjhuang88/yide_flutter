@@ -12,6 +12,7 @@ import 'package:yide/src/config.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
 import 'package:yide/src/models/geo_data.dart';
 import 'package:yide/src/notification.dart';
+import 'package:yide/src/tools/common_tools.dart';
 import 'package:yide/src/tools/sqlite_manager.dart';
 import 'package:yide/src/models/task_data.dart';
 import 'package:yide/src/screens/edit_main_screen.dart';
@@ -91,6 +92,7 @@ class _DetailListScreenState extends State<DetailListScreen>
           return;
         }
         _backProcessing = true;
+        haptic();
         PopRouteNotification().dispatch(context);
       }
     });

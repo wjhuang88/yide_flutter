@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 typedef PanelItemBuilder = Widget Function(
   BuildContext context,
-  double animValue,
+  Animation<double> animation,
 );
 
 class PanelSwitcherController {
@@ -20,16 +20,16 @@ class PanelSwitcherController {
 }
 
 class PanelSwitcher extends StatefulWidget {
-  const PanelSwitcher(
-      {Key key,
-      this.pageMap,
-      this.controller,
-      @required this.initPage,
-      this.curve = Curves.easeOutCubic,
-      this.reverseCurve = Curves.easeInCubic,
-      this.duration = const Duration(milliseconds: 300),
-      this.backgroundColor = Colors.transparent})
-      : super(key: key);
+  const PanelSwitcher({
+    Key key,
+    this.pageMap,
+    this.controller,
+    @required this.initPage,
+    this.curve = Curves.easeOutCubic,
+    this.reverseCurve = Curves.easeInCubic,
+    this.duration = const Duration(milliseconds: 300),
+    this.backgroundColor = Colors.transparent,
+  }) : super(key: key);
 
   final Map<String, PanelItemBuilder> pageMap;
   final PanelSwitcherController controller;
@@ -120,11 +120,11 @@ class _PanelSwitcherState extends State<PanelSwitcher>
     return Container(
       color: widget.backgroundColor,
       child: _backgroundStage == null || hideBackground
-          ? _topStage(context, 1.0)
+          ? _topStage(context, Tween(begin: 1.0, end: 1.0).animate(_anim))
           : Stack(
               children: <Widget>[
-                _backgroundStage(context, 1.0 - _anim.value),
-                _topStage(context, _anim.value),
+                _backgroundStage(context, ReverseAnimation(_anim)),
+                _topStage(context, _anim),
               ],
             ),
     );

@@ -28,25 +28,26 @@ class ScreenContainer extends StatefulWidget implements Navigatable {
   Route get route {
     return PageRouteBuilder(
       pageBuilder: (context, anim1, anim2) => this,
-      transitionDuration: Duration(milliseconds: 400),
+      transitionDuration: const Duration(milliseconds: 400),
       transitionsBuilder: (context, anim1, anim2, child) {
         final anim2Curved = CurvedAnimation(
-          parent: anim2,
-          curve: const ElasticOutCurve(1.0),
-          reverseCurve: const ElasticInCurve(1.0),
-        ).value;
-        final angle = -anim2Curved * Math.pi / 6;
+          parent: Tween(begin: 1.0, end: 0.0).animate(anim2),
+          curve: const ElasticInCurve(1.0),
+          reverseCurve: const ElasticOutCurve(1.0),
+        );
+        final factor = 1 - anim2Curved.value;
+        final angle = -factor * Math.pi / 6;
         return Container(
           color: const Color(0xFF483667),
-          child: Opacity(
-            opacity: (1 - anim2Curved).clamp(0.0, 1.0),
+          child: FadeTransition(
+            opacity: anim2Curved,
             child: Transform(
               alignment: const Alignment(1.0, 0.0),
               transform: Matrix4.identity()
                 ..setEntry(3, 2, 0.002)
                 ..rotateY(angle)
-                ..translate(150 * anim2Curved)
-                ..scale(1 - anim2Curved * 0.5, 0.7 + (1 - anim2Curved) * 0.3),
+                ..translate(150 * factor)
+                ..scale(1 - factor * 0.5, 0.7 + (1 - factor) * 0.3),
               child: child,
             ),
           ),
@@ -84,12 +85,9 @@ class _ScreenContainerState extends State<ScreenContainer> {
   ScreenContainerController _controller;
 
   SlideDragController _slideDragController;
-
-  double _offsetValue;
-  double _animValue;
+  StageWithMenuController _menuController;
 
   bool _menuMoving = false;
-  bool _menuOpened = false;
 
   bool _pageMoving = false;
 
@@ -97,17 +95,11 @@ class _ScreenContainerState extends State<ScreenContainer> {
 
   NavigatorObserver _navigatorObserver;
 
-  var menuData = Config.menuConfig;
-  Widget _mainMenuWidget = MainMenu(
-      menuConfig: Config.menuConfig, key: ValueKey(Config.menuConfig.hashCode));
-
   @override
   void initState() {
     super.initState();
-    _offsetValue = 0.0;
-    _animValue = 0.0;
-
     _slideDragController = SlideDragController();
+    _menuController = StageWithMenuController();
     _navigatorObserver = NavigatorObserver();
 
     _controller ??= ScreenContainerController();
@@ -143,23 +135,8 @@ class _ScreenContainerState extends State<ScreenContainer> {
   }
 
   void _dragMenu(double dist) {
-    setState(() {
-      _animValue = dist;
-      _offsetValue = dist;
-      if (dist < 0.05) {
-        _menuOpened = false;
-      } else {
-        _menuOpened = true;
-      }
-    });
-  }
-
-  WillPopScope _popScopeValue;
-  Widget get _popScope {
-    if (_popScopeValue == null) {
-      _popScopeValue = _buildPopScope(context, (context) => SplashScreen());
-    }
-    return _popScopeValue;
+    _menuController.setAnimationValue(dist);
+    menuAnimationOffset = dist;
   }
 
   WillPopScope _buildPopScope(BuildContext context,
@@ -168,6 +145,7 @@ class _ScreenContainerState extends State<ScreenContainer> {
       key: const ValueKey('main_page_willPopScope'),
       onWillPop: () async {
         final nav = Config.mainNavigatorKey.currentState;
+        lastPageType = null;
         // 拦截返回按钮
         // 可以后退则后退
         if (nav.canPop()) {
@@ -201,32 +179,37 @@ class _ScreenContainerState extends State<ScreenContainer> {
     return scope;
   }
 
-  @override
-  void didUpdateWidget(ScreenContainer oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if ((_mainMenuWidget.key as ValueKey).value as int !=
-        Config.menuConfig.hashCode) {
-      _mainMenuWidget = MainMenu(
+  Widget _menuContainerStorage;
+  Widget get _menuContainer {
+    if (_menuContainerStorage == null) {
+      _menuContainerStorage = StageWithMenu(
+        key: ValueKey('main_menu_container'),
+        menu: MainMenu(
           menuConfig: Config.menuConfig,
-          key: ValueKey(Config.menuConfig.hashCode));
+          key: ValueKey(Config.menuConfig.hashCode),
+        ),
+        onSideTap: _closeMenu,
+        child: _buildPopScope(context, (context) => SplashScreen()),
+        controller: _menuController,
+      );
     }
+    return _menuContainerStorage;
   }
 
   @override
   Widget build(BuildContext context) {
-    return SlideDragDetector(
+    final mainWidget = SlideDragDetector(
       leftBarrier: 0.0,
       rightBarrier: 0.7,
       leftSecondBarrier: -0.7,
       isActive: false,
-      transitionDuration: const Duration(milliseconds: 1000),
+      transitionDuration: const Duration(milliseconds: 800),
       controller: _slideDragController,
       onUpdate: (frac) {
         _dragMenu(frac);
       },
       onRightDragEnd: (frac) {
         _menuMoving = true;
-        _menuOpened = true;
       },
       onRightMoveComplete: (frac) {
         _menuMoving = false;
@@ -236,14 +219,11 @@ class _ScreenContainerState extends State<ScreenContainer> {
       },
       onLeftMoveComplete: (frac) {
         _menuMoving = false;
-        _menuOpened = false;
       },
       onLeftOutBoundUpdate: (frac) {
         frac = frac * 0.5;
         final offset = frac - frac * frac * frac;
-        setState(() {
-          singleDayController?.updateTransitionExt(offset);
-        });
+        singleDayController?.updateTransitionExt(offset);
       },
       onStartDrag: () => _pageMoving = false,
       onLeftSecondMoveHalf: (frac) {
@@ -262,69 +242,97 @@ class _ScreenContainerState extends State<ScreenContainer> {
         haptic();
         _pageMoving = true;
       },
-      child: _buildMenuContainer(context),
+      child: _menuContainer,
     );
+    return mainWidget;
+  }
+}
+
+class StageWithMenu extends StatefulWidget {
+  final Widget menu;
+  final Widget child;
+  final VoidCallback onSideTap;
+  final StageWithMenuController controller;
+
+  const StageWithMenu({
+    Key key,
+    @required this.menu,
+    this.onSideTap,
+    @required this.child,
+    this.controller,
+  }) : super(key: key);
+  @override
+  _StageWithMenuState createState() => _StageWithMenuState();
+}
+
+class StageWithMenuController {
+  _StageWithMenuState _state;
+
+  void setAnimationValue(double value) => _state?._animValue = value;
+}
+
+class _StageWithMenuState extends State<StageWithMenu> {
+  double _animValueStorage;
+  double get _animValue => _animValueStorage;
+  set _animValue(double value) => setState(() => _animValueStorage = value);
+
+  StageWithMenuController controller;
+
+  @override
+  void initState() {
+    _animValueStorage = menuAnimationOffset ?? 0.0;
+    controller = widget.controller ?? StageWithMenuController();
+    controller._state = this;
+    super.initState();
   }
 
-  Widget _buildMenuContainer(BuildContext context) {
-    double scale = _offsetValue < 0.0 ? 1.0 : 1.0 - _offsetValue * 0.3;
-    double translate = _offsetValue;
+  @override
+  Widget build(BuildContext context) {
+    double scale = _animValue < 0.0 ? 1.0 : 1.0 - _animValue * 0.3;
     final transform = Matrix4.identity();
     transform.scale(scale);
     double menuTransformValue = _animValue / 0.7;
     final menuAngle = (1 - menuTransformValue) * Math.pi / 4;
-    final pagePart = Transform(
+    final _pagePart = Transform(
       alignment: Alignment.centerRight,
       transform: transform,
       child: FractionalTranslation(
-        translation: Offset(translate, 0.0),
+        translation: Offset(_animValue, 0.0),
         child: Stack(
           children: <Widget>[
             _buildPageContainer(context),
-            _buildPageCover(context),
+            _pageCover,
           ],
         ),
       ),
     );
-    if (_menuOpened) {
-      return Stack(
-        children: <Widget>[
-          SafeArea(
-            child: Transform(
-              transform: Matrix4.identity()
-                ..setEntry(3, 2, 0.002)
-                ..scale(0.5 + menuTransformValue * 0.5,
-                    0.9 + menuTransformValue * 0.1)
-                ..rotateY(menuAngle),
-              alignment: const FractionalOffset(0.0, 0.5),
-              child: FractionalTranslation(
-                translation: Offset((menuTransformValue - 1) * 0.2, 0.0),
-                child: Opacity(
-                  opacity: menuTransformValue.clamp(0.0, 1.0),
-                  child: _mainMenuWidget,
-                ),
+    return Stack(
+      children: <Widget>[
+        SafeArea(
+          child: Transform(
+            transform: Matrix4.identity()
+              ..setEntry(3, 2, 0.002)
+              ..scale(0.5 + menuTransformValue * 0.5,
+                  0.9 + menuTransformValue * 0.1)
+              ..rotateY(menuAngle),
+            alignment: const FractionalOffset(0.0, 0.5),
+            child: FractionalTranslation(
+              translation: Offset((menuTransformValue - 1) * 0.2, 0.0),
+              child: AnimatedOpacity(
+                duration: Duration.zero,
+                opacity: menuTransformValue.clamp(0.0, 1.0),
+                child: widget.menu,
               ),
             ),
           ),
-          pagePart,
-        ],
-      );
-    } else {
-      return pagePart;
-    }
+        ),
+        _pagePart,
+      ],
+    );
   }
 
   Widget _buildPageContainer(BuildContext context) {
-    final opacity = 1 - (_offsetValue / 0.7).clamp(0.0, 1.0);
-    Widget inner;
-    if (opacity > 0.95) {
-      inner = _popScope;
-    } else {
-      inner = Opacity(
-        opacity: opacity,
-        child: _popScope,
-      );
-    }
+    final opacity = 1 - (_animValue / 0.7).clamp(0.0, 1.0);
     return Container(
       alignment: Alignment.center,
       decoration: BoxDecoration(
@@ -339,23 +347,29 @@ class _ScreenContainerState extends State<ScreenContainer> {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(25 * _animValue),
-        child: inner,
+        child: AnimatedOpacity(
+          duration: Duration.zero,
+          opacity: opacity,
+          child: widget.child,
+        ),
       ),
     );
   }
 
-  Widget _buildPageCover(BuildContext context) {
-    return Offstage(
-      offstage: !(_offsetValue > 0.0),
-      child: GestureDetector(
+  Widget _pageCoverInnerStorage;
+  Widget get _pageCover {
+    if (_pageCoverInnerStorage == null) {
+      _pageCoverInnerStorage = GestureDetector(
         child: Container(
           alignment: Alignment.centerLeft,
           color: const Color(0x00000000),
         ),
-        onTap: () {
-          _closeMenu();
-        },
-      ),
+        onTap: widget.onSideTap,
+      );
+    }
+    return Offstage(
+      offstage: !(_animValue > 0.0),
+      child: _pageCoverInnerStorage,
     );
   }
 }

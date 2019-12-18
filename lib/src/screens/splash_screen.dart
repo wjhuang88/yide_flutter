@@ -62,8 +62,8 @@ class _SplashScreenState extends State<SplashScreen>
           translation: Offset(0.0, 0.2 - 0.2 * _moveAnimation.value),
           child: DecoratedBox(
             decoration: BoxDecoration(gradient: backgroundGradient),
-            child: Opacity(
-              opacity: _moveAnimation.value,
+            child: FadeTransition(
+              opacity: _moveAnimation,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[

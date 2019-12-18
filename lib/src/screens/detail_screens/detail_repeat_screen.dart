@@ -6,6 +6,7 @@ import 'package:yide/src/components/header_bar.dart';
 import 'package:yide/src/components/tap_animator.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
 import 'package:yide/src/notification.dart';
+import 'package:yide/src/tools/common_tools.dart';
 import 'package:yide/src/tools/date_tools.dart';
 import 'package:yide/src/models/task_data.dart';
 
@@ -66,6 +67,7 @@ class _DetailRepeatScreenState extends State<DetailRepeatScreen> {
           return;
         }
         _backProcessing = true;
+        haptic();
         PopRouteNotification().dispatch(context);
       }
     });

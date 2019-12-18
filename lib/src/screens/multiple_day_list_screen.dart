@@ -31,13 +31,12 @@ class MultipleDayListScreen extends StatefulWidget implements Navigatable {
                   curve: const ElasticOutCurve(1.0),
                   reverseCurve: const ElasticInCurve(1.0),
                 ),
-              )
-              .value;
+              );
           final anim2Curved = const ElasticInCurve(1.0).transform(anim2.value);
-          return Opacity(
-            opacity: anim1Curved.clamp(0.0, 1.0),
+          return FadeTransition(
+            opacity: anim1Curved,
             child: FractionalTranslation(
-              translation: Offset(1 - anim1Curved - anim2Curved, 0.0),
+              translation: Offset(1 - anim1Curved.value - anim2Curved, 0.0),
               child: child,
             ),
           );

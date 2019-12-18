@@ -12,7 +12,6 @@ import 'package:yide/src/components/tap_animator.dart';
 import 'package:yide/src/config.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
 import 'package:yide/src/notification.dart';
-import 'package:yide/src/tools/common_tools.dart';
 import 'package:yide/src/tools/date_tools.dart';
 import 'package:yide/src/tools/sqlite_manager.dart';
 import 'package:yide/src/models/task_data.dart';
@@ -33,15 +32,14 @@ class EditMainScreen extends StatefulWidget implements Navigatable {
   @override
   Route get route => PageRouteBuilder<TaskPack>(
         pageBuilder: (context, anim1, anim2) => this,
-        transitionDuration: Duration(milliseconds: 400),
+        transitionDuration: Duration(milliseconds: 500),
         transitionsBuilder: (context, anim1, anim2, child) {
           final anim1Curved = CurvedAnimation(
-            parent: anim1,
+            parent: Tween(begin: 0.0, end: 1.0).animate(anim1),
             curve: Curves.easeOutCubic,
             reverseCurve: Curves.easeInCubic,
           );
-          final offset = 1 - anim1Curved.value;
-          controller.updateTransition(offset);
+          controller.setTransitionAnim(anim1Curved);
           return child;
         },
       );
@@ -51,55 +49,41 @@ class EditMainScreen extends StatefulWidget implements Navigatable {
 }
 
 class _EditMainScreenState extends State<EditMainScreen>
-    with TickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
   _EditMainScreenState(this._controller);
 
   TextEditingController _textEditingController;
   FocusNode _focusNode;
-  double _keyboardRealHeight;
 
-  double transitionFactor;
+  AnimationController _defaultAnimController;
+  Animation<double> _factorAnimationStorage;
+  Animation<double> get _factorAnimation =>
+      _factorAnimationStorage ??
+      Tween(begin: 0.0, end: 0.0).animate(_defaultAnimController);
+  set _factorAnimation(Animation<double> value) =>
+      _factorAnimationStorage = value;
+
   EditScreenController _controller;
-  FadeInController _fadeInController;
-
-  AnimationController _bottomBarController;
-  Animation _bottomBarAnimation;
-
-  AnimationController _dateListController;
-  Animation _dateListAnimation;
-
-  PanelSwitcherController _setupPanelController;
-  String _setupTitle = '';
-
-  InfinityPageController _datePageController;
-
-  DateTime _baseTime;
 
   TaskData _taskData;
   TaskTag _tagData;
 
-  String _getWeekDayName(DateTime dateTime) {
-    final now = DateTime.now();
-    final nextDay = now.add(Duration(days: 1));
-    final previousDay = now.subtract(Duration(days: 1));
-    final sameDay = (DateTime a, DateTime b) {
-      return a.year == b.year && a.month == b.month && a.day == b.day;
-    };
-    if (dateTime == null || sameDay(dateTime, now)) {
-      return '今天';
-    } else if (sameDay(dateTime, nextDay)) {
-      return '明天';
-    } else if (sameDay(dateTime, previousDay)) {
-      return '昨天';
-    } else {
-      return weekMapLong[dateTime.weekday];
-    }
+  void _updateTaskData(TaskData taskData) {
+    setState(() {
+      _taskData = taskData;
+    });
+  }
+
+  void _updateTag(TaskTag tag) {
+    setState(() {
+      _tagData = tag;
+    });
   }
 
   @override
   void initState() {
     super.initState();
-
+    _defaultAnimController = AnimationController(vsync: this);
     _taskData = TaskData.copy(widget.taskPack?.data ?? TaskData.defultNull());
     _tagData = widget.taskPack?.tag;
     if (_tagData == null) {
@@ -113,41 +97,18 @@ class _EditMainScreenState extends State<EditMainScreen>
       _taskData.tagId = _tagData.id;
     }
 
-    transitionFactor = 1.0;
     _controller ??= EditScreenController();
-    _controller._state = this;
+    _controller._mainState = this;
     _textEditingController = TextEditingController(text: _taskData.content);
     _focusNode = FocusNode();
     _focusNode.addListener(() {
       if (_focusNode.hasFocus) {
-        _bottomBarController.forward().then((v) => _setupTitle = '');
-        _setupPanelController.switchTo('blank');
+        _controller.hideBottomBar(
+          callback: () => _controller.setBottomPanelTitle(''),
+        );
+        _controller.forceSwitchToPanel('blank');
       }
     });
-
-    _bottomBarController = AnimationController(
-        vsync: this, duration: Duration(milliseconds: 250), value: 0.0);
-    _bottomBarAnimation = CurvedAnimation(
-      parent: _bottomBarController,
-      curve: Curves.easeOutCubic,
-      reverseCurve: Curves.easeInCubic,
-    )..addListener(() => setState(() {}));
-
-    _dateListController = AnimationController(
-        vsync: this,
-        duration: Duration(milliseconds: 250),
-        value: _taskData.timeType == DateTimeType.someday ? 1.0 : 0.0);
-    _dateListAnimation = CurvedAnimation(
-        parent: _dateListController,
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.easeInCubic)
-      ..addListener(() => setState(() {}));
-
-    _fadeInController = FadeInController();
-    _setupPanelController = PanelSwitcherController();
-    _datePageController = InfinityPageController();
-
-    _baseTime = _taskData.taskTime;
   }
 
   @override
@@ -182,58 +143,33 @@ class _EditMainScreenState extends State<EditMainScreen>
     return callback.future;
   }
 
-  void _updateTransition(double value) {
+  void _setTransitionAnim(Animation<double> value) {
     setState(() {
-      this.transitionFactor = value;
+      this._factorAnimation = value;
     });
   }
 
   @override
   void dispose() {
-    _datePageController.dispose();
-    _bottomBarController.dispose();
     _textEditingController.dispose();
     _focusNode.dispose();
-    _controller._state = null;
+    _controller._mainState = null;
     super.dispose();
   }
 
   void _unfocus() {
     _focusNode.unfocus();
-    _bottomBarController.reverse();
+    _controller.showBottomBar();
   }
 
   void _focus() {
     FocusScope.of(context).requestFocus(_focusNode);
   }
 
-  void _changePanel(String pageName, String title) {
-    if (_setupPanelController.currentPage == pageName) {
-      _focus();
-      return;
-    }
-    _unfocus();
-    _setupPanelController.switchTo(pageName);
-    setState(() {
-      _setupTitle = title;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    final _keyboardBuildHeight = MediaQuery.of(context).viewInsets.bottom;
-    if (_keyboardBuildHeight > 0.0) {
-      _keyboardRealHeight = _keyboardBuildHeight;
-    }
-
-    final opacity = 1 - transitionFactor.clamp(0.0, 1.0);
-
-    final _setupOffset = 150.0 * transitionFactor;
-    final _bottomOffset = _setupOffset + (1 - _bottomBarAnimation.value) * 50;
-    final _bottomOpacity = _bottomBarAnimation.value;
-
-    return Opacity(
-      opacity: opacity,
+    return FadeTransition(
+      opacity: _factorAnimation,
       child: Container(
         decoration: BoxDecoration(
           gradient: backgroundGradient,
@@ -251,73 +187,15 @@ class _EditMainScreenState extends State<EditMainScreen>
                 ),
                 Expanded(
                   child: Transform.translate(
-                    offset: Offset(0.0, 200 * transitionFactor),
-                    child: Column(
-                      children: <Widget>[
-                        GestureDetector(
-                          onTap: () {
-                            _changePanel(DetailDateTimePanel.panelName, '日期');
-                          },
-                          child: Container(
-                            height: 80.0,
-                            child: FractionalTranslation(
-                              translation:
-                                  Offset(0.0, -_dateListAnimation.value * 0.1),
-                              child: Opacity(
-                                opacity: 1 - _dateListAnimation.value,
-                                child: InfinityPageView(
-                                  controller: _datePageController,
-                                  itemBuilder: (context, i) {
-                                    final timeToRender =
-                                        _baseTime.add(Duration(days: i));
-                                    return Column(
-                                      children: <Widget>[
-                                        Text(
-                                          _getWeekDayName(timeToRender),
-                                          style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 20.0),
-                                        ),
-                                        Text(
-                                          DateFormat('MM月dd日')
-                                              .format(timeToRender),
-                                          style: const TextStyle(
-                                              color: Color(0xFFBBADE7),
-                                              fontSize: 14.0,
-                                              fontFamily: ''),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                  onPageChanged: (page) {
-                                    setState(() {
-                                      _taskData.taskTime =
-                                          _baseTime.add(Duration(days: page));
-                                    });
-                                  },
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 12.0,
-                        ),
-                        FractionalTranslation(
-                          translation: Offset(0.0, -_dateListAnimation.value),
-                          child: FadeIn(
-                            duration: Duration(milliseconds: 250),
-                            controller: _fadeInController,
-                            child: _buildDatetimeField(_taskData.timeType),
-                          ),
-                        ),
-                      ],
+                    offset: Offset(0.0, 200 * (1 - _factorAnimation.value)),
+                    child: _DateInfo(
+                      controller: _controller,
                     ),
                   ),
                 ),
                 Container(
                   transform: Matrix4.translationValues(
-                      0.0, 60.0 * transitionFactor, 0.0),
+                      0.0, 60.0 * (1 - _factorAnimation.value), 0.0),
                   height: 40.0,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -328,155 +206,14 @@ class _EditMainScreenState extends State<EditMainScreen>
                     ],
                   ),
                 ),
-                Stack(
-                  children: <Widget>[
-                    _buildSetupPanel(context, _setupOffset, 1 - _bottomOpacity,
-                        title: _setupTitle),
-                    Offstage(
-                      offstage: _bottomOpacity < 0.01,
-                      child: Opacity(
-                        opacity: _bottomOpacity,
-                        child: _buildBottomBar(context, _bottomOffset),
-                      ),
-                    ),
-                  ],
+                _BottomPanel(
+                  factorAnimation: _factorAnimation,
+                  controller: _controller,
                 ),
               ],
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildSetupPanel(
-      BuildContext context, double offset, double titleOpacity,
-      {String title = ''}) {
-    return Container(
-      transform: Matrix4.translationValues(0.0, offset, 0.0),
-      child: Column(
-        children: <Widget>[
-          GestureDetector(
-            onTap: () {
-              _focus();
-            },
-            child: Container(
-              height: 44.0,
-              color: const Color(0xFF472478),
-              child: Opacity(
-                opacity: titleOpacity,
-                child: Stack(
-                  children: <Widget>[
-                    Center(
-                        child: Text(
-                      title,
-                      style: const TextStyle(
-                          color: Color(0xFFBBADE7), fontSize: 14.0),
-                    )),
-                    Container(
-                      padding: const EdgeInsets.only(right: 16.0),
-                      alignment: Alignment.centerRight,
-                      child: Icon(
-                        Icons.clear,
-                        color: Color(0xFFBBADE7),
-                        size: 20.0,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const Divider(
-            height: 0.0,
-            color: Color(0xFFBBADE7),
-            thickness: 0.1,
-          ),
-          PanelSwitcher(
-            initPage: 'blank',
-            backgroundColor: const Color(0xFF472478),
-            pageMap: {
-              'blank': (context, factor) => Container(
-                    color: const Color(0xFF472478),
-                    height: _keyboardRealHeight ?? 0.0,
-                  ),
-              DetailTagPanel.panelName: (context, factor) => Opacity(
-                    opacity: factor,
-                    child: Container(
-                      height: _keyboardRealHeight ?? 0.0,
-                      child: DetailTagPanel(
-                        selectedTag: _tagData,
-                        onChange: (tag) {
-                          if (tag == null ||
-                              (_tagData != null && _tagData.id == tag.id)) {
-                            return;
-                          }
-                          setState(() {
-                            _tagData = tag;
-                          });
-                        },
-                      ),
-                    ),
-                  ),
-              DetailDateTimePanel.panelName: (context, factor) {
-                return Opacity(
-                  opacity: factor,
-                  child: Container(
-                    height: _keyboardRealHeight ?? 0.0,
-                    alignment: Alignment.center,
-                    child: DetailDateTimePanel(
-                      selectedDate: _taskData.taskTime,
-                      onChange: (date) {
-                        if (_taskData.taskTime.year == date.year &&
-                            _taskData.taskTime.month == date.month &&
-                            _taskData.taskTime.day == date.day) {
-                          return;
-                        }
-                        setState(() {
-                          _baseTime = _taskData.taskTime = DateTime(
-                              date.year,
-                              date.month,
-                              date.day,
-                              _taskData.taskTime.hour,
-                              _taskData.taskTime.minute,
-                              _taskData.taskTime.second);
-                          _datePageController.jumpToPage(0);
-                        });
-                      },
-                    ),
-                  ),
-                );
-              },
-              DetailTimePanel.panelName: (context, factor) => Opacity(
-                    opacity: factor,
-                    child: Container(
-                      height: _keyboardRealHeight ?? 0.0,
-                      alignment: Alignment.center,
-                      child: DetailTimePanel(
-                        selectedDate: _taskData.taskTime,
-                        onChange: (date) {
-                          if (_taskData.taskTime.hour == date.hour &&
-                              _taskData.taskTime.minute == date.minute &&
-                              _taskData.taskTime.second == date.second) {
-                            return;
-                          }
-                          setState(() {
-                            _taskData.taskTime = DateTime(
-                                _taskData.taskTime.year,
-                                _taskData.taskTime.month,
-                                _taskData.taskTime.day,
-                                date.hour,
-                                date.minute,
-                                date.second);
-                          });
-                        },
-                      ),
-                    ),
-                  )
-            },
-            controller: _setupPanelController,
-          ),
-        ],
       ),
     );
   }
@@ -489,15 +226,7 @@ class _EditMainScreenState extends State<EditMainScreen>
           if (_taskData.timeType == type) {
             return;
           }
-          setState(() {
-            _taskData.timeType = type;
-          });
-          if (type == DateTimeType.someday) {
-            _dateListController.forward();
-          } else {
-            _dateListController.reverse();
-          }
-          _fadeInController.fadeIn();
+          _controller.switchToDateType(type);
           _focus();
         },
         builder: (animValue) {
@@ -520,42 +249,10 @@ class _EditMainScreenState extends State<EditMainScreen>
     );
   }
 
-  Widget _buildDatetimeField(DateTimeType type) {
-    switch (type) {
-      case DateTimeType.fullday:
-        return Text(
-          '全天',
-          style: const TextStyle(color: Colors.white, fontSize: 20.0),
-        );
-      case DateTimeType.someday:
-        return Text(
-          '某天',
-          style: const TextStyle(color: Colors.white, fontSize: 20.0),
-        );
-      case DateTimeType.datetime:
-        return GestureDetector(
-          onTap: () {
-            _changePanel(DetailTimePanel.panelName, '时间');
-          },
-          child: Container(
-            child: Text(
-              DateFormat('HH:mm').format(_taskData.taskTime),
-              style: const TextStyle(
-                  color: Colors.white, fontSize: 20.0, fontFamily: ''),
-            ),
-          ),
-        );
-      default:
-        return Text(
-          '未设定',
-          style: const TextStyle(color: Colors.white, fontSize: 20.0),
-        );
-    }
-  }
-
   Widget _buildInputPanel() {
     return Container(
-      transform: Matrix4.translationValues(0.0, -100.0 * transitionFactor, 0.0),
+      transform: Matrix4.translationValues(
+          0.0, -100.0 * (1 - _factorAnimation.value), 0.0),
       margin: const EdgeInsets.only(top: 20.0, left: 20.0, right: 20.0),
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0),
       decoration: const BoxDecoration(
@@ -595,7 +292,7 @@ class _EditMainScreenState extends State<EditMainScreen>
               ],
             ),
             onTap: () {
-              _changePanel(DetailTagPanel.panelName, '标签');
+              _controller.changeSetupPanel(DetailTagPanel.panelName, '标签');
             },
           ),
           const SizedBox(
@@ -621,6 +318,303 @@ class _EditMainScreenState extends State<EditMainScreen>
             placeholder: '记录你的任务',
             placeholderStyle: const TextStyle(color: Color(0xFF9B7FE9)),
             decoration: const BoxDecoration(color: Colors.transparent),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DateInfo extends StatefulWidget {
+  const _DateInfo({
+    Key key,
+    @required EditScreenController controller,
+  })  : _controller = controller,
+        super(key: key);
+
+  final EditScreenController _controller;
+
+  @override
+  _DateInfoState createState() => _DateInfoState();
+}
+
+class _DateInfoState extends State<_DateInfo>
+    with SingleTickerProviderStateMixin {
+  EditScreenController _controller;
+
+  FadeInController _fadeInController;
+
+  AnimationController _dateListController;
+  Animation _dateListAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = widget._controller ?? EditScreenController();
+    _controller._dateInfoState = this;
+    _dateListController = AnimationController(
+        vsync: this,
+        duration: Duration(milliseconds: 250),
+        value:
+            _controller.taskData.timeType == DateTimeType.someday ? 1.0 : 0.0);
+    _dateListAnimation = CurvedAnimation(
+        parent: _dateListController,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic)
+      ..addListener(() => setState(() {}));
+
+    _fadeInController = FadeInController();
+  }
+
+  @override
+  void dispose() {
+    _dateListController.dispose();
+    super.dispose();
+  }
+
+  void _switchToType(DateTimeType type) {
+    final taskData = _controller.taskData;
+    taskData.timeType = type;
+    _controller.taskData = taskData;
+    if (type == DateTimeType.someday) {
+      _dateListController.forward();
+    } else {
+      _dateListController.reverse();
+    }
+    _fadeInController.fadeIn();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: <Widget>[
+        GestureDetector(
+          onTap: () {
+            widget._controller
+                .changeSetupPanel(DetailDateTimePanel.panelName, '日期');
+          },
+          child: Container(
+            height: 80.0,
+            child: FractionalTranslation(
+              translation: Offset(0.0, -_dateListAnimation.value * 0.1),
+              child: FadeTransition(
+                opacity: ReverseAnimation(_dateListAnimation),
+                child: _DatePage(
+                  baseTime: _controller.taskData.taskTime,
+                  controller: widget._controller,
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(
+          height: 12.0,
+        ),
+        FractionalTranslation(
+          translation: Offset(0.0, -_dateListAnimation.value),
+          child: FadeIn(
+            duration: const Duration(milliseconds: 250),
+            controller: _fadeInController,
+            child: _buildDatetimeField(_controller.taskData.timeType),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDatetimeField(DateTimeType type) {
+    switch (type) {
+      case DateTimeType.fullday:
+        return Text(
+          '全天',
+          style: const TextStyle(color: Colors.white, fontSize: 20.0),
+        );
+      case DateTimeType.someday:
+        return Text(
+          '某天',
+          style: const TextStyle(color: Colors.white, fontSize: 20.0),
+        );
+      case DateTimeType.datetime:
+        return GestureDetector(
+          onTap: () {
+            _controller.changeSetupPanel(DetailTimePanel.panelName, '时间');
+          },
+          child: Container(
+            child: Text(
+              DateFormat('HH:mm').format(_controller.taskData.taskTime),
+              style: const TextStyle(
+                  color: Colors.white, fontSize: 20.0, fontFamily: ''),
+            ),
+          ),
+        );
+      default:
+        return Text(
+          '未设定',
+          style: const TextStyle(color: Colors.white, fontSize: 20.0),
+        );
+    }
+  }
+}
+
+class _DatePage extends StatefulWidget {
+  const _DatePage({
+    Key key,
+    @required this.baseTime,
+    this.controller,
+  }) : super(key: key);
+
+  final DateTime baseTime;
+  final EditScreenController controller;
+
+  @override
+  _DatePageState createState() => _DatePageState();
+}
+
+class _DatePageState extends State<_DatePage> {
+  InfinityPageController _datePageController = InfinityPageController();
+  EditScreenController _controller;
+
+  DateTime _baseTime;
+
+  void _updateBaseTime(DateTime dateTime) {
+    setState(() {
+      _baseTime = dateTime;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = widget.controller ?? EditMainScreen();
+    _controller._datePageState = this;
+    _baseTime = widget.baseTime ?? DateTime.now();
+  }
+
+  @override
+  void dispose() {
+    _datePageController.dispose();
+    super.dispose();
+  }
+
+  String _getWeekDayName(DateTime dateTime) {
+    final now = DateTime.now();
+    final nextDay = now.add(Duration(days: 1));
+    final previousDay = now.subtract(Duration(days: 1));
+    final sameDay = (DateTime a, DateTime b) {
+      return a.year == b.year && a.month == b.month && a.day == b.day;
+    };
+    if (dateTime == null || sameDay(dateTime, now)) {
+      return '今天';
+    } else if (sameDay(dateTime, nextDay)) {
+      return '明天';
+    } else if (sameDay(dateTime, previousDay)) {
+      return '昨天';
+    } else {
+      return weekMapLong[dateTime.weekday];
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InfinityPageView(
+      controller: _datePageController,
+      itemBuilder: (context, i) {
+        final timeToRender = _baseTime.add(Duration(days: i));
+        return Column(
+          children: <Widget>[
+            Text(
+              _getWeekDayName(timeToRender),
+              style: const TextStyle(color: Colors.white, fontSize: 20.0),
+            ),
+            Text(
+              DateFormat('MM月dd日').format(timeToRender),
+              style: const TextStyle(
+                  color: Color(0xFFBBADE7), fontSize: 14.0, fontFamily: ''),
+            ),
+          ],
+        );
+      },
+      onPageChanged: (page) {
+        setState(() {
+          final data = _controller.taskData;
+          data.taskTime = _baseTime.add(Duration(days: page));
+          _controller.taskData = data;
+        });
+      },
+    );
+  }
+}
+
+class _BottomPanel extends StatefulWidget {
+  const _BottomPanel({
+    Key key,
+    @required this.factorAnimation,
+    this.setupTitle,
+    this.controller,
+  }) : super(key: key);
+
+  final Animation<double> factorAnimation;
+  final String setupTitle;
+
+  final EditScreenController controller;
+
+  @override
+  _BottomPanelState createState() => _BottomPanelState();
+}
+
+class _BottomPanelState extends State<_BottomPanel>
+    with SingleTickerProviderStateMixin {
+  AnimationController _bottomBarController;
+  Animation _bottomBarAnimation;
+
+  String _setupTitle;
+
+  EditScreenController _controller;
+
+  void _updateTitle(String title) {
+    setState(() {
+      _setupTitle = title;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _bottomBarController = AnimationController(
+        vsync: this, duration: Duration(milliseconds: 250), value: 0.0);
+    _bottomBarAnimation = CurvedAnimation(
+      parent: _bottomBarController,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    )..addListener(() => setState(() {}));
+    _controller = widget.controller ?? EditScreenController();
+    _controller._bottomState = this;
+    _setupTitle = widget.setupTitle ?? '';
+  }
+
+  @override
+  void dispose() {
+    _bottomBarController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final _setupOffset = 150.0 * (1.0 - widget.factorAnimation.value);
+    final _bottomOffset = _setupOffset + (1 - _bottomBarAnimation.value) * 50;
+    final _bottomOpacity = _bottomBarAnimation;
+    return Container(
+      child: Stack(
+        children: <Widget>[
+          _buildSetupPanel(
+              context, _setupOffset, ReverseAnimation(_bottomOpacity),
+              title: _setupTitle),
+          Offstage(
+            offstage: _bottomOpacity.value < 0.01,
+            child: FadeTransition(
+              opacity: _bottomOpacity,
+              child: _buildBottomBar(context, _bottomOffset),
+            ),
           ),
         ],
       ),
@@ -672,9 +666,7 @@ class _EditMainScreenState extends State<EditMainScreen>
           Expanded(
             child: TapAnimator(
               behavior: HitTestBehavior.opaque,
-              onTap: () {
-                _unfocus();
-              },
+              onTap: () {},
               builder: (factor) => Center(
                 child: Text(
                   '更多设置',
@@ -696,9 +688,7 @@ class _EditMainScreenState extends State<EditMainScreen>
           Expanded(
             child: TapAnimator(
               behavior: HitTestBehavior.opaque,
-              onTap: () {
-                _saveAndBack(context, _taskData, _tagData);
-              },
+              onTap: () => _controller.saveAndBack(context),
               builder: (factor) {
                 final color =
                     const Color(0xFFBBADE7).withOpacity(1 - factor * 0.5);
@@ -726,12 +716,254 @@ class _EditMainScreenState extends State<EditMainScreen>
       ),
     );
   }
+
+  Widget _buildSetupPanel(
+      BuildContext context, double offset, Animation<double> titleOpacity,
+      {String title = ''}) {
+    return Container(
+      transform: Matrix4.translationValues(0.0, offset, 0.0),
+      child: Column(
+        children: <Widget>[
+          GestureDetector(
+            onTap: () {
+              _controller.focusInput();
+            },
+            child: Container(
+              height: 44.0,
+              color: const Color(0xFF472478),
+              child: FadeTransition(
+                opacity: titleOpacity,
+                child: Stack(
+                  children: <Widget>[
+                    Center(
+                        child: Text(
+                      title,
+                      style: const TextStyle(
+                          color: Color(0xFFBBADE7), fontSize: 14.0),
+                    )),
+                    Container(
+                      padding: const EdgeInsets.only(right: 16.0),
+                      alignment: Alignment.centerRight,
+                      child: Icon(
+                        Icons.clear,
+                        color: Color(0xFFBBADE7),
+                        size: 20.0,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const Divider(
+            height: 0.0,
+            color: Color(0xFFBBADE7),
+            thickness: 0.1,
+          ),
+          _SetupPanelBody(
+            controller: _controller,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SetupPanelBody extends StatefulWidget {
+  final EditScreenController controller;
+
+  const _SetupPanelBody({Key key, this.controller}) : super(key: key);
+  @override
+  _SetupPanelBodyState createState() => _SetupPanelBodyState();
+}
+
+class _SetupPanelBodyState extends State<_SetupPanelBody> {
+  double _keyboardRealHeight;
+  PanelSwitcherController _setupPanelController;
+
+  EditScreenController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _setupPanelController = PanelSwitcherController();
+    _controller = widget.controller ?? EditScreenController();
+    _controller._panelBodyState = this;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final _keyboardBuildHeight = MediaQuery.of(context).viewInsets.bottom;
+    if (_keyboardBuildHeight > 0.0) {
+      _keyboardRealHeight = _keyboardBuildHeight;
+    }
+
+    return PanelSwitcher(
+      initPage: 'blank',
+      backgroundColor: const Color(0xFF472478),
+      pageMap: {
+        'blank': (context, factor) => Container(
+              color: const Color(0xFF472478),
+              height: _keyboardRealHeight ?? 0.0,
+            ),
+        DetailTagPanel.panelName: (context, animation) {
+          final tagData = _controller.tagData;
+          return FadeTransition(
+            opacity: animation,
+            child: Container(
+              height: _keyboardRealHeight ?? 0.0,
+              child: DetailTagPanel(
+                selectedTag: tagData,
+                onChange: (tag) {
+                  if (tagData == null ||
+                      (tagData != null && tagData.id == tag.id)) {
+                    return;
+                  }
+                  setState(() {
+                    _controller.tagData = tag;
+                  });
+                },
+              ),
+            ),
+          );
+        },
+        DetailDateTimePanel.panelName: (context, animation) {
+          final taskData = _controller.taskData;
+          return FadeTransition(
+            opacity: animation,
+            child: Container(
+              height: _keyboardRealHeight ?? 0.0,
+              alignment: Alignment.center,
+              child: DetailDateTimePanel(
+                selectedDate: taskData.taskTime,
+                onChange: (date) {
+                  if (taskData.taskTime.year == date.year &&
+                      taskData.taskTime.month == date.month &&
+                      taskData.taskTime.day == date.day) {
+                    return;
+                  }
+                  final time = taskData.taskTime = DateTime(
+                    date.year,
+                    date.month,
+                    date.day,
+                    taskData.taskTime.hour,
+                    taskData.taskTime.minute,
+                    taskData.taskTime.second,
+                  );
+                  _controller.updateDatePageBaseTime(time);
+                  _controller.taskData = taskData;
+                  _controller.datePageJumpTo(0);
+                },
+              ),
+            ),
+          );
+        },
+        DetailTimePanel.panelName: (context, animation) {
+          final taskData = _controller.taskData;
+          return FadeTransition(
+            opacity: animation,
+            child: Container(
+              height: _keyboardRealHeight ?? 0.0,
+              alignment: Alignment.center,
+              child: DetailTimePanel(
+                selectedDate: taskData.taskTime,
+                onChange: (date) {
+                  if (taskData.taskTime.hour == date.hour &&
+                      taskData.taskTime.minute == date.minute &&
+                      taskData.taskTime.second == date.second) {
+                    return;
+                  }
+                  taskData.taskTime = DateTime(
+                    taskData.taskTime.year,
+                    taskData.taskTime.month,
+                    taskData.taskTime.day,
+                    date.hour,
+                    date.minute,
+                    date.second,
+                  );
+                  _controller.taskData = taskData;
+                },
+              ),
+            ),
+          );
+        }
+      },
+      controller: _setupPanelController,
+    );
+  }
 }
 
 class EditScreenController {
-  _EditMainScreenState _state;
+  _EditMainScreenState _mainState;
+  _SetupPanelBodyState _panelBodyState;
+  _DatePageState _datePageState;
+  _BottomPanelState _bottomState;
+  _DateInfoState _dateInfoState;
 
-  void updateTransition(double value) {
-    _state?._updateTransition(value);
+  TaskData get taskData => _mainState?._taskData;
+  set taskData(TaskData value) => _mainState?._updateTaskData(value);
+
+  TaskTag get tagData => _mainState?._tagData;
+  set tagData(TaskTag value) => _mainState?._updateTag(value);
+
+  void focusInput() {
+    _mainState?._focus();
+  }
+
+  void unfocusInput() {
+    _mainState?._unfocus();
+  }
+
+  void setTransitionAnim(Animation<double> value) {
+    _mainState?._setTransitionAnim(value);
+  }
+
+  void updateDatePageBaseTime(DateTime dateTime) {
+    _datePageState?._updateBaseTime(dateTime);
+  }
+
+  void saveAndBack(BuildContext context) {
+    _mainState?._saveAndBack(
+        context, _mainState._taskData, _mainState._tagData);
+  }
+
+  void setBottomPanelTitle(String title) {
+    _bottomState?._updateTitle(title);
+  }
+
+  void showBottomBar({VoidCallback callback}) async {
+    await _bottomState?._bottomBarController?.reverse();
+    if (callback != null) {
+      callback();
+    }
+  }
+
+  void hideBottomBar({VoidCallback callback}) async {
+    _bottomState?._bottomBarController?.forward();
+    if (callback != null) {
+      callback();
+    }
+  }
+
+  void datePageJumpTo(int page) {
+    _datePageState?._datePageController?.jumpToPage(page);
+  }
+
+  void changeSetupPanel(String pageName, String title) {
+    if (_panelBodyState?._setupPanelController?.currentPage == pageName) {
+      focusInput();
+      return;
+    }
+    unfocusInput();
+    _panelBodyState?._setupPanelController?.switchTo(pageName);
+    setBottomPanelTitle(title);
+  }
+
+  void forceSwitchToPanel(String pageName) {
+    _panelBodyState?._setupPanelController?.switchTo(pageName);
+  }
+
+  void switchToDateType(DateTimeType type) {
+    _dateInfoState?._switchToType(type);
   }
 }

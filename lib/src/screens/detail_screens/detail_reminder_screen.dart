@@ -6,6 +6,7 @@ import 'package:yide/src/components/header_bar.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
 import 'package:yide/src/models/task_data.dart';
 import 'package:yide/src/notification.dart';
+import 'package:yide/src/tools/common_tools.dart';
 
 class DetailReminderScreen extends StatefulWidget implements Navigatable {
   DetailReminderScreen({this.stateCode = 0});
@@ -61,6 +62,7 @@ class _DetailReminderScreenState extends State<DetailReminderScreen> {
           return;
         }
         _backProcessing = true;
+        haptic();
         PopRouteNotification().dispatch(context);
       }
     });

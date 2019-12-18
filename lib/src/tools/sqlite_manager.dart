@@ -238,6 +238,9 @@ class TaskDBAction {
 
   static Future<TaskTag> getFirstTag() async {
     final result = await _dbManager.query('assets/sql/query_first_tag.sql');
+    if (result.length == 0) {
+      return null;
+    }
     assert(result.length == 1,
         'Querying first tag should return 1 and only 1 result, but ${result.length} found.');
     final tagRaw = result.first;
@@ -245,6 +248,9 @@ class TaskDBAction {
   }
 
   static Future<TaskTag> getTaskTagById(int id) async {
+    if (id == null) {
+      return null;
+    }
     final result =
         await _dbManager.query('assets/sql/query_tag_by_id.sql', [id]);
     assert(result.length == 1,
@@ -254,6 +260,9 @@ class TaskDBAction {
   }
 
   static Future<TaskPack> getTaskById(int id) async {
+    if (id == null) {
+      return null;
+    }
     final result =
         await _dbManager.query('assets/sql/query_task_by_id.sql', [id]);
     assert(result.length == 1,
@@ -264,6 +273,10 @@ class TaskDBAction {
   }
 
   static Future<List<TaskPack>> getTaskListByDate(DateTime date) async {
+    if (date == null) {
+      return null;
+    }
+
     DateTime dateBegin = DateTime(date.year, date.month, date.day);
     DateTime dateEnd = DateTime(date.year, date.month, date.day + 1);
 
@@ -281,6 +294,9 @@ class TaskDBAction {
   }
 
   static Future<TaskDetail> getTaskDetailById(int id) async {
+    if (id == null) {
+      return null;
+    }
     final result =
         await _dbManager.query('assets/sql/query_task_detail_by_id.sql', [id]);
     if (result.length == 0) {
@@ -305,6 +321,9 @@ class TaskDBAction {
   }
 
   static Future<bool> isTaskDetailExists(int id) async {
+    if (id == null) {
+      return false;
+    }
     final result =
         await _dbManager.query('assets/sql/query_task_detail_count.sql', [id]);
     if (result == null) {
@@ -317,6 +336,9 @@ class TaskDBAction {
   }
 
   static Future<bool> isTaskExists(int id) async {
+    if (id == null) {
+      return false;
+    }
     final result =
         await _dbManager.query('assets/sql/query_task_count.sql', [id]);
     if (result == null) {
@@ -347,6 +369,7 @@ class TaskDBAction {
   }
 
   static Future<int> saveTask(TaskData task) async {
+    assert(task != null);
     const insertSqlPath = 'assets/sql/insert_task.sql';
     const updateSqlPath = 'assets/sql/update_task_by_id.sql';
     final isExist = await isTaskExists(task.id);
@@ -375,6 +398,7 @@ class TaskDBAction {
   }
 
   static Future<int> saveTaskDetail(TaskDetail detail) async {
+    assert(detail != null);
     const insertSqlPath = 'assets/sql/insert_task_detail.sql';
     const updateSqlPath = 'assets/sql/update_task_detail_by_id.sql';
 
@@ -388,6 +412,7 @@ class TaskDBAction {
   }
 
   static Future<int> deleteTask(TaskData task) async {
+    assert(task != null);
     final isExist = await isTaskExists(task.id);
     if (!isExist) {
       return 0;

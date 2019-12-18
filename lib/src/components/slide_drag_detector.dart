@@ -25,6 +25,7 @@ class SlideDragDetector extends StatefulWidget {
   final double leftSecondBarrier;
   final SlideDragController controller;
   final bool isActive;
+  final double initValue;
 
   const SlideDragDetector({
     Key key,
@@ -52,6 +53,7 @@ class SlideDragDetector extends StatefulWidget {
     this.onLeftSecondMoveHalf,
     this.onLeftSecondMoveBackHalf,
     this.isActive,
+    this.initValue,
   }) : super(key: key);
 
   @override
@@ -98,7 +100,7 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
   double _animDragDelta = 0.0;
   bool _isDragging = false;
 
-  double _fraction = 0.0;
+  double _fraction;
   bool _flip = false;
   bool _leftOutBoundFlip = false;
 
@@ -138,6 +140,7 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
 
   @override
   void initState() {
+    _fraction = widget.initValue ?? 0.0;
     _activeValue = widget.isActive ?? true;
     _animationController = AnimationController(
         value: 0.0, duration: widget.transitionDuration, vsync: this);
@@ -331,7 +334,12 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
                 final secondLeft = widget.leftSecondBarrier;
                 var frac =
                     (detail.globalPosition.dx - _animDragDelta) / _screenWidth;
-                if (_fraction <= left) {
+                if (left == secondLeft && _fraction <= left && frac < 0.0) {
+                  _fraction = left;
+                  _handleUpdate(_fraction);
+                  return;
+                }
+                if (_fraction < left) {
                   if (frac < 0.0) {
                     _handleUpdate(left);
                   }
