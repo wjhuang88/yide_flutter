@@ -41,6 +41,7 @@ class NotificationContainer extends StatefulWidget {
   final VoidCallback onMenuClose;
   final VoidCallback onMenuActive;
   final VoidCallback onMenuDeactive;
+  final VoidCallback onMenuInit;
 
   const NotificationContainer({
     Key key,
@@ -48,6 +49,7 @@ class NotificationContainer extends StatefulWidget {
     @required this.onMenuClose,
     @required this.onMenuActive,
     @required this.onMenuDeactive,
+    @required this.onMenuInit,
     @required this.child,
   }) : super(key: key);
 
@@ -58,6 +60,18 @@ class NotificationContainer extends StatefulWidget {
 class _NotificationContainerState extends State<NotificationContainer> {
   bool _lastRouteWithMenu = false;
 
+  void runInit() {
+    if (widget.onMenuInit != null) {
+      widget.onMenuInit();
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    runInit();
+  }
+
   @override
   Widget build(BuildContext context) {
     return NotificationListener<Notification>(
@@ -66,6 +80,7 @@ class _NotificationContainerState extends State<NotificationContainer> {
           () async {
             switch (n.type) {
               case MenuNotificationType.openMenu:
+                runInit();
                 widget.onMenuOpen();
                 break;
               case MenuNotificationType.closeMenu:

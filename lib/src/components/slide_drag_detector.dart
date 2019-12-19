@@ -81,6 +81,10 @@ class SlideDragController {
     return _state?._leftOutBoundReverse();
   }
 
+  void moveStop() {
+    return _state?._stop();
+  }
+
   void reset() {
     _state?._reset();
   }
@@ -176,14 +180,20 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
     super.dispose();
   }
 
+  void _stop() {
+    _animationController.stop();
+  }
+
   Future<void> _forward() async {
     _startFraction = _fraction;
     _endFraction = widget.rightBarrier;
     _flip = true;
     _isLeftOutBound = false;
     _normalRunning = true;
-    await _animationController.forward(from: 0.0);
+    final future = _animationController.forward(from: 0.0);
+    await future;
     _normalRunning = false;
+    return future;
   }
 
   Future<void> _reverse() async {
@@ -192,8 +202,10 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
     _flip = false;
     _isLeftOutBound = false;
     _normalRunning = true;
-    await _animationController.reverse(from: 1.0);
+    final future = _animationController.reverse(from: 1.0);
+    await future;
     _normalRunning = false;
+    return future;
   }
 
   Future<void> _leftOutBoundForward() async {
@@ -202,8 +214,10 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
     _leftOutBoundFlip = false;
     _isLeftOutBound = true;
     _outBoundRunning = true;
-    await _animationController.forward(from: 0.0);
+    final future = _animationController.forward(from: 0.0);
+    await future;
     _outBoundRunning = false;
+    return future;
   }
 
   Future<void> _leftOutBoundReverse() async {
@@ -212,8 +226,10 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
     _leftOutBoundFlip = true;
     _isLeftOutBound = true;
     _outBoundRunning = true;
-    await _animationController.reverse(from: 1.0);
+    final future = _animationController.reverse(from: 1.0);
+    await future;
     _outBoundRunning = false;
+    return future;
   }
 
   void _reset() {
@@ -292,9 +308,7 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
   }
 
   void _handleUpdateAnimation(value) {
-    if (widget.onUpdate != null &&
-        _lastUpdateValue != value &&
-        !_outBoundRunning) {
+    if (widget.onUpdate != null && _lastUpdateValue != value) {
       _lastUpdateValue = value;
       widget.onUpdate(value);
     }
@@ -314,8 +328,7 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
 
   void _handleLeftOutBoundAnimation(value) {
     if (widget.onLeftOutBoundUpdate != null &&
-        _lastLeftOutBoundUpdateValue != value &&
-        !_normalRunning) {
+        _lastLeftOutBoundUpdateValue != value) {
       _lastLeftOutBoundUpdateValue = value;
       widget.onLeftOutBoundUpdate(value);
     }

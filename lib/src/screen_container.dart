@@ -127,7 +127,12 @@ class _ScreenContainerState extends State<ScreenContainer> {
       return;
     }
     _menuMoving = true;
-    await _slideDragController.moveRight();
+    await _slideDragController
+        .moveRight()
+        .timeout(Duration(milliseconds: 50))
+        .catchError((e) {
+      _menuMoving = false;
+    });
     _menuMoving = false;
     return;
   }
@@ -137,7 +142,12 @@ class _ScreenContainerState extends State<ScreenContainer> {
       return;
     }
     _menuMoving = true;
-    await _slideDragController.moveLeft();
+    await _slideDragController
+        .moveLeft()
+        .timeout(Duration(milliseconds: 50))
+        .catchError((e) {
+      _menuMoving = false;
+    });
     _menuMoving = false;
     return;
   }
