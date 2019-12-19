@@ -3,9 +3,10 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:yide/src/components/header_bar.dart';
 import 'package:yide/src/components/location_methods.dart';
 import 'package:yide/src/components/timeline_list.dart';
-import 'package:yide/src/config.dart';
+import 'package:yide/src/config.dart' as Config;
 import 'package:yide/src/globle_variable.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
 import 'package:yide/src/screens/multiple_day_list_screen.dart';
@@ -92,39 +93,32 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
       child: _FadeContainer(
         controller: _controller,
         child: Container(
-          decoration: BoxDecoration(gradient: backgroundGradient),
+          decoration: BoxDecoration(gradient: Config.backgroundGradient),
           child: Stack(
             children: <Widget>[
               Column(
                 children: <Widget>[
-                  SafeArea(
-                    bottom: false,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        CupertinoButton(
-                          padding: const EdgeInsets.all(17.0),
-                          child: Icon(
-                            buildCupertinoIconData(0xf394),
-                            color: Color(0xFFD7CAFF),
-                            size: 30.0,
-                          ),
-                          onPressed: () {
-                            MenuNotification(MenuNotificationType.openMenu)
-                                .dispatch(context);
-                          },
-                        ),
-                        _ButtonAndLoadingIcon(
-                          controller: _controller,
-                          isLoading: true,
-                          onPressed: () {
-                            PushRouteNotification(MultipleDayListScreen())
-                                .dispatch(context);
-                          },
-                        ),
-                      ],
+                  HeaderBar(
+                    indent: 17.0,
+                    endIndet: 17.0,
+                    leadingIcon: Icon(
+                      buildCupertinoIconData(0xf394),
+                      color: Color(0xFFD7CAFF),
+                      size: 30.0,
                     ),
+                    onLeadingAction: () =>
+                        MenuNotification(MenuNotificationType.openMenu)
+                            .dispatch(context),
+                    actionIcon: _ButtonAndLoadingIcon(
+                      controller: _controller,
+                      isLoading: true,
+                    ),
+                    onAction: () {
+                      PushRouteNotification(MultipleDayListScreen())
+                          .dispatch(context);
+                    },
                   ),
+                  const SizedBox(height: 10.0,),
                   _TranslateContainer(
                     controller: _controller,
                     child: Container(
@@ -180,7 +174,7 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
                             offset: Offset(0.0, 6.5),
                           ),
                         ]),
-                    margin: const EdgeInsets.only(right: 20.0, bottom: 20.0),
+                    margin: const EdgeInsets.only(right: 10.0, bottom: 20.0),
                     child: CupertinoButton(
                       padding: EdgeInsets.zero,
                       color: const Color(0xFFFAB807),
@@ -425,7 +419,12 @@ class _ListBody extends StatefulWidget {
 }
 
 class _ListBodyState extends State<_ListBody> {
-  Widget _placeholder = Container();
+  Widget _placeholder = Container(
+    alignment: Alignment.topCenter,
+    height: 300.0,
+    width: 300.0,
+    child: Config.listPlaceholder,
+  );
   List<TaskPack> _taskList;
   DateTime _dateTime;
 
@@ -556,13 +555,11 @@ class _ListBodyState extends State<_ListBody> {
 class _ButtonAndLoadingIcon extends StatefulWidget {
   final bool isLoading;
   final SingleDayScreenController controller;
-  final VoidCallback onPressed;
 
   const _ButtonAndLoadingIcon({
     Key key,
     this.isLoading,
     this.controller,
-    this.onPressed,
   }) : super(key: key);
   @override
   _ButtonAndLoadingIconState createState() => _ButtonAndLoadingIconState();
@@ -594,7 +591,7 @@ class _ButtonAndLoadingIconState extends State<_ButtonAndLoadingIcon> {
   Widget build(BuildContext context) {
     return _isLoading
         ? Container(
-            padding: const EdgeInsets.only(right: 17.0),
+            padding: EdgeInsets.zero,
             child: CupertinoTheme(
               data: CupertinoThemeData(
                 brightness: Brightness.dark,
@@ -602,14 +599,23 @@ class _ButtonAndLoadingIconState extends State<_ButtonAndLoadingIcon> {
               child: CupertinoActivityIndicator(),
             ),
           )
-        : CupertinoButton(
-            padding: const EdgeInsets.all(17.0),
-            child: Icon(
-              buildCupertinoIconData(0xf2d1),
-              color: Color(0xFFD7CAFF),
-              size: 30.0,
-            ),
-            onPressed: widget.onPressed,
+        : Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              Text(
+                '日程',
+                style: const TextStyle(
+                  fontSize: 16.0,
+                  color: const Color(0xFFEDE7FF),
+                ),
+              ),
+              Icon(
+                CupertinoIcons.right_chevron,
+                size: 26.0,
+                color: const Color(0xFFEDE7FF),
+              ),
+            ],
           );
   }
 }

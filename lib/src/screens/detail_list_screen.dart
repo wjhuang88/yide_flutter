@@ -44,11 +44,11 @@ class DetailListScreen extends StatefulWidget implements Navigatable {
             reverseCurve: Curves.easeInToLinear,
           ),
         );
-        final opacity = (anim1Curved.value - anim2.value).clamp(0.0, 1.0);
+        final opacity = AnimationPageFade(anim1Curved, anim2);
         return FractionalTranslation(
           translation: Offset(0.0, 1.0 - anim1Curved.value),
-          child: Opacity(
-            opacity: opacity * opacity,
+          child: FadeTransition(
+            opacity: opacity,
             child: child,
           ),
         );
@@ -58,6 +58,16 @@ class DetailListScreen extends StatefulWidget implements Navigatable {
 
   @override
   bool get withMene => false;
+}
+
+class AnimationPageFade extends CompoundAnimation<double> {
+  AnimationPageFade(Animation<double> first, Animation<double> next)
+      : super(first: first, next: next);
+  @override
+  double get value {
+    final opacity = first.value - next.value;
+    return opacity * opacity;
+  }
 }
 
 class _DetailListScreenState extends State<DetailListScreen>

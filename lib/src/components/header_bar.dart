@@ -8,11 +8,15 @@ class HeaderBar extends StatelessWidget {
     this.title,
     this.onLeadingAction,
     this.onAction,
+    this.indent = 0.0,
+    this.endIndet = 15.0,
   }) : super(key: key);
 
   final Widget leadingIcon;
   final Widget actionIcon;
   final String title;
+  final double indent;
+  final double endIndet;
 
   final VoidCallback onLeadingAction;
   final VoidCallback onAction;
@@ -22,7 +26,7 @@ class HeaderBar extends StatelessWidget {
     final children = <Widget>[];
 
     final leading = CupertinoButton(
-      padding: EdgeInsets.zero,
+      padding: EdgeInsets.only(left: indent),
       child: leadingIcon ?? const SizedBox(),
       onPressed: onLeadingAction ?? () {},
     );
@@ -36,9 +40,8 @@ class HeaderBar extends StatelessWidget {
     }
 
     final action = CupertinoButton(
-      padding: const EdgeInsets.only(right: 15.0),
-      child: actionIcon ??
-          const SizedBox(),
+      padding: EdgeInsets.only(right: endIndet),
+      child: actionIcon ?? const SizedBox(),
       onPressed: onAction ?? () {},
     );
     children.add(action);
