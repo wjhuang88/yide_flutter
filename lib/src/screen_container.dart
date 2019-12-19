@@ -64,11 +64,19 @@ class ScreenContainerController {
   _ScreenContainerState _state;
 
   Future<void> openMenu() async {
-    return _state?._openMenu();
+    if (_state?._slideDragController?.isActive ?? false) {
+      return _state?._openMenu();
+    }
   }
 
   Future<void> closeMenu() async {
-    return _state?._closeMenu();
+    if (_state?._slideDragController?.isActive ?? false) {
+      return _state?._closeMenu();
+    }
+  }
+
+  void resetMenu() {
+    _state?._slideDragController?.reset();
   }
 
   void menuOn() {

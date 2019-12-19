@@ -92,6 +92,8 @@ class SlideDragController {
   void setOff() {
     _state?._active = false;
   }
+
+  bool get isActive => _state?._active ?? false;
 }
 
 class _SlideDragDetectorState extends State<SlideDragDetector>
@@ -153,12 +155,12 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
       _fraction =
           _startFraction + (_endFraction - _startFraction) * _animation.value;
       if (_outBoundRunning) {
-        _handleLeftOutBoundUpdate(_fraction);
-        _handleUpdate(widget.leftBarrier);
+        _handleLeftOutBoundAnimation(_fraction);
+        _handleUpdateAnimation(widget.leftBarrier);
       }
       if (_normalRunning) {
-        _handleUpdate(_fraction);
-        _handleLeftOutBoundUpdate(widget.leftBarrier);
+        _handleUpdateAnimation(_fraction);
+        _handleLeftOutBoundAnimation(widget.leftBarrier);
       }
     });
 
@@ -217,6 +219,15 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
   void _reset() {
     setState(() {
       _fraction = widget.leftBarrier;
+      _normalRunning = false;
+      _outBoundRunning = false;
+      _isLeftOutBound = false;
+      _isForwardOverHalf = false;
+      _isReverseOverHalf = false;
+      _isLeftOutBoundForwardOverHalf = false;
+      _isLeftOutBoundReverseOverHalf = false;
+      _lastUpdateValue = null;
+      _lastLeftOutBoundUpdateValue = null;
     });
   }
 
@@ -269,15 +280,42 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
   }
 
   void _handleUpdate(value) {
-    if (widget.onUpdate != null && _lastUpdateValue != value) {
+    final condition1 = widget.leftBarrier < widget.rightBarrier &&
+        value >= widget.leftBarrier &&
+        value <= widget.rightBarrier;
+    final condition2 = widget.leftBarrier > widget.rightBarrier &&
+        value <= widget.leftBarrier &&
+        value >= widget.rightBarrier;
+    if (condition1 || condition2) {
+      _handleUpdateAnimation(value);
+    }
+  }
+
+  void _handleUpdateAnimation(value) {
+    if (widget.onUpdate != null &&
+        _lastUpdateValue != value &&
+        !_outBoundRunning) {
       _lastUpdateValue = value;
       widget.onUpdate(value);
     }
   }
 
   void _handleLeftOutBoundUpdate(value) {
+    final condition1 = widget.leftSecondBarrier < widget.leftBarrier &&
+        value >= widget.leftSecondBarrier &&
+        value <= widget.leftBarrier;
+    final condition2 = widget.leftSecondBarrier > widget.leftBarrier &&
+        value <= widget.leftSecondBarrier &&
+        value >= widget.leftBarrier;
+    if (condition1 || condition2) {
+      _handleLeftOutBoundAnimation(value);
+    }
+  }
+
+  void _handleLeftOutBoundAnimation(value) {
     if (widget.onLeftOutBoundUpdate != null &&
-        _lastLeftOutBoundUpdateValue != value) {
+        _lastLeftOutBoundUpdateValue != value &&
+        !_normalRunning) {
       _lastLeftOutBoundUpdateValue = value;
       widget.onLeftOutBoundUpdate(value);
     }
@@ -359,7 +397,6 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
                   _isLeftOutBound = false;
                 }
                 if (_isLeftOutBound) {
-                  _flip = false;
                   _handleUpdate(left);
                   if (_fraction <= secondLeft) {
                     _leftOutBoundFlip = true;

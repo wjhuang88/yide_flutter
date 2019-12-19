@@ -27,8 +27,14 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return NotificationContainer(
-      onMenuOpen: _screenController.openMenu,
-      onMenuClose: _screenController.closeMenu,
+      onMenuOpen: () {
+        _screenController.resetMenu();
+        _screenController.openMenu();
+      },
+      onMenuClose: () {
+        _screenController.resetMenu();
+        _screenController.closeMenu();
+      },
       onMenuActive: _screenController.menuOn,
       onMenuDeactive: _screenController.menuOff,
       child: CupertinoApp(

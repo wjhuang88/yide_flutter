@@ -231,6 +231,8 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
   Widget _buildSectionList() {
     final weekdayFormatter = DateFormat('EEE', 'zh');
     final dateFormatter = DateFormat('dd日', 'zh');
+    final dateFormatterWithMonth = DateFormat('MM月dd日', 'zh');
+    final dateFormatterWithYear = DateFormat('yyyy年MM月dd日', 'zh');
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final slivers = <Widget>[];
@@ -238,7 +240,15 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
       final date = today.add(Duration(days: i));
       final isTomorrow = i == 1;
       final weekdayLabel = isTomorrow ? '明天' : weekdayFormatter.format(date);
-      final dateLabel = dateFormatter.format(date);
+      final dateLabel = (() {
+        if (date.year != today.year) {
+          return dateFormatterWithYear.format(date);
+        }
+        if (date.month != today.month) {
+          return dateFormatterWithMonth.format(date);
+        }
+        return dateFormatter.format(date);
+      })();
       final weekHeader = SliverToBoxAdapter(
         child: Container(
           key: ValueKey('sectionHeader-week-with-date_$date'),
@@ -290,6 +300,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
                 isBorderShow: index + 1 != cellCount,
                 child: TimelineTile(
                   onTap: () async {
+                    singleDayController.setVerticalMove(true);
                     PushRouteNotification(
                       DetailListScreen(taskPack: pack),
                       callback: (pack) {
@@ -358,7 +369,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
       case DateTimeType.fullday:
         return '全天';
       case DateTimeType.someday:
-        return '某��';
+        return '某天';
       case DateTimeType.datetime:
         final date = data?.taskTime;
         return date == null || date.millisecondsSinceEpoch == 0
