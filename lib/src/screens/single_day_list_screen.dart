@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:yide/src/components/add_button_positioned.dart';
 import 'package:yide/src/components/header_bar.dart';
 import 'package:yide/src/components/location_methods.dart';
 import 'package:yide/src/components/timeline_list.dart';
@@ -101,6 +102,7 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
                   HeaderBar(
                     indent: 17.0,
                     endIndet: 17.0,
+                    title: '今日',
                     leadingIcon: Icon(
                       buildCupertinoIconData(0xf394),
                       color: Color(0xFFD7CAFF),
@@ -114,11 +116,17 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
                       isLoading: true,
                     ),
                     onAction: () {
-                      PushRouteNotification(MultipleDayListScreen())
-                          .dispatch(context);
+                      PushRouteNotification(MultipleDayListScreen(),
+                          callback: (pack) {
+                        setState(() {
+                          _controller.updateListData();
+                        });
+                      }).dispatch(context);
                     },
                   ),
-                  const SizedBox(height: 10.0,),
+                  const SizedBox(
+                    height: 10.0,
+                  ),
                   _TranslateContainer(
                     controller: _controller,
                     child: Container(
@@ -158,50 +166,20 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
                   ),
                 ],
               ),
-              Positioned(
-                bottom: 0.0,
-                right: 0.0,
-                child: SafeArea(
-                  child: Container(
-                    height: 55.0,
-                    width: 55.0,
-                    decoration: BoxDecoration(
-                        borderRadius: BorderRadius.all(Radius.circular(30.0)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0x883D2E75),
-                            blurRadius: 10.5,
-                            offset: Offset(0.0, 6.5),
-                          ),
-                        ]),
-                    margin: const EdgeInsets.only(right: 10.0, bottom: 20.0),
-                    child: CupertinoButton(
-                      padding: EdgeInsets.zero,
-                      color: const Color(0xFFFAB807),
-                      borderRadius: BorderRadius.all(Radius.circular(30.0)),
-                      child: const Icon(
-                        CupertinoIcons.add,
-                        size: 45.0,
-                        color: Colors.white,
-                      ),
-                      onPressed: () async {
-                        isSingleDayScreenTransitionVertical = true;
-                        PushRouteNotification(
-                          EditMainScreen(),
-                          callback: (pack) async {
-                            final newTask = pack as TaskPack;
-                            if (newTask != null) {
-                              await TaskDBAction.saveTask(newTask.data);
-                              setState(() {
-                                _controller.updateListData();
-                              });
-                            }
-                          },
-                        ).dispatch(context);
-                      },
-                    ),
-                  ),
-                ),
+              AddButtonPositioned(
+                onPressed: () async {
+                  isScreenTransitionVertical = true;
+                  PushRouteNotification(
+                    EditMainScreen(),
+                    callback: (pack) async {
+                      final newTask = pack as TaskPack;
+                      if (newTask != null) {
+                        await TaskDBAction.saveTask(newTask.data);
+                        _controller.updateListData();
+                      }
+                    },
+                  ).dispatch(context);
+                },
               ),
             ],
           ),
@@ -518,7 +496,7 @@ class _ListBodyState extends State<_ListBody> {
         return TimelineTile(
           rows: rows,
           onTap: () async {
-            isSingleDayScreenTransitionVertical = true;
+            isScreenTransitionVertical = true;
             PushRouteNotification(
               DetailListScreen(taskPack: item),
               callback: (pack) {
@@ -652,7 +630,7 @@ class _TranslateContainerState extends State<_TranslateContainer> {
 
   @override
   Widget build(BuildContext context) {
-    final offsetObject = isSingleDayScreenTransitionVertical
+    final offsetObject = isScreenTransitionVertical
         ? Offset(0.0, offset)
         : Offset(offset, 0.0);
     return FractionalTranslation(
@@ -736,7 +714,7 @@ class SingleDayScreenController {
   }
 
   void setVerticalMove(bool value) {
-    isSingleDayScreenTransitionVertical = value;
+    isScreenTransitionVertical = value;
   }
 
   void updateCountInfo(int count, int doingCount) {

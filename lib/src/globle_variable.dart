@@ -5,4 +5,4 @@ SingleDayScreenController get singleDayController => SingleDayListScreen.control
 Type lastPageType;
 
 double menuAnimationOffset = 0.0;
-bool isSingleDayScreenTransitionVertical = false;
+bool isScreenTransitionVertical = false;

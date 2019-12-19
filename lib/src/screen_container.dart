@@ -230,6 +230,7 @@ class _ScreenContainerState extends State<ScreenContainer> {
         if (_pageMoving) return;
         PushRouteNotification(MultipleDayListScreen(), callback: (d) {
           _slideDragController.moveLeftOutbound();
+          singleDayController?.updateListData();
         }).dispatch(context);
         haptic();
         _pageMoving = true;
@@ -238,6 +239,7 @@ class _ScreenContainerState extends State<ScreenContainer> {
         if (_pageMoving) return;
         PushRouteNotification(MultipleDayListScreen(), callback: (d) {
           _slideDragController.moveLeftOutbound();
+          singleDayController?.updateListData();
         }).dispatch(context);
         haptic();
         _pageMoving = true;

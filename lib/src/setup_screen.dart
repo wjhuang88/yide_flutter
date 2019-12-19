@@ -11,12 +11,25 @@ class SetupScreen extends StatelessWidget with SlideNavigatable {
       child: Column(
         children: <Widget>[
           HeaderBar(
-            leadingIcon: const Icon(
-              CupertinoIcons.left_chevron,
-              color: Color(0xFFD7CAFF),
-              size: 30.0,
+            actionIcon: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                Text(
+                  '返回',
+                  style: const TextStyle(
+                    fontSize: 16.0,
+                    color: const Color(0xFFEDE7FF),
+                  ),
+                ),
+                Icon(
+                  CupertinoIcons.right_chevron,
+                  size: 26.0,
+                  color: const Color(0xFFEDE7FF),
+                ),
+              ],
             ),
-            onLeadingAction: () =>
+            onAction: () =>
                 PopRouteNotification(isSide: true).dispatch(context),
             title: '设置',
           ),

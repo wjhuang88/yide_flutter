@@ -32,13 +32,6 @@ class HeaderBar extends StatelessWidget {
     );
     children.add(leading);
 
-    if (title != null) {
-      children.add(Text(
-        title,
-        style: const TextStyle(fontSize: 18.0, color: const Color(0xFFFFFFFF)),
-      ));
-    }
-
     final action = CupertinoButton(
       padding: EdgeInsets.only(right: endIndet),
       child: actionIcon ?? const SizedBox(),
@@ -46,12 +39,38 @@ class HeaderBar extends StatelessWidget {
     );
     children.add(action);
 
+    final fullWidget = Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: children,
+    );
+
+    if (title != null) {
+      return SafeArea(
+        bottom: false,
+        child: Stack(
+          children: <Widget>[
+            Positioned(
+              left: 0,
+              right: 0,
+              top: 0,
+              bottom: 0,
+              child: Center(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                      fontSize: 18.0, color: const Color(0xFFFFFFFF)),
+                ),
+              ),
+            ),
+            fullWidget,
+          ],
+        ),
+      );
+    }
+
     return SafeArea(
       bottom: false,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: children,
-      ),
+      child: fullWidget,
     );
   }
 }

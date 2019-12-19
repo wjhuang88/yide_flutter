@@ -26,8 +26,7 @@ mixin SlideNavigatable on Widget implements Navigatable {
                 curve: const ElasticOutCurve(1.0),
                 reverseCurve: Curves.easeInExpo,
               ),
-            )
-            .value;
+            ).value;
         return _DragBuilder(
           builder: (context, slideValue, isPopped) {
             final finalSlideValue = (slideValue > 0.0 ? 0.0 : slideValue) * 0.5;
@@ -39,14 +38,16 @@ mixin SlideNavigatable on Widget implements Navigatable {
               children: <Widget>[
                 Offstage(
                   offstage: isPopped,
-                  child: Opacity(
+                  child: AnimatedOpacity(
+                    duration: Duration.zero,
                     opacity: opacity,
                     child: Container(
                       color: const Color(0xFF483667),
                     ),
                   ),
                 ),
-                Opacity(
+                AnimatedOpacity(
+                  duration: Duration.zero,
                   opacity: anim1Curved.clamp(0.0, 1.0),
                   child: Transform(
                     alignment: const Alignment(-0.6, 0.0),

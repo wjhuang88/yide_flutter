@@ -1,12 +1,14 @@
 import 'dart:collection';
 
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_tableview/flutter_tableview.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:yide/src/components/add_button_positioned.dart';
 import 'package:yide/src/components/header_bar.dart';
 import 'package:yide/src/components/slide_drag_detector.dart';
 import 'package:yide/src/components/timeline_list.dart';
-import 'package:yide/src/config.dart';
+import 'package:yide/src/config.dart' as Config;
+import 'package:yide/src/globle_variable.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
 import 'package:yide/src/models/task_data.dart';
 import 'package:yide/src/notification.dart';
@@ -14,31 +16,39 @@ import 'package:yide/src/tools/common_tools.dart';
 import 'package:yide/src/tools/sqlite_manager.dart';
 
 import 'detail_list_screen.dart';
+import 'edit_main_screen.dart';
 
 class MultipleDayListScreen extends StatefulWidget implements Navigatable {
+  final MultipleDayController controller = MultipleDayController();
+
   @override
-  _MultipleDayListScreenState createState() => _MultipleDayListScreenState();
+  _MultipleDayListScreenState createState() =>
+      _MultipleDayListScreenState(controller);
 
   @override
   Route get route => PageRouteBuilder(
-        pageBuilder: (context, anim1, anim2) => this,
+        pageBuilder: (context, anim1, anim2) {
+          anim2.addStatusListener((status) {
+            if (status == AnimationStatus.dismissed) {
+              singleDayController.setVerticalMove(false);
+            }
+          });
+          return this;
+        },
         transitionDuration: Duration(milliseconds: 1000),
         transitionsBuilder: (context, anim1, anim2, child) {
-          final anim1Curved = Tween<double>(begin: 0.0, end: 1.0)
-              .animate(
-                CurvedAnimation(
-                  parent: anim1,
-                  curve: const ElasticOutCurve(1.0),
-                  reverseCurve: const ElasticInCurve(1.0),
-                ),
-              );
+          final anim1Curved = Tween<double>(begin: 0.0, end: 1.0).animate(
+            CurvedAnimation(
+              parent: anim1,
+              curve: const ElasticOutCurve(1.0),
+              reverseCurve: const ElasticInCurve(1.0),
+            ),
+          );
           final anim2Curved = const ElasticInCurve(1.0).transform(anim2.value);
+          controller.updateTransition(1 - anim1Curved.value - anim2Curved);
           return FadeTransition(
             opacity: anim1Curved,
-            child: FractionalTranslation(
-              translation: Offset(1 - anim1Curved.value - anim2Curved, 0.0),
-              child: child,
-            ),
+            child: child,
           );
         },
       );
@@ -47,7 +57,19 @@ class MultipleDayListScreen extends StatefulWidget implements Navigatable {
   bool get withMene => false;
 }
 
+class MultipleDayController {
+  List<_TranslateContainerState> _transStates = List();
+
+  void updateTransition(double value) {
+    _transStates.forEach((state) => state.offset = value);
+  }
+}
+
 class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
+  _MultipleDayListScreenState(this._controller);
+
+  MultipleDayController _controller;
+
   bool _isLoadingValue = false;
   bool get _isLoading => _isLoadingValue;
   set _isLoading(bool value) {
@@ -61,36 +83,24 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
   double _dragOffset = 0.0;
   bool _isPoping = false;
 
-  static const _cellHeight = 110.0;
-  static const _headerHeight = 35.0;
+  static const _cellHeight = 80.0;
+  static const _headerHeight = 45.0;
+  static const _headerGap = 8.0;
 
   Map<DateTime, List<TaskPack>> _listData = LinkedHashMap();
-  Iterable<DateTime> get _sectionKeys => _listData.keys;
-  Iterable<int> get _sectionCount =>
-      _sectionKeys.map((date) => _listData[date].length);
-
-  int _todaySection = 0;
-  double get _todayOffset {
-    if (_todaySection <= 0) {
-      return 0.0;
-    }
-    var cellCount =
-        _sectionCount.take(_todaySection - 1).reduce((a, b) => a + b);
-    return _cellHeight * cellCount + (_todaySection - 1) * _headerHeight;
-  }
-
-  Future<void> _updating;
 
   @override
   void initState() {
     super.initState();
-    _scrollController = ScrollController(keepScrollOffset: true);
-    _updating = _update();
+    _scrollController = ScrollController(keepScrollOffset: false);
+    _update();
+    _controller ??= MultipleDayController();
   }
 
   @override
   void dispose() {
     _scrollController?.dispose();
+    _controller._transStates.clear();
     super.dispose();
   }
 
@@ -98,19 +108,11 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
     _isLoading = true;
     final list = await TaskDBAction.getTaskListByPage(0, 100);
     _listData.clear();
-    var sectionCount = 0;
-    final now = DateTime.now();
     for (var item in list) {
       final taskTime = item.data.taskTime;
       final sectionTime = DateTime(taskTime.year, taskTime.month, taskTime.day);
       if (!_listData.containsKey(sectionTime)) {
         _listData[sectionTime] = List();
-        sectionCount++;
-      }
-      if (taskTime.year == now.year &&
-          taskTime.month == now.month &&
-          taskTime.day == now.day) {
-        _todaySection = sectionCount;
       }
       _listData[sectionTime].add(item);
     }
@@ -119,14 +121,11 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final _sections = _sectionKeys.toList();
-    final _counts = _sectionCount.toList();
-
     return CupertinoPageScaffold(
       backgroundColor: const Color(0x00000000),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          gradient: backgroundGradient,
+          gradient: Config.backgroundGradient,
         ),
         child: SlideDragDetector(
           leftBarrier: 0.0,
@@ -151,145 +150,205 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
             haptic();
             _isPoping = true;
           },
-          child: FractionalTranslation(
-            translation: Offset(_dragOffset, 0.0),
-            child: Column(
-              children: <Widget>[
-                HeaderBar(
-                  leadingIcon: const Icon(
-                    CupertinoIcons.left_chevron,
-                    color: Color(0xFFD7CAFF),
-                    size: 30.0,
-                  ),
-                  onLeadingAction: () =>
-                      PopRouteNotification().dispatch(context),
-                  actionIcon: _isLoading
-                      ? CupertinoTheme(
-                          data: CupertinoThemeData(
-                            brightness: Brightness.dark,
-                          ),
-                          child: CupertinoActivityIndicator(),
-                        )
-                      : const Text(
-                          '编辑',
-                          style: TextStyle(
-                              fontSize: 16.0, color: Color(0xFFD7CAFF)),
+          child: Stack(
+            children: <Widget>[
+              Column(
+                children: <Widget>[
+                  HeaderBar(
+                    indent: 10.0,
+                    endIndet: 15.0,
+                    leadingIcon: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: <Widget>[
+                        Icon(
+                          CupertinoIcons.left_chevron,
+                          size: 26.0,
+                          color: const Color(0xFFEDE7FF),
                         ),
-                  title: '日程',
-                ),
-                const SizedBox(
-                  height: 20.0,
-                ),
-                Expanded(
-                  child: _sections.length > 0
-                      ? _buildSectionList(_sections, _counts)
-                      : const SizedBox(),
-                )
-              ],
-            ),
+                        Text(
+                          '今日',
+                          style: const TextStyle(
+                            fontSize: 16.0,
+                            color: const Color(0xFFEDE7FF),
+                          ),
+                        ),
+                      ],
+                    ),
+                    onLeadingAction: () =>
+                        PopRouteNotification().dispatch(context),
+                    actionIcon: _isLoading
+                        ? CupertinoTheme(
+                            data: CupertinoThemeData(
+                              brightness: Brightness.dark,
+                            ),
+                            child: CupertinoActivityIndicator(),
+                          )
+                        : const Text(
+                            '编辑',
+                            style: TextStyle(
+                                fontSize: 16.0, color: Color(0xFFD7CAFF)),
+                          ),
+                    title: '日程',
+                  ),
+                  const SizedBox(
+                    height: 20.0,
+                  ),
+                  Expanded(
+                    child: FractionalTranslation(
+                      translation: Offset(_dragOffset, 0.0),
+                      child: _TranslateContainer(
+                        initOffset: 0.0,
+                        controller: _controller,
+                        child: _buildSectionList(),
+                      ),
+                    ),
+                  )
+                ],
+              ),
+              AddButtonPositioned(
+                onPressed: () async {
+                  isScreenTransitionVertical = true;
+                  PushRouteNotification(
+                    EditMainScreen(),
+                    callback: (pack) async {
+                      final newTask = pack as TaskPack;
+                      if (newTask != null) {
+                        await TaskDBAction.saveTask(newTask.data);
+                        _update();
+                      }
+                    },
+                  ).dispatch(context);
+                },
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildSectionList(List<DateTime> _sections, List<int> _counts) {
-    final formatterNoYear = DateFormat('MM月dd日 EEE', 'zh');
-    final formatterWithYear = DateFormat('yyyy年MM月dd日 EEE', 'zh');
+  Widget _buildSectionList() {
+    final weekdayFormatter = DateFormat('EEE', 'zh');
+    final dateFormatter = DateFormat('dd日', 'zh');
     final now = DateTime.now();
-    final view = FlutterTableView(
-      controller: _scrollController,
-      listViewFatherWidgetBuilder: (context, list) {
-        return MediaQuery.removePadding(
-          context: context,
-          removeTop: true,
-          child: list,
-        );
-      },
-      sectionCount: _sections.length,
-      rowCountAtSection: (i) => _listData[_sections[i]].length,
-      sectionHeaderBuilder: (context, i) {
-        final time = _sections[i];
-        final timeLabel = time.year == now.year
-            ? formatterNoYear.format(time)
-            : formatterWithYear.format(time);
-        return Container(
-          padding: const EdgeInsets.only(left: 15.0),
+    final today = DateTime(now.year, now.month, now.day);
+    final slivers = <Widget>[];
+    for (var i = 1; i <= 7; i++) {
+      final date = today.add(Duration(days: i));
+      final isTomorrow = i == 1;
+      final weekdayLabel = isTomorrow ? '明天' : weekdayFormatter.format(date);
+      final dateLabel = dateFormatter.format(date);
+      final weekHeader = SliverToBoxAdapter(
+        child: Container(
+          key: ValueKey('sectionHeader-week-with-date_$date'),
           alignment: Alignment.centerLeft,
-          color: Color(0xFF9051DC),
-          child: Text(
-            timeLabel,
-            style: const TextStyle(
-                fontSize: 18.0,
-                fontWeight: FontWeight.w200,
-                color: Color(0xFFFFFFFF)),
+          height: _headerHeight,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.ideographic,
+            children: <Widget>[
+              Text(
+                weekdayLabel,
+                style: const TextStyle(
+                  fontSize: 20.0,
+                  fontWeight: FontWeight.w300,
+                  color: const Color(0xFFFFFFFF),
+                ),
+              ),
+              const SizedBox(
+                width: 10.0,
+              ),
+              Text(
+                dateLabel,
+                style: const TextStyle(
+                  fontSize: 12.0,
+                  fontWeight: FontWeight.w300,
+                  color: const Color(0x88FFFFFF),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      slivers.add(
+        SliverPadding(
+          sliver: weekHeader,
+          padding: const EdgeInsets.only(bottom: _headerGap, left: 20.0),
+        ),
+      );
+      final innerListData = _listData[date];
+      if (innerListData != null && innerListData.isNotEmpty) {
+        final cellCount = innerListData.length;
+        final innerList = SliverFixedExtentList(
+          itemExtent: _cellHeight,
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              final pack = innerListData[index];
+              return TimelineDecorated(
+                decorationColor: pack.tag.iconColor,
+                isBorderShow: index + 1 != cellCount,
+                child: TimelineTile(
+                  onTap: () async {
+                    PushRouteNotification(
+                      DetailListScreen(taskPack: pack),
+                      callback: (pack) {
+                        _update();
+                      },
+                    ).dispatch(context);
+                  },
+                  rows: <Widget>[
+                    Text(
+                      pack.data.content,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFFD7CAFF),
+                        fontSize: 15.0,
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 3.0,
+                    ),
+                    Text(
+                      _makeTimeLabel(pack.data),
+                      style: const TextStyle(
+                        color: Color(0xFFC9A2F5),
+                        fontSize: 12.0,
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 3.0,
+                    ),
+                    Text(
+                      pack.tag.name ?? '默认',
+                      style:
+                          TextStyle(color: pack.tag.iconColor, fontSize: 12.0),
+                    ),
+                  ],
+                ),
+              );
+            },
+            childCount: cellCount,
           ),
         );
-      },
-      sectionHeaderHeight: (context, i) => _headerHeight,
-      cellBuilder: (context, section, row) {
-        final pack = _listData[_sections[section]][row];
-        final firstMargin =
-            row == 0 ? const EdgeInsets.only(top: 15.0) : EdgeInsets.zero;
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 15.0),
-          child: Container(
-            margin: firstMargin,
-            child: TimelineDecorated(
-              decorationColor: pack.tag.iconColor,
-              isBorderShow: row + 1 != _counts[section],
-              child: TimelineTile(
-                onTap: () async {
-                  PushRouteNotification(
-                    DetailListScreen(taskPack: pack),
-                    callback: (pack) {
-                      _update();
-                    },
-                  ).dispatch(context);
-                },
-                rows: <Widget>[
-                  Text(
-                    _makeTimeLabel(pack.data),
-                    style: const TextStyle(
-                      color: Color(0xFFC9A2F5),
-                      fontSize: 12.0,
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 5.0,
-                  ),
-                  Text(
-                    pack.data.content,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFFD7CAFF),
-                      fontSize: 15.0,
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 5.0,
-                  ),
-                  Text(
-                    pack.tag.name ?? '默认',
-                    style: TextStyle(color: pack.tag.iconColor, fontSize: 12.0),
-                  ),
-                ],
-              ),
+        slivers.add(SliverPadding(
+          sliver: innerList,
+          padding: const EdgeInsets.only(left: 25.0, right: 15.0),
+        ));
+      } else {
+        slivers.add(
+          const SliverToBoxAdapter(
+            child: SizedBox(
+              height: _cellHeight / 2.5,
             ),
           ),
         );
-      },
-      cellHeight: (context, section, row) => _cellHeight,
-    );
-    _updating?.then(
-      (f) {
-        if (_scrollController.offset == 0) {
-          _scrollController.jumpTo(_todayOffset.clamp(
-              _scrollController.position.minScrollExtent,
-              _scrollController.position.maxScrollExtent));
-        }
-      },
+      }
+    }
+    final view = CustomScrollView(
+      controller: _scrollController,
+      slivers: slivers,
     );
     return view;
   }
@@ -299,7 +358,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
       case DateTimeType.fullday:
         return '全天';
       case DateTimeType.someday:
-        return '某天';
+        return '某��';
       case DateTimeType.datetime:
         final date = data?.taskTime;
         return date == null || date.millisecondsSinceEpoch == 0
@@ -308,5 +367,46 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
       default:
         return ' - ';
     }
+  }
+}
+
+class _TranslateContainer extends StatefulWidget {
+  final double initOffset;
+  final Widget child;
+  final MultipleDayController controller;
+
+  const _TranslateContainer({
+    Key key,
+    this.initOffset,
+    @required this.child,
+    this.controller,
+  }) : super(key: key);
+  @override
+  _TranslateContainerState createState() => _TranslateContainerState();
+}
+
+class _TranslateContainerState extends State<_TranslateContainer> {
+  double _offsetValue;
+  double get offset => _offsetValue;
+  set offset(double value) => setState(() => _offsetValue = value);
+
+  MultipleDayController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _offsetValue = widget.initOffset ?? 0.0;
+    _controller = widget.controller ?? MultipleDayController();
+    _controller._transStates.add(this);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final offsetObject =
+        isScreenTransitionVertical ? Offset(0.0, offset) : Offset(offset, 0.0);
+    return FractionalTranslation(
+      translation: offsetObject,
+      child: widget.child,
+    );
   }
 }

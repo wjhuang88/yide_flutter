@@ -287,6 +287,7 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
   Widget build(BuildContext context) {
     return _active
         ? GestureDetector(
+            behavior: HitTestBehavior.opaque,
             child: widget.child,
             onHorizontalDragStart: (detail) {
               final x = detail.globalPosition.dx;
@@ -336,20 +337,30 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
                     (detail.globalPosition.dx - _animDragDelta) / _screenWidth;
                 if (left == secondLeft && _fraction <= left && frac < 0.0) {
                   _fraction = left;
+                  _isLeftOutBound = false;
                   _handleUpdate(_fraction);
                   return;
                 }
-                if (_fraction < left) {
-                  if (frac < 0.0) {
-                    _handleUpdate(left);
-                  }
+                if (_fraction >= right && frac > 0.0) {
+                  _fraction = right;
+                  _isLeftOutBound = false;
+                  _handleUpdate(_fraction);
+                  return;
+                }
+                if (_fraction <= secondLeft && frac < 0.0) {
+                  _fraction = secondLeft;
                   _isLeftOutBound = true;
-                  if (_fraction <= secondLeft && frac < 0.0) {
-                    _fraction = secondLeft;
-                    _handleLeftOutBoundUpdate(_fraction);
-                    return;
-                  }
+                  _handleLeftOutBoundUpdate(_fraction);
+                  return;
+                }
+                if (_fraction <= left) {
+                  _isLeftOutBound = true;
+                } else {
+                  _isLeftOutBound = false;
+                }
+                if (_isLeftOutBound) {
                   _flip = false;
+                  _handleUpdate(left);
                   if (_fraction <= secondLeft) {
                     _leftOutBoundFlip = true;
                   } else if (_fraction >= left) {
@@ -372,33 +383,29 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
                     (widget.onLeftSecondMoveBackHalf ?? (frac) {})(_fraction);
                     _isLeftOutBoundReverseOverHalf = true;
                   }
-                  return;
-                }
-                _isLeftOutBound = false;
-                if (_fraction >= right && frac > 0.0) {
-                  _fraction = right;
+                } else {
+                  if (_fraction >= right) {
+                    _flip = true;
+                  } else if (_fraction <= left) {
+                    _flip = false;
+                  }
+                  if (_flip) {
+                    frac = right + frac;
+                  }
+                  _fraction = frac;
                   _handleUpdate(_fraction);
-                  return;
-                }
-                if (_fraction >= right) {
-                  _flip = true;
-                } else if (_fraction <= left) {
-                  _flip = false;
-                }
-                if (_flip) {
-                  frac = right + frac;
-                }
-                _fraction = frac;
-                _handleUpdate(_fraction);
-                if (!_flip &&
-                    !_isForwardOverHalf &&
-                    _fraction >= _centerPoint) {
-                  (widget.onRightMoveHalf ?? (frac) {})(_fraction);
-                  _isForwardOverHalf = true;
-                }
-                if (_flip && !_isReverseOverHalf && _fraction <= _centerPoint) {
-                  (widget.onLeftMoveHalf ?? (frac) {})(_fraction);
-                  _isReverseOverHalf = true;
+                  if (!_flip &&
+                      !_isForwardOverHalf &&
+                      _fraction >= _centerPoint) {
+                    (widget.onRightMoveHalf ?? (frac) {})(_fraction);
+                    _isForwardOverHalf = true;
+                  }
+                  if (_flip &&
+                      !_isReverseOverHalf &&
+                      _fraction <= _centerPoint) {
+                    (widget.onLeftMoveHalf ?? (frac) {})(_fraction);
+                    _isReverseOverHalf = true;
+                  }
                 }
               }
             },
