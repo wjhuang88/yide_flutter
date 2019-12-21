@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:yide/src/components/header_bar.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
+import 'package:yide/src/notification.dart';
 
 class DetailCommentsScreen extends StatelessWidget implements Navigatable {
   final TextEditingController _controller;
@@ -22,14 +23,13 @@ class DetailCommentsScreen extends StatelessWidget implements Navigatable {
               color: Color(0xFFD7CAFF),
               size: 40.0,
             ),
-            onLeadingAction: Navigator.of(context).maybePop,
+            onLeadingAction: () => PopRouteNotification().dispatch(context),
             actionIcon: const Text(
               '完成',
               style: const TextStyle(
                   fontSize: 15.0, color: const Color(0xFFEDE7FF)),
             ),
-            onAction: () =>
-                Navigator.of(context).maybePop<String>(_controller.text),
+            onAction: () => PopRouteNotification(result: _controller.text).dispatch(context),
             title: '备注',
           ),
           Container(

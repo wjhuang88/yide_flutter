@@ -157,7 +157,7 @@ class _ScreenContainerState extends State<ScreenContainer> {
     menuAnimationOffset = dist;
   }
 
-  WillPopScope _buildPopScope(BuildContext context,
+  Widget _buildNavContainer(BuildContext context,
       Navigatable Function(BuildContext context) initialPage) {
     final scope = WillPopScope(
       key: const ValueKey('main_page_willPopScope'),
@@ -171,6 +171,11 @@ class _ScreenContainerState extends State<ScreenContainer> {
               .dispatch(Config.mainNavigatorKey.currentContext);
           return false;
         }
+        if (_menuController.isMenuOpen) {
+          _controller.closeMenu();
+          return false;
+        }
+
         // 无法后退则检测是否连续按返回键，连续则推出app
         if (_backPressedAt == null ||
             DateTime.now().difference(_backPressedAt) > Duration(seconds: 1)) {
@@ -208,7 +213,7 @@ class _ScreenContainerState extends State<ScreenContainer> {
           key: ValueKey(Config.menuConfig.hashCode),
         ),
         onSideTap: _closeMenu,
-        child: _buildPopScope(context, (context) => SplashScreen()),
+        child: _buildNavContainer(context, (context) => SplashScreen()),
         controller: _menuController,
       );
     }
@@ -290,6 +295,8 @@ class StageWithMenuController {
   _StageWithMenuState _state;
 
   void setAnimationValue(double value) => _state?._animValue = value;
+
+  bool get isMenuOpen => _state?._animValue != 0.0;
 }
 
 class _StageWithMenuState extends State<StageWithMenu> {
@@ -327,25 +334,29 @@ class _StageWithMenuState extends State<StageWithMenu> {
         ),
       ),
     );
+    final _menuPart = SafeArea(
+      child: Transform(
+        transform: Matrix4.identity()
+          ..setEntry(3, 2, 0.002)
+          ..scale(
+              0.5 + menuTransformValue * 0.5, 0.9 + menuTransformValue * 0.1)
+          ..rotateY(menuAngle),
+        alignment: const FractionalOffset(0.0, 0.5),
+        child: FractionalTranslation(
+          translation: Offset((menuTransformValue - 1) * 0.2, 0.0),
+          child: AnimatedOpacity(
+            duration: Duration.zero,
+            opacity: menuTransformValue.clamp(0.0, 1.0),
+            child: widget.menu,
+          ),
+        ),
+      ),
+    );
     return Stack(
       children: <Widget>[
-        SafeArea(
-          child: Transform(
-            transform: Matrix4.identity()
-              ..setEntry(3, 2, 0.002)
-              ..scale(0.5 + menuTransformValue * 0.5,
-                  0.9 + menuTransformValue * 0.1)
-              ..rotateY(menuAngle),
-            alignment: const FractionalOffset(0.0, 0.5),
-            child: FractionalTranslation(
-              translation: Offset((menuTransformValue - 1) * 0.2, 0.0),
-              child: AnimatedOpacity(
-                duration: Duration.zero,
-                opacity: menuTransformValue.clamp(0.0, 1.0),
-                child: widget.menu,
-              ),
-            ),
-          ),
+        Offstage(
+          offstage: menuTransformValue == 0.0,
+          child: _menuPart,
         ),
         _pagePart,
       ],

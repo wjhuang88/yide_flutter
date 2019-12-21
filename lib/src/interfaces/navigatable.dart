@@ -1,7 +1,7 @@
 import 'dart:math' as Math;
 import 'package:flutter/widgets.dart';
 import 'package:yide/src/components/slide_drag_detector.dart';
-import 'package:yide/src/config.dart' as Config;
+import 'package:yide/src/config.dart';
 import 'package:yide/src/globle_variable.dart';
 import 'package:yide/src/notification.dart';
 import 'package:yide/src/tools/common_tools.dart';
@@ -87,7 +87,12 @@ class _DragBuilder extends StatefulWidget {
 
 class _DragBuilderState extends State<_DragBuilder> {
   double _slideValue = 0.0;
-  bool _isPoping = true;
+  bool _isPoping = false;
+  @override
+  void initState() {
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return SlideDragDetector(
@@ -99,7 +104,6 @@ class _DragBuilderState extends State<_DragBuilder> {
           _slideValue = value;
         });
       },
-      onStartDrag: () => _isPoping = false,
       onLeftDragEnd: (f) {
         if (_isPoping) return;
         _isPoping = true;
@@ -114,7 +118,6 @@ class _DragBuilderState extends State<_DragBuilder> {
       },
       child: WillPopScope(
         onWillPop: () async {
-          _isPoping = true;
           lastPageType = null;
           return true;
         },

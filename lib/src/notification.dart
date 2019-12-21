@@ -124,9 +124,6 @@ class _NotificationContainerState extends State<NotificationContainer> {
             (n.callback ?? (arg) {})(result);
           })();
         } else if (n is PopRouteNotification) {
-          if (lastPageType == null) {
-            return true;
-          }
           NavigatorState nav;
           if (n.isSide) {
             nav = Config.sideNavigatorKey.currentState;
