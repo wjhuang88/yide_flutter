@@ -124,6 +124,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: const Color(0x00000000),
       child: DecoratedBox(
         decoration: BoxDecoration(

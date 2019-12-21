@@ -14,6 +14,7 @@ class AddButtonPositioned extends StatelessWidget {
       bottom: 0.0,
       right: 0.0,
       child: SafeArea(
+        maintainBottomViewPadding: true,
         child: Container(
           height: 55.0,
           width: 55.0,
