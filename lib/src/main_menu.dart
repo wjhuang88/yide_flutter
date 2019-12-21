@@ -12,9 +12,7 @@ class MainMenu extends StatefulWidget {
   static const contentPadding =
       EdgeInsets.symmetric(horizontal: 25.0, vertical: 14.0);
 
-  const MainMenu(
-      {Key key, @required this.menuConfig})
-      : super(key: key);
+  const MainMenu({Key key, @required this.menuConfig}) : super(key: key);
 
   @override
   _MainMenuState createState() => _MainMenuState();
@@ -102,7 +100,9 @@ class _MainMenuState extends State<MainMenu> {
             padding: MainMenu.contentPadding,
             child: Row(
               children: <Widget>[
-                SizedBox(width: 40.0 * (item['level'] as int),),
+                SizedBox(
+                  width: 40.0 * (item['level'] as int),
+                ),
                 item['icon'],
                 const SizedBox(
                   width: 20.0,
@@ -110,7 +110,8 @@ class _MainMenuState extends State<MainMenu> {
                 Text(
                   item['name'] as String,
                   style: TextStyle(
-                    color: Color(0xFFEDE7FF).withOpacity(0.5 + (1 - factor) * 0.5),
+                    color:
+                        Color(0xFFEDE7FF).withOpacity(0.5 + (1 - factor) * 0.5),
                     fontWeight: FontWeight.w300,
                     fontSize: 15.0,
                   ),
@@ -128,8 +129,7 @@ class _MainMenuState extends State<MainMenu> {
             if (route != null) {
               final page = route();
               if (page is Navigatable) {
-                PushRouteNotification(page, isSide: isSide)
-                    .dispatch(context);
+                PushRouteNotification(page, isSide: isSide).dispatch(context);
               }
             }
           },

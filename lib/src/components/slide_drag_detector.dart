@@ -247,51 +247,77 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
     });
   }
 
+  void _invokeMethod(ValueChanged<double> method, double argument) {
+    if (method != null) {
+      method(argument);
+    }
+  }
+
   Future<void> _dragEndAction(double velocity, double offet) async {
     if (velocity > 700.0) {
       // 右划速度大于阈值触发处理器运行
-      (widget.onRightDragEnd ?? (frac) {})(offet);
+      _invokeMethod(widget.onRightDragEnd, offet);
       await _forward();
-      (widget.onRightMoveComplete ?? (frac) {})(offet);
+      _invokeMethod(widget.onRightMoveComplete, offet);
     } else if (velocity < -700) {
       // 左划速度大于阈值触发处理器运行
-      (widget.onLeftDragEnd ?? (frac) {})(offet);
+      _invokeMethod(widget.onLeftDragEnd, offet);
       await _reverse();
-      (widget.onLeftMoveComplete ?? (frac) {})(offet);
+      _invokeMethod(widget.onLeftMoveComplete, offet);
     } else if (offet >= _centerPoint) {
       // 终止点超过中点
-      (widget.onRightDragEnd ?? (frac) {})(offet);
+      _invokeMethod(widget.onRightDragEnd, offet);
       await _forward();
-      (widget.onRightMoveComplete ?? (frac) {})(offet);
+      _invokeMethod(widget.onRightMoveComplete, offet);
     } else {
       // 终止点不超过中点
-      (widget.onLeftDragEnd ?? (frac) {})(offet);
+      _invokeMethod(widget.onLeftDragEnd, offet);
       await _reverse();
-      (widget.onLeftMoveComplete ?? (frac) {})(offet);
+      _invokeMethod(widget.onLeftMoveComplete, offet);
+    }
+  }
+
+  Future<void> _dragCancelAction(double offet) async {
+    if (offet >= _centerPoint) {
+      // 终止点超过中点
+      await _forward();
+    } else {
+      // 终止点不超过中点
+      await _reverse();
     }
   }
 
   Future<void> _dragEndLeftOutBoundAction(double velocity, double offet) async {
     if (velocity > 700.0) {
       // 右划速度大于阈值触发处理器运行
-      (widget.onLeftSecondDragBackEnd ?? (frac) {})(offet);
+      _invokeMethod(widget.onLeftSecondDragBackEnd, offet);
       await _leftOutBoundForward();
-      (widget.onLeftSecondMoveBackComplete ?? (frac) {})(offet);
+      _invokeMethod(widget.onLeftSecondMoveBackComplete, offet);
     } else if (velocity < -700) {
       // 左划速度大于阈值触发处理器运行
-      (widget.onLeftSecondDragEnd ?? (frac) {})(offet);
+      _invokeMethod(widget.onLeftSecondDragEnd, offet);
       await _leftOutBoundReverse();
-      (widget.onLeftSecondMoveComplete ?? (frac) {})(offet);
+      _invokeMethod(widget.onLeftSecondMoveComplete, offet);
     } else if (offet >= _leftSecondCenter) {
       // 终止点超过中点
-      (widget.onLeftSecondDragBackEnd ?? (frac) {})(offet);
+      _invokeMethod(widget.onLeftSecondDragBackEnd, offet);
       await _leftOutBoundForward();
-      (widget.onLeftSecondMoveBackComplete ?? (frac) {})(offet);
+      _invokeMethod(widget.onLeftSecondMoveBackComplete, offet);
     } else {
       // 终止点不超过中点
-      (widget.onLeftSecondDragEnd ?? (frac) {})(offet);
+      _invokeMethod(widget.onLeftSecondDragEnd, offet);
       await _leftOutBoundReverse();
-      (widget.onLeftSecondMoveComplete ?? (frac) {})(offet);
+      _invokeMethod(widget.onLeftSecondMoveComplete, offet);
+    }
+  }
+
+  Future<void> _dragCancelLeftOutBoundAction(double offet) async {
+    if (offet >= _leftSecondCenter) {
+      // 终止点超过中点
+      await _leftOutBoundForward();
+    } else {
+      // 终止点不超过中点
+      await _leftOutBoundReverse();
     }
   }
 
@@ -374,9 +400,9 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
               }
               _isDragging = false;
               if (_isLeftOutBound) {
-                await _dragEndLeftOutBoundAction(0.0, _fraction);
+                await _dragCancelLeftOutBoundAction(_fraction);
               } else {
-                await _dragEndAction(0.0, _fraction);
+                await _dragCancelAction(_fraction);
               }
             },
             onHorizontalDragUpdate: (detail) {
@@ -424,13 +450,13 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
                   if (!_leftOutBoundFlip &&
                       !_isLeftOutBoundForwardOverHalf &&
                       _fraction <= _leftSecondCenter) {
-                    (widget.onLeftSecondMoveHalf ?? (frac) {})(_fraction);
+                    _invokeMethod(widget.onLeftSecondMoveHalf, _fraction);
                     _isLeftOutBoundForwardOverHalf = true;
                   }
                   if (_leftOutBoundFlip &&
                       !_isLeftOutBoundReverseOverHalf &&
                       _fraction >= _leftSecondCenter) {
-                    (widget.onLeftSecondMoveBackHalf ?? (frac) {})(_fraction);
+                    _invokeMethod(widget.onLeftSecondMoveBackHalf, _fraction);
                     _isLeftOutBoundReverseOverHalf = true;
                   }
                 } else {
@@ -447,13 +473,13 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
                   if (!_flip &&
                       !_isForwardOverHalf &&
                       _fraction >= _centerPoint) {
-                    (widget.onRightMoveHalf ?? (frac) {})(_fraction);
+                    _invokeMethod(widget.onRightMoveHalf, _fraction);
                     _isForwardOverHalf = true;
                   }
                   if (_flip &&
                       !_isReverseOverHalf &&
                       _fraction <= _centerPoint) {
-                    (widget.onLeftMoveHalf ?? (frac) {})(_fraction);
+                    _invokeMethod(widget.onLeftMoveHalf, _fraction);
                     _isReverseOverHalf = true;
                   }
                 }

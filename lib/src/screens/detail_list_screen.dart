@@ -180,28 +180,28 @@ class _DetailListScreenState extends State<DetailListScreen>
               onAction: _isLoading
                   ? null
                   : () async {
-                      final isDelete = await showCupertinoDialog<bool>(
+                      final isDelete = await showCupertinoModalPopup<bool>(
                         context: context,
-                        builder: (context) => CupertinoAlertDialog(
+                        builder: (context) => CupertinoActionSheet(
                           title: Text('将要删除本事项，请您确认'),
-                          content: Text('删除事项后将无法恢复，请确认此次操作是您的真实意图'),
+                          message: Text('删除事项后将无法恢复，请确认此次操作是您的真实意图'),
                           actions: <Widget>[
-                            CupertinoDialogAction(
-                              child: Text('取消'),
-                              isDefaultAction: true,
-                              onPressed: () =>
-                                  Navigator.of(context).maybePop(false),
-                            ),
-                            CupertinoDialogAction(
-                              child: Text('确定删除'),
+                            CupertinoActionSheetAction(
+                              child: Text('确定删除', style: const TextStyle(color: Color(0xDDFF0000), fontSize: 16.0),),
                               isDestructiveAction: true,
                               onPressed: () =>
                                   Navigator.of(context).maybePop(true),
                             ),
                           ],
+                          cancelButton: CupertinoActionSheetAction(
+                            child: Text('取消', style: const TextStyle(color: Color(0xFF000000), fontSize: 16.0),),
+                            isDefaultAction: true,
+                            onPressed: () =>
+                                Navigator.of(context).maybePop(false),
+                          ),
                         ),
                       );
-                      if (isDelete) {
+                      if (isDelete != null && isDelete) {
                         await _deleteTask();
                         PopRouteNotification().dispatch(context);
                       }

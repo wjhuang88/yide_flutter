@@ -59,9 +59,11 @@ class TimelineListView extends StatelessWidget {
                       : SizedBox(),
                   Expanded(
                     child: TimelineDecorated(
-                        decorationColor: (onGenerateDotColor ?? (i) => const Color(0xFFFFFFFF))(index),
-                        isBorderShow: index + 1 != itemCount,
-                        child: (tileBuilder ?? (c, i) => SizedBox())(context, index),
+                      decorationColor: (onGenerateDotColor ??
+                          (i) => const Color(0xFFFFFFFF))(index),
+                      isBorderShow: index + 1 != itemCount,
+                      child:
+                          (tileBuilder ?? (c, i) => SizedBox())(context, index),
                     ),
                   ),
                 ],
@@ -112,9 +114,14 @@ class TimelineDecorated extends StatelessWidget {
 class TimelineTile extends StatelessWidget {
   final List<Widget> rows;
   final VoidCallback onTap;
+  final EdgeInsetsGeometry padding;
 
-  const TimelineTile({Key key, @required this.rows, this.onTap})
-      : super(key: key);
+  const TimelineTile({
+    Key key,
+    @required this.rows,
+    this.onTap,
+    this.padding = const EdgeInsets.only(left: 27.5, bottom: 0.0),
+  }) : super(key: key);
   @override
   Widget build(BuildContext context) {
     return TapAnimator(
@@ -122,7 +129,7 @@ class TimelineTile extends StatelessWidget {
       onTap: onTap ?? () {},
       builder: (_factor) => Container(
         width: double.infinity,
-        padding: const EdgeInsets.only(left: 27.5, bottom: 0.0),
+        padding: padding,
         transform: Matrix4.identity()
           ..setEntry(3, 2, 0.002)
           ..rotateY(-_factor * Math.pi / 24)

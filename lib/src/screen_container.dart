@@ -167,7 +167,8 @@ class _ScreenContainerState extends State<ScreenContainer> {
         // 拦截返回按钮
         // 可以后退则后退
         if (nav.canPop()) {
-          await nav.maybePop();
+          PopRouteNotification(callback: (r) => lastPageType = null)
+              .dispatch(Config.mainNavigatorKey.currentContext);
           return false;
         }
         // 无法后退则检测是否连续按返回键，连续则推出app

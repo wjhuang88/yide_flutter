@@ -2,6 +2,7 @@ import 'dart:collection';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:yide/src/components/add_button_positioned.dart';
 import 'package:yide/src/components/header_bar.dart';
@@ -13,6 +14,7 @@ import 'package:yide/src/interfaces/navigatable.dart';
 import 'package:yide/src/models/task_data.dart';
 import 'package:yide/src/notification.dart';
 import 'package:yide/src/tools/common_tools.dart';
+import 'package:yide/src/tools/icon_tools.dart';
 import 'package:yide/src/tools/sqlite_manager.dart';
 
 import 'detail_list_screen.dart';
@@ -83,7 +85,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
   double _dragOffset = 0.0;
   bool _isPoping = false;
 
-  static const _cellHeight = 80.0;
+  static const _cellHeight = 65.0;
   static const _headerHeight = 45.0;
   static const _headerGap = 8.0;
 
@@ -106,7 +108,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
 
   Future<void> _update() async {
     _isLoading = true;
-    final list = await TaskDBAction.getTaskListByPage(0, 100);
+    final list = await TaskDBAction.getTaskListAfterDate(DateTime.now());
     _listData.clear();
     for (var item in list) {
       final taskTime = item.data.taskTime;
@@ -230,61 +232,33 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
 
   Widget _buildSectionList() {
     final weekdayFormatter = DateFormat('EEE', 'zh');
+    final monthFormatter = DateFormat('MMMM', 'zh');
     final dateFormatter = DateFormat('dd日', 'zh');
     final dateFormatterWithMonth = DateFormat('MM月dd日', 'zh');
     final dateFormatterWithYear = DateFormat('yyyy年MM月dd日', 'zh');
+    final yearFormatter = DateFormat('yyyy年', 'zh');
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
     final slivers = <Widget>[];
+    DateTime date = now;
     for (var i = 1; i <= 7; i++) {
-      final date = today.add(Duration(days: i));
+      date = DateTime(now.year, now.month, now.day + i);
       final isTomorrow = i == 1;
       final weekdayLabel = isTomorrow ? '明天' : weekdayFormatter.format(date);
       final dateLabel = (() {
-        if (date.year != today.year) {
+        if (date.year != now.year) {
           return dateFormatterWithYear.format(date);
         }
-        if (date.month != today.month) {
+        if (date.month != now.month) {
           return dateFormatterWithMonth.format(date);
         }
         return dateFormatter.format(date);
       })();
-      final weekHeader = SliverToBoxAdapter(
-        child: Container(
-          key: ValueKey('sectionHeader-week-with-date_$date'),
-          alignment: Alignment.centerLeft,
-          height: _headerHeight,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.ideographic,
-            children: <Widget>[
-              Text(
-                weekdayLabel,
-                style: const TextStyle(
-                  fontSize: 20.0,
-                  fontWeight: FontWeight.w300,
-                  color: const Color(0xFFFFFFFF),
-                ),
-              ),
-              const SizedBox(
-                width: 10.0,
-              ),
-              Text(
-                dateLabel,
-                style: const TextStyle(
-                  fontSize: 12.0,
-                  fontWeight: FontWeight.w300,
-                  color: const Color(0x88FFFFFF),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+      final weekHeader = _buildWeekDayHeader(weekdayLabel, dateLabel);
       slivers.add(
         SliverPadding(
           sliver: weekHeader,
-          padding: const EdgeInsets.only(bottom: _headerGap, left: 20.0),
+          padding: const EdgeInsets.only(
+              top: _headerGap, bottom: _headerGap, left: 20.0),
         ),
       );
       final innerListData = _listData[date];
@@ -293,75 +267,447 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
         final innerList = SliverFixedExtentList(
           itemExtent: _cellHeight,
           delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final pack = innerListData[index];
-              return TimelineDecorated(
-                decorationColor: pack.tag.iconColor,
-                isBorderShow: index + 1 != cellCount,
-                child: TimelineTile(
-                  onTap: () async {
-                    singleDayController.setVerticalMove(true);
-                    PushRouteNotification(
-                      DetailListScreen(taskPack: pack),
-                      callback: (pack) {
-                        _update();
-                      },
-                    ).dispatch(context);
-                  },
-                  rows: <Widget>[
-                    Text(
-                      pack.data.content,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFFD7CAFF),
-                        fontSize: 15.0,
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 3.0,
-                    ),
-                    Text(
-                      _makeTimeLabel(pack.data),
-                      style: const TextStyle(
-                        color: Color(0xFFC9A2F5),
-                        fontSize: 12.0,
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 3.0,
-                    ),
-                    Text(
-                      pack.tag.name ?? '默认',
-                      style:
-                          TextStyle(color: pack.tag.iconColor, fontSize: 12.0),
-                    ),
-                  ],
-                ),
-              );
-            },
+            _taskItemBuilder(innerListData),
             childCount: cellCount,
           ),
         );
-        slivers.add(SliverPadding(
-          sliver: innerList,
-          padding: const EdgeInsets.only(left: 25.0, right: 15.0),
-        ));
+        slivers.add(
+          SliverPadding(
+            sliver: innerList,
+            padding: const EdgeInsets.only(left: 0.0, right: 20.0),
+          ),
+        );
       } else {
         slivers.add(
           const SliverToBoxAdapter(
             child: SizedBox(
-              height: _cellHeight / 2.5,
+              height: _cellHeight,
             ),
           ),
         );
       }
     }
+    slivers.add(
+      const SliverToBoxAdapter(
+        child: SizedBox(
+          height: 30.0,
+        ),
+      ),
+    );
+    date = date.add(Duration(days: 1));
+    DateTime monthDate;
+    final leftEntries = _listData.entries.where(
+        (entry) => entry.key.isAfter(date) || entry.key.isAtSameMomentAs(date));
+    for (var i = 0; i < 3; i++) {
+      final isCurrentMonth = i == 0;
+      final isDayShown = isCurrentMonth && date.day != 1;
+      monthDate = DateTime(date.year, date.month + i);
+      final monthLabel = monthFormatter.format(monthDate);
+      final dayLabel = isDayShown
+          ? dateFormatter.format(date) +
+              ' - ' +
+              dateFormatter.format(
+                DateTime(date.year, date.month).subtract(
+                  Duration(days: 1),
+                ),
+              )
+          : '';
+      final yearLabel =
+          monthDate.year != now.year ? yearFormatter.format(monthDate) : '';
+      final monthHeader = _buildMonthHeader(monthLabel, dayLabel, yearLabel);
+      slivers.add(
+        SliverPadding(
+          sliver: monthHeader,
+          padding: const EdgeInsets.only(
+              top: _headerGap, bottom: _headerGap, left: 20.0),
+        ),
+      );
+      final monthListData = leftEntries
+          .where((entry) =>
+              entry.key.year == monthDate.year &&
+              entry.key.month == monthDate.month)
+          .map((entry) => entry.value)
+          .expand((list) => list)
+          .toList();
+      if (monthListData != null && monthListData.isNotEmpty) {
+        final cellCount = monthListData.length;
+        final innerList = SliverFixedExtentList(
+          itemExtent: _cellHeight,
+          delegate: SliverChildBuilderDelegate(
+            _taskItemBuilder(monthListData, isDateShow: true),
+            childCount: cellCount,
+          ),
+        );
+        slivers.add(
+          SliverPadding(
+            sliver: innerList,
+            padding: const EdgeInsets.only(left: 0.0, right: 20.0),
+          ),
+        );
+      } else {
+        slivers.add(
+          const SliverToBoxAdapter(
+            child: SizedBox(
+              height: _cellHeight,
+            ),
+          ),
+        );
+      }
+    }
+    slivers.add(
+      const SliverToBoxAdapter(
+        child: SizedBox(
+          height: 30.0,
+        ),
+      ),
+    );
+    var lastDate = DateTime(monthDate.year, monthDate.month + 1);
+    final lastEntries = _listData.entries.where((entry) =>
+        entry.key.isAfter(lastDate) || entry.key.isAtSameMomentAs(lastDate));
+    final yearMap = Map<int, List<TaskPack>>();
+    lastEntries.forEach((entry) {
+      final year = entry.key.year;
+      if (yearMap.containsKey(year)) {
+        yearMap[year].addAll(entry.value);
+      } else {
+        yearMap[year] = List<TaskPack>()..addAll(entry.value);
+      }
+    });
+    final fromLabel = lastDate.month != DateTime.january
+        ? '从${monthFormatter.format(lastDate)}开始'
+        : '';
+    final currentYearHeader =
+        _buildYearHeader(yearFormatter.format(lastDate), fromLabel);
+    slivers.add(
+      SliverPadding(
+        sliver: currentYearHeader,
+        padding: const EdgeInsets.only(
+            top: _headerGap, bottom: _headerGap, left: 20.0),
+      ),
+    );
+    if (yearMap.containsKey(lastDate.year)) {
+      final yearListData = yearMap[lastDate.year];
+      final cellCount = yearListData.length;
+      final innerList = SliverFixedExtentList(
+        itemExtent: _cellHeight,
+        delegate: SliverChildBuilderDelegate(
+          _taskItemBuilder(yearListData, isDateShow: true),
+          childCount: cellCount,
+        ),
+      );
+      slivers.add(
+        SliverPadding(
+          sliver: innerList,
+          padding: const EdgeInsets.only(left: 0.0, right: 20.0),
+        ),
+      );
+    } else {
+      slivers.add(
+        const SliverToBoxAdapter(
+          child: SizedBox(
+            height: _cellHeight,
+          ),
+        ),
+      );
+    }
+    final leftYearEntries = yearMap.entries
+        .where((entry) => entry.key > lastDate.year)
+        .toList()
+          ..sort((a, b) => a.key - b.key);
+    leftYearEntries.forEach((entry) {
+      final currentYearHeader =
+          _buildYearHeader(yearFormatter.format(DateTime(entry.key)), '');
+      slivers.add(
+        const SliverToBoxAdapter(
+          child: SizedBox(
+            height: 20.0,
+          ),
+        ),
+      );
+      slivers.add(
+        SliverPadding(
+          sliver: currentYearHeader,
+          padding: const EdgeInsets.only(
+              top: _headerGap, bottom: _headerGap, left: 20.0),
+        ),
+      );
+      final yearListData = entry.value;
+      final cellCount = yearListData.length;
+      final innerList = SliverFixedExtentList(
+        itemExtent: _cellHeight,
+        delegate: SliverChildBuilderDelegate(
+          _taskItemBuilder(yearListData, isDateShow: true),
+          childCount: cellCount,
+        ),
+      );
+      slivers.add(
+        SliverPadding(
+          sliver: innerList,
+          padding: const EdgeInsets.only(left: 0.0, right: 20.0),
+        ),
+      );
+    });
+    slivers.add(
+      const SliverToBoxAdapter(
+        child: SizedBox(
+          height: 60.0,
+        ),
+      ),
+    );
     final view = CustomScrollView(
       controller: _scrollController,
       slivers: slivers,
     );
     return view;
+  }
+
+  SliverToBoxAdapter _buildWeekDayHeader(
+      String weekdayLabel, String dateLabel) {
+    return SliverToBoxAdapter(
+      child: Container(
+        alignment: Alignment.centerLeft,
+        height: _headerHeight,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.ideographic,
+          children: <Widget>[
+            Text(
+              weekdayLabel,
+              style: const TextStyle(
+                fontSize: 22.0,
+                fontWeight: FontWeight.w200,
+                color: const Color(0xDDFFFFFF),
+              ),
+            ),
+            const SizedBox(
+              width: 8.0,
+            ),
+            Expanded(
+              child: Container(
+                height: 20.0,
+                margin: const EdgeInsets.only(right: 20.0),
+                alignment: Alignment.bottomLeft,
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(
+                      color: const Color(0x88FFFFFF),
+                      width: 0.3,
+                    ),
+                  ),
+                ),
+                child: Text(
+                  dateLabel,
+                  style: const TextStyle(
+                    fontSize: 12.0,
+                    fontWeight: FontWeight.w300,
+                    color: const Color(0x66FFFFFF),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  SliverToBoxAdapter _buildMonthHeader(
+      String monthLabel, String dayLabel, String yearLabel) {
+    final labels = <Widget>[
+      Text(
+        monthLabel,
+        style: const TextStyle(
+          fontSize: 16.0,
+          fontWeight: FontWeight.w200,
+          color: const Color(0xDDFFFFFF),
+        ),
+      ),
+    ];
+    if (dayLabel.isNotEmpty) {
+      labels
+        ..add(const SizedBox(width: 8.0))
+        ..add(
+          Text(
+            dayLabel,
+            style: const TextStyle(
+              fontSize: 12.0,
+              fontWeight: FontWeight.w300,
+              color: const Color(0x66FFFFFF),
+            ),
+          ),
+        );
+    }
+    if (yearLabel.isNotEmpty) {
+      labels
+        ..add(const SizedBox(width: 8.0))
+        ..add(
+          Text(
+            yearLabel,
+            style: const TextStyle(
+              fontSize: 12.0,
+              fontWeight: FontWeight.w300,
+              color: const Color(0x66FFFFFF),
+            ),
+          ),
+        );
+    }
+    return SliverToBoxAdapter(
+      child: Container(
+        padding: const EdgeInsets.only(top: 1.0),
+        alignment: Alignment.topLeft,
+        height: _headerHeight * 16.0 / 22.0,
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(
+              color: const Color(0x88FFFFFF),
+              width: 0.3,
+            ),
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.ideographic,
+          verticalDirection: VerticalDirection.up,
+          children: labels,
+        ),
+      ),
+    );
+  }
+
+  SliverToBoxAdapter _buildYearHeader(String yearLabel, String fromLabel) {
+    final labels = <Widget>[
+      Text(
+        yearLabel,
+        style: const TextStyle(
+          fontSize: 16.0,
+          fontWeight: FontWeight.w200,
+          color: const Color(0xDDFFFFFF),
+        ),
+      ),
+    ];
+    if (fromLabel.isNotEmpty) {
+      labels
+        ..add(const SizedBox(width: 8.0))
+        ..add(
+          Text(
+            fromLabel,
+            style: const TextStyle(
+              fontSize: 12.0,
+              fontWeight: FontWeight.w300,
+              color: const Color(0x66FFFFFF),
+            ),
+          ),
+        );
+    }
+    return SliverToBoxAdapter(
+      child: Container(
+        padding: const EdgeInsets.only(top: 1.0),
+        alignment: Alignment.topLeft,
+        height: _headerHeight * 16.0 / 22.0,
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(
+              color: const Color(0x88FFFFFF),
+              width: 0.3,
+            ),
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.ideographic,
+          verticalDirection: VerticalDirection.up,
+          children: labels,
+        ),
+      ),
+    );
+  }
+
+  IndexedWidgetBuilder _taskItemBuilder(List<TaskPack> list,
+      {bool isDateShow = false}) {
+    return (context, index) {
+      final pack = list[index];
+      final infoRow = <Widget>[
+        Icon(
+          FontAwesomeIcons.solidCircle,
+          color: pack.tag.iconColor,
+          size: 8.0,
+        ),
+        const SizedBox(
+          width: 8.0,
+        ),
+        Text(
+          pack.tag.name ?? '默认',
+          style: TextStyle(color: pack.tag.iconColor, fontSize: 12.0),
+        ),
+        const SizedBox(
+          width: 20.0,
+        ),
+      ];
+      if (isDateShow) {
+        infoRow
+          ..add(
+            Text(
+              DateFormat('yyyy.MM.dd', 'zh').format(pack.data.taskTime),
+              style: const TextStyle(
+                color: Color(0xFFC9A2F5),
+                fontSize: 12.0,
+              ),
+            ),
+          )
+          ..add(
+            const SizedBox(
+              width: 20.0,
+            ),
+          );
+      }
+      infoRow.addAll([
+        Icon(
+          buildCupertinoIconData(0xf402),
+          color: const Color(0xFFC9A2F5),
+          size: 12.0,
+        ),
+        const SizedBox(
+          width: 5.0,
+        ),
+        Text(
+          _makeTimeLabel(pack.data),
+          style: const TextStyle(
+            color: Color(0xFFC9A2F5),
+            fontSize: 12.0,
+          ),
+        ),
+      ]);
+      return TimelineTile(
+        padding: const EdgeInsets.only(left: 42.0, bottom: 0.0),
+        onTap: () async {
+          singleDayController.setVerticalMove(true);
+          PushRouteNotification(
+            DetailListScreen(taskPack: pack),
+            callback: (pack) {
+              _update();
+            },
+          ).dispatch(context);
+        },
+        rows: <Widget>[
+          Text(
+            pack.data.content,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Color(0xFFD7CAFF),
+              fontSize: 15.0,
+            ),
+          ),
+          const SizedBox(
+            height: 5.0,
+          ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: infoRow,
+          ),
+        ],
+      );
+    };
   }
 
   String _makeTimeLabel(TaskData data) {
@@ -374,7 +720,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
         final date = data?.taskTime;
         return date == null || date.millisecondsSinceEpoch == 0
             ? ' - '
-            : DateFormat('h:mm a').format(date);
+            : DateFormat('HH:mm').format(date);
       default:
         return ' - ';
     }

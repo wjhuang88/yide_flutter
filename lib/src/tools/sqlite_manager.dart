@@ -286,6 +286,20 @@ class TaskDBAction {
     return result.map(_makePackFromQueryResult).toList();
   }
 
+  static Future<List<TaskPack>> getTaskListAfterDate(DateTime date) async {
+    if (date == null) {
+      return null;
+    }
+
+    final queryDate = DateTime(date.year, date.month, date.day);
+
+    final result = await _dbManager.query(
+        'assets/sql/query_task_after_date.sql',
+        [queryDate.millisecondsSinceEpoch]);
+
+    return result.map(_makePackFromQueryResult).toList();
+  }
+
   static Future<List<TaskPack>> getTaskListByPage(
       int pagination, int perPage) async {
     final result = await _dbManager.query(

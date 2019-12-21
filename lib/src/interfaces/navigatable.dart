@@ -1,6 +1,8 @@
 import 'dart:math' as Math;
 import 'package:flutter/widgets.dart';
 import 'package:yide/src/components/slide_drag_detector.dart';
+import 'package:yide/src/config.dart' as Config;
+import 'package:yide/src/globle_variable.dart';
 import 'package:yide/src/notification.dart';
 import 'package:yide/src/tools/common_tools.dart';
 
@@ -26,7 +28,8 @@ mixin SlideNavigatable on Widget implements Navigatable {
                 curve: const ElasticOutCurve(1.0),
                 reverseCurve: Curves.easeInExpo,
               ),
-            ).value;
+            )
+            .value;
         return _DragBuilder(
           builder: (context, slideValue, isPopped) {
             final finalSlideValue = (slideValue > 0.0 ? 0.0 : slideValue) * 0.5;
@@ -57,8 +60,8 @@ mixin SlideNavigatable on Widget implements Navigatable {
                       ..translate(-150 * (1 - animValue))
                       ..scale(animValue, 0.7 + animValue * 0.3),
                     child: ClipRRect(
-                      borderRadius:
-                          BorderRadius.only(topRight: radius, bottomRight: radius),
+                      borderRadius: BorderRadius.only(
+                          topRight: radius, bottomRight: radius),
                       child: child,
                     ),
                   ),
@@ -84,7 +87,7 @@ class _DragBuilder extends StatefulWidget {
 
 class _DragBuilderState extends State<_DragBuilder> {
   double _slideValue = 0.0;
-  bool _isPoping = false;
+  bool _isPoping = true;
   @override
   Widget build(BuildContext context) {
     return SlideDragDetector(
@@ -99,17 +102,24 @@ class _DragBuilderState extends State<_DragBuilder> {
       onStartDrag: () => _isPoping = false,
       onLeftDragEnd: (f) {
         if (_isPoping) return;
+        _isPoping = true;
         PopRouteNotification(isSide: true).dispatch(context);
         haptic();
-        _isPoping = true;
       },
       onLeftMoveHalf: (f) {
         if (_isPoping) return;
+        _isPoping = true;
         PopRouteNotification(isSide: true).dispatch(context);
         haptic();
-        _isPoping = true;
       },
-      child: widget.builder(context, _slideValue, _isPoping),
+      child: WillPopScope(
+        onWillPop: () async {
+          _isPoping = true;
+          lastPageType = null;
+          return true;
+        },
+        child: widget.builder(context, _slideValue, _isPoping),
+      ),
     );
   }
 }
