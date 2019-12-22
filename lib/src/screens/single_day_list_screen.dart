@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
@@ -11,6 +12,7 @@ import 'package:yide/src/config.dart' as Config;
 import 'package:yide/src/globle_variable.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
 import 'package:yide/src/screens/multiple_day_list_screen.dart';
+import 'package:yide/src/tools/common_tools.dart';
 import 'package:yide/src/tools/date_tools.dart';
 import 'package:yide/src/models/geo_data.dart';
 import 'package:yide/src/tools/sqlite_manager.dart';
@@ -495,16 +497,17 @@ class _ListBodyState extends State<_ListBody> {
         rows.add(const SizedBox(height: 20.0));
         return TimelineTile(
           rows: rows,
-          onTap: () async {
-            isScreenTransitionVertical = true;
-            PushRouteNotification(
-              DetailListScreen(taskPack: item),
-              callback: (pack) {
-                setState(() {
-                  _updateListData();
-                });
+          onTap: () => _enterDetail(item),
+          onLongPress: () async {
+            detailPopup(
+              context,
+              onDetail: () => _enterDetail(item),
+              onDone: () => TaskDBAction.toggleTaskFinish(item.data.id, true),
+              onDelete: () async {
+                await TaskDBAction.deleteTask(item.data);
+                _controller.updateListData();
               },
-            ).dispatch(context);
+            );
           },
         );
       },
@@ -527,6 +530,21 @@ class _ListBodyState extends State<_ListBody> {
       default:
         return ' - ';
     }
+  }
+
+  Future<TaskPack> _enterDetail(TaskPack item) {
+    isScreenTransitionVertical = true;
+    final future = Completer<TaskPack>();
+    PushRouteNotification(
+      DetailListScreen(taskPack: item),
+      callback: (pack) {
+        future.complete(pack);
+        setState(() {
+          _updateListData();
+        });
+      },
+    ).dispatch(context);
+    return future.future;
   }
 }
 
@@ -630,9 +648,8 @@ class _TranslateContainerState extends State<_TranslateContainer> {
 
   @override
   Widget build(BuildContext context) {
-    final offsetObject = isScreenTransitionVertical
-        ? Offset(0.0, offset)
-        : Offset(offset, 0.0);
+    final offsetObject =
+        isScreenTransitionVertical ? Offset(0.0, offset) : Offset(offset, 0.0);
     return FractionalTranslation(
       translation: offsetObject,
       child: widget.child,

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 
 import 'package:flutter/cupertino.dart';
@@ -680,14 +681,17 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
       ]);
       return TimelineTile(
         padding: const EdgeInsets.only(left: 42.0, bottom: 0.0),
-        onTap: () async {
-          singleDayController.setVerticalMove(true);
-          PushRouteNotification(
-            DetailListScreen(taskPack: pack),
-            callback: (pack) {
-              _update();
-            },
-          ).dispatch(context);
+        onTap: () => _enterDetail(pack),
+        onLongPress: () {
+          detailPopup(
+              context,
+              onDetail: () => _enterDetail(pack),
+              onDone: () => TaskDBAction.toggleTaskFinish(pack.data.id, true),
+              onDelete: () async {
+                await TaskDBAction.deleteTask(pack.data);
+                _update();
+              },
+            );
         },
         rows: <Widget>[
           Text(
@@ -725,6 +729,19 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
       default:
         return ' - ';
     }
+  }
+
+  Future<TaskPack> _enterDetail(TaskPack item) {
+    singleDayController.setVerticalMove(true);
+    final future = Completer<TaskPack>();
+    PushRouteNotification(
+      DetailListScreen(taskPack: item),
+      callback: (pack) {
+        future.complete(pack);
+        _update();
+      },
+    ).dispatch(context);
+    return future.future;
   }
 }
 

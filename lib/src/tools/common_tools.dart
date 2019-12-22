@@ -1,8 +1,9 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 
-void showToast(String content, BuildContext context, Duration duration) async {
+Future<void> showToast(
+    String content, BuildContext context, Duration duration) async {
   //获取OverlayState
   OverlayState overlayState = Overlay.of(context);
   //创建OverlayEntry
@@ -26,9 +27,10 @@ void showToast(String content, BuildContext context, Duration duration) async {
   overlayState.insert(_overlayEntry);
   await Future.delayed(duration);
   _overlayEntry.remove();
+  return;
 }
 
-void haptic() {
+Future<void> haptic() async {
   bool hasSuitableHapticHardware;
   switch (defaultTargetPlatform) {
     case TargetPlatform.iOS:
@@ -42,6 +44,128 @@ void haptic() {
   }
   assert(hasSuitableHapticHardware != null);
   if (hasSuitableHapticHardware) {
-    HapticFeedback.selectionClick();
+    return HapticFeedback.selectionClick();
+  }
+}
+
+Future<void> editPopup(BuildContext context,
+    {VoidCallback onCancel,
+    VoidCallback onEdit,
+    String editTitle = '编辑',
+    String clearTitle = '清除',
+    VoidCallback onClear}) async {
+  final act = await showCupertinoModalPopup<bool>(
+    context: context,
+    builder: (context) => CupertinoActionSheet(
+      actions: <Widget>[
+        CupertinoActionSheetAction(
+          child: Text(
+            editTitle,
+            style: const TextStyle(
+              fontSize: 16.0,
+              color: Color(0xFF000000),
+            ),
+          ),
+          onPressed: () => Navigator.of(context).maybePop(true),
+        ),
+        CupertinoActionSheetAction(
+          isDestructiveAction: true,
+          child: Text(
+            clearTitle,
+            style: const TextStyle(
+              fontSize: 16.0,
+              color: Color(0xFF000000),
+            ),
+          ),
+          onPressed: () => Navigator.of(context).maybePop(false),
+        ),
+      ],
+      cancelButton: CupertinoActionSheetAction(
+        child: Text(
+          '取消',
+          style: const TextStyle(
+            fontSize: 16.0,
+            color: Color(0xFF000000),
+          ),
+        ),
+        onPressed: Navigator.of(context).maybePop,
+      ),
+    ),
+  );
+  if (act == null) {
+    (onCancel ?? () {})();
+  } else if (act) {
+    (onEdit ?? () {})();
+  } else {
+    (onClear ?? () {})();
+  }
+}
+
+Future<void> detailPopup(
+  BuildContext context, {
+  VoidCallback onCancel,
+  VoidCallback onDetail,
+  VoidCallback onDelete,
+  VoidCallback onDone,
+  String detailTitle = '详情',
+  String deleteTitle = '删除',
+  String doneTitle = '完成',
+}) async {
+  final act = await showCupertinoModalPopup<int>(
+    context: context,
+    builder: (context) => CupertinoActionSheet(
+      actions: <Widget>[
+        CupertinoActionSheetAction(
+          child: Text(
+            detailTitle,
+            style: const TextStyle(
+              fontSize: 16.0,
+              color: Color(0xFF000000),
+            ),
+          ),
+          onPressed: () => Navigator.of(context).maybePop(0),
+        ),
+        CupertinoActionSheetAction(
+          child: Text(
+            doneTitle,
+            style: const TextStyle(
+              fontSize: 16.0,
+              color: Color(0xFF000000),
+            ),
+          ),
+          onPressed: () => Navigator.of(context).maybePop(1),
+        ),
+        CupertinoActionSheetAction(
+          isDestructiveAction: true,
+          child: Text(
+            deleteTitle,
+            style: const TextStyle(
+              fontSize: 16.0,
+              color: Color(0xDDFF0000),
+            ),
+          ),
+          onPressed: () => Navigator.of(context).maybePop(2),
+        ),
+      ],
+      cancelButton: CupertinoActionSheetAction(
+        child: Text(
+          '取消',
+          style: const TextStyle(
+            fontSize: 16.0,
+            color: Color(0xFF000000),
+          ),
+        ),
+        onPressed: Navigator.of(context).maybePop,
+      ),
+    ),
+  );
+  if (act == null) {
+    (onCancel ?? () {})();
+  } else if (act == 0) {
+    (onDetail ?? () {})();
+  } else if (act == 1) {
+    (onDone ?? () {})();
+  } else if (act == 2) {
+    (onDelete ?? () {})();
   }
 }

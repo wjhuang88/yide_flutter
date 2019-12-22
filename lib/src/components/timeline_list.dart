@@ -114,19 +114,22 @@ class TimelineDecorated extends StatelessWidget {
 class TimelineTile extends StatelessWidget {
   final List<Widget> rows;
   final VoidCallback onTap;
+  final VoidCallback onLongPress;
   final EdgeInsetsGeometry padding;
 
   const TimelineTile({
     Key key,
     @required this.rows,
     this.onTap,
+    this.onLongPress,
     this.padding = const EdgeInsets.only(left: 27.5, bottom: 0.0),
   }) : super(key: key);
   @override
   Widget build(BuildContext context) {
     return TapAnimator(
       behavior: HitTestBehavior.opaque,
-      onTap: onTap ?? () {},
+      onTap: onTap,
+      onLongPress: onLongPress,
       builder: (_factor) => Container(
         width: double.infinity,
         padding: padding,

@@ -184,10 +184,10 @@ class _DetailListScreenState extends State<DetailListScreen>
                         context: context,
                         builder: (context) => CupertinoActionSheet(
                           title: Text('将要删除本事项，请您确认'),
-                          message: Text('删除事项后将无法恢复，请确认此次操作是您的真实意图'),
+                          message: Text('删除事项后将无法恢复'),
                           actions: <Widget>[
                             CupertinoActionSheetAction(
-                              child: Text('确定删除', style: const TextStyle(color: Color(0xDDFF0000), fontSize: 16.0),),
+                              child: Text('删除', style: const TextStyle(color: Color(0xDDFF0000), fontSize: 16.0),),
                               isDestructiveAction: true,
                               onPressed: () =>
                                   Navigator.of(context).maybePop(true),
@@ -256,7 +256,7 @@ class _DetailListScreenState extends State<DetailListScreen>
                           ),
                     onTap: _reminderForward,
                     onLongPress: () {
-                      _popup(
+                      editPopup(
                         context,
                         onEdit: _reminderForward,
                         onClear: () {
@@ -289,7 +289,7 @@ class _DetailListScreenState extends State<DetailListScreen>
                           ),
                     onTap: _repeatForward,
                     onLongPress: () {
-                      _popup(
+                      editPopup(
                         context,
                         onEdit: _repeatForward,
                         onClear: () {
@@ -321,7 +321,7 @@ class _DetailListScreenState extends State<DetailListScreen>
                           ),
                     onTap: _addressForward,
                     onLongPress: () {
-                      _popup(
+                      editPopup(
                         context,
                         onEdit: _addressForward,
                         onClear: () {
@@ -366,7 +366,7 @@ class _DetailListScreenState extends State<DetailListScreen>
                         : Text('点击添加备注', style: nocontentStyle),
                     onTap: _remarkForward,
                     onLongPress: () {
-                      _popup(
+                      editPopup(
                         context,
                         onEdit: _remarkForward,
                         onClear: () {
@@ -444,57 +444,6 @@ class _DetailListScreenState extends State<DetailListScreen>
         _data.remark = value;
       });
       _saveTask();
-    }
-  }
-
-  Future<void> _popup(BuildContext context,
-      {VoidCallback onCancel,
-      VoidCallback onEdit,
-      VoidCallback onClear}) async {
-    final act = await showCupertinoModalPopup<bool>(
-      context: context,
-      builder: (context) => CupertinoActionSheet(
-        actions: <Widget>[
-          CupertinoActionSheetAction(
-            child: Text(
-              '编辑内容',
-              style: const TextStyle(
-                fontSize: 16.0,
-                color: Color(0xFF000000),
-              ),
-            ),
-            onPressed: () => Navigator.of(context).maybePop(true),
-          ),
-          CupertinoActionSheetAction(
-            isDestructiveAction: true,
-            child: Text(
-              '清除内容',
-              style: const TextStyle(
-                fontSize: 16.0,
-                color: Color(0xFF000000),
-              ),
-            ),
-            onPressed: () => Navigator.of(context).maybePop(false),
-          ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          child: Text(
-            '取消',
-            style: const TextStyle(
-              fontSize: 16.0,
-              color: Color(0xFF000000),
-            ),
-          ),
-          onPressed: Navigator.of(context).maybePop,
-        ),
-      ),
-    );
-    if (act == null) {
-      (onCancel ?? () {})();
-    } else if (act) {
-      (onEdit ?? () {})();
-    } else {
-      (onClear ?? () {})();
     }
   }
 }

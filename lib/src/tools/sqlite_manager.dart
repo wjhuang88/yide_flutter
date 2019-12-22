@@ -394,6 +394,16 @@ class TaskDBAction {
     }
   }
 
+  static Future<int> toggleTaskFinish(int id, bool isFinished) async {
+    const sql = 'assets/sql/toggle_task_finish.sql';
+    final isExist = await isTaskExists(id);
+    if (isExist) {
+      return _dbManager.update(sql, [isFinished ? 1 : 0, id]);
+    } else {
+      return 0;
+    }
+  }
+
   static List<dynamic> _makeDetailQueryArgs(TaskDetail detail,
       [bool isUpdate = false]) {
     final body = [
