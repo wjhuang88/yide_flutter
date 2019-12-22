@@ -57,6 +57,8 @@ class _DetailRepeatScreenState extends State<DetailRepeatScreen> {
   ScrollController _scrollController;
   bool _backProcessing = false;
 
+  DateTime _countUpdateTime;
+
   @override
   void initState() {
     _scrollController = ScrollController();
@@ -293,46 +295,66 @@ class _DetailRepeatScreenState extends State<DetailRepeatScreen> {
                   title: _repeatState.isCountEnd
                       ? '重复 ${_repeatState.repeatCount} 次后'
                       : '一定次数',
-                  extend: Container(
-                    height: 50.0,
-                    color: const Color(0xFFE6A800),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        TapAnimator(
-                          behavior: HitTestBehavior.opaque,
-                          builder: (factor) => Icon(
-                            FontAwesomeIcons.caretLeft,
-                            color: Colors.white.withOpacity(1.0 - 0.3 * factor),
-                          ),
-                          onTap: () {
-                            setState(() {
-                              _repeatState.decreaseCount();
-                            });
-                          },
-                        ),
-                        const SizedBox(
-                          width: 20.0,
-                        ),
-                        Text(
-                          '${_repeatState.repeatCount} 次',
-                          style: TextStyle(fontSize: 15.0, color: Colors.white),
-                        ),
-                        const SizedBox(
-                          width: 20.0,
-                        ),
-                        TapAnimator(
-                          behavior: HitTestBehavior.opaque,
-                          builder: (factor) => Icon(FontAwesomeIcons.caretRight,
+                  extend: GestureDetector(
+                    onHorizontalDragUpdate: (detail) {
+                      if (_countUpdateTime != null &&
+                          DateTime.now().difference(_countUpdateTime) <
+                              const Duration(milliseconds: 300)) {
+                        return;
+                      }
+                      _countUpdateTime = DateTime.now();
+                      if (detail.primaryDelta < -0.0) {
+                        _repeatState.decreaseCount();
+                      } else if (detail.primaryDelta > 0.0) {
+                        _repeatState.increaseCount();
+                      }
+                      setState(() {});
+                      haptic();
+                    },
+                    child: Container(
+                      height: 50.0,
+                      color: const Color(0xFFE6A800),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          TapAnimator(
+                            behavior: HitTestBehavior.opaque,
+                            builder: (factor) => Icon(
+                              FontAwesomeIcons.caretLeft,
                               color:
-                                  Colors.white.withOpacity(1.0 - 0.3 * factor)),
-                          onTap: () {
-                            setState(() {
-                              _repeatState.increaseCount();
-                            });
-                          },
-                        ),
-                      ],
+                                  Colors.white.withOpacity(1.0 - 0.3 * factor),
+                            ),
+                            onTap: () {
+                              setState(() {
+                                _repeatState.decreaseCount();
+                              });
+                            },
+                          ),
+                          const SizedBox(
+                            width: 20.0,
+                          ),
+                          Text(
+                            '${_repeatState.repeatCount} 次',
+                            style:
+                                TextStyle(fontSize: 15.0, color: Colors.white),
+                          ),
+                          const SizedBox(
+                            width: 20.0,
+                          ),
+                          TapAnimator(
+                            behavior: HitTestBehavior.opaque,
+                            builder: (factor) => Icon(
+                                FontAwesomeIcons.caretRight,
+                                color: Colors.white
+                                    .withOpacity(1.0 - 0.3 * factor)),
+                            onTap: () {
+                              setState(() {
+                                _repeatState.increaseCount();
+                              });
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   onTap: () {
