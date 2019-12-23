@@ -100,19 +100,24 @@ class _ScreenContainerState extends State<ScreenContainer> {
         }
         return true;
       },
-      child: Navigator(
-        key: Config.mainNavigatorKey,
-        initialRoute: '/',
-        onGenerateRoute: (RouteSettings settings) {
-          final String name = settings.name;
-          if ('/' == name) {
-            return initialPage(context).route;
-          } else {
-            throw FlutterError(
-                'The builder for route "${settings.name}" returned null.\n'
-                'Route builders must never return null.');
-          }
-        },
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: Config.backgroundGradient
+        ),
+        child: Navigator(
+          key: Config.mainNavigatorKey,
+          initialRoute: '/',
+          onGenerateRoute: (RouteSettings settings) {
+            final String name = settings.name;
+            if ('/' == name) {
+              return initialPage(context).route;
+            } else {
+              throw FlutterError(
+                  'The builder for route "${settings.name}" returned null.\n'
+                  'Route builders must never return null.');
+            }
+          },
+        ),
       ),
     );
     return scope;

@@ -86,7 +86,12 @@ class _StageWithMenuState extends State<StageWithMenu> {
       children: <Widget>[
         Offstage(
           offstage: menuTransformValue == 0.0,
-          child: _menuPart,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: const Color(0xFF483667),
+            ),
+            child: _menuPart,
+          ),
         ),
         _pagePart,
       ],

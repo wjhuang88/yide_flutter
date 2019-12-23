@@ -50,13 +50,17 @@ mixin NavigatableWithMenu on Widget implements Navigatable {
           reverseCurve: const ElasticInCurve(1.0),
         );
         onTransitionValueChange(anim1Curved.value - anim2Curved.value);
-        return _WithMenuDragBuilder(
-          builder: (context, dragOffset, isPopping) {
-            final value = anim1Curved.value - anim2Curved.value + dragOffset;
-            onTransitionValueChange(value);
-            return child;
-          },
-          onDragNext: (frac) => onDragNext(context, frac),
+        return AnimatedOpacity(
+          duration: Duration.zero,
+          opacity: (anim1Curved.value - anim2Curved.value).clamp(0.0, 1.0),
+          child: _WithMenuDragBuilder(
+            builder: (context, dragOffset, isPopping) {
+              final value = anim1Curved.value - anim2Curved.value + dragOffset;
+              onTransitionValueChange(value);
+              return child;
+            },
+            onDragNext: (frac) => onDragNext(context, frac),
+          ),
         );
       },
     );

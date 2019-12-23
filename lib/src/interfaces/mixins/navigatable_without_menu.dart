@@ -40,15 +40,19 @@ mixin NavigatableWithOutMenu on Widget implements Navigatable {
           reverseCurve: const ElasticInCurve(1.0),
         );
         onTransitionValueChange(1 - anim1Curved.value - anim2Curved.value);
-        return _WithOutMenuDragBuilder(
-          builder: (context, dragOffset, isPopping) {
-            onTransitionValueChange(
-                1 - anim1Curved.value - anim2Curved.value + dragOffset);
-            return child;
-          },
-          hasNext: hasNext,
-          onDragPrevious: (frac) => onDragPrevious(context, frac),
-          onDragNext: (frac) => onDragNext(context, frac),
+        return AnimatedOpacity(
+          duration: Duration.zero,
+          opacity: (anim1Curved.value - anim2Curved.value).clamp(0.0, 1.0),
+          child: _WithOutMenuDragBuilder(
+            builder: (context, dragOffset, isPopping) {
+              onTransitionValueChange(
+                  1 - anim1Curved.value - anim2Curved.value + dragOffset);
+              return child;
+            },
+            hasNext: hasNext,
+            onDragPrevious: (frac) => onDragPrevious(context, frac),
+            onDragNext: (frac) => onDragNext(context, frac),
+          ),
         );
       },
     );

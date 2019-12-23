@@ -16,48 +16,43 @@ class DetailCommentsScreen extends StatelessWidget implements Navigatable {
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       backgroundColor: Colors.transparent,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: backgroundGradient
-        ),
-        child: Column(
-          children: <Widget>[
-            HeaderBar(
-              leadingIcon: const Icon(
-                CupertinoIcons.clear,
-                color: Color(0xFFD7CAFF),
-                size: 40.0,
-              ),
-              onLeadingAction: () => PopRouteNotification().dispatch(context),
-              actionIcon: const Text(
-                '完成',
-                style: const TextStyle(
-                    fontSize: 15.0, color: const Color(0xFFEDE7FF)),
-              ),
-              onAction: () => PopRouteNotification(result: _controller.text).dispatch(context),
-              title: '备注',
+      child: Column(
+        children: <Widget>[
+          HeaderBar(
+            leadingIcon: const Icon(
+              CupertinoIcons.clear,
+              color: Color(0xFFD7CAFF),
+              size: 40.0,
             ),
-            Container(
-              margin: const EdgeInsets.only(top: 50.0),
-              child: CupertinoTextField(
-                style: const TextStyle(color: Colors.white, fontSize: 14.0),
-                autofocus: true,
-                maxLines: null,
-                controller: _controller,
-                keyboardType: TextInputType.text,
-                keyboardAppearance: Brightness.dark,
-                textInputAction: TextInputAction.done,
-                onSubmitted: (text) => Navigator.of(context).maybePop<String>(text),
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                placeholder: '请输入内容',
-                placeholderStyle: const TextStyle(color: Color(0xFF9B7FE9)),
-                decoration: BoxDecoration(
-                  color: Colors.transparent
-                ),
+            onLeadingAction: () => PopRouteNotification().dispatch(context),
+            actionIcon: const Text(
+              '完成',
+              style: const TextStyle(
+                  fontSize: 15.0, color: const Color(0xFFEDE7FF)),
+            ),
+            onAction: () => PopRouteNotification(result: _controller.text).dispatch(context),
+            title: '备注',
+          ),
+          Container(
+            margin: const EdgeInsets.only(top: 50.0),
+            child: CupertinoTextField(
+              style: const TextStyle(color: Colors.white, fontSize: 14.0),
+              autofocus: true,
+              maxLines: null,
+              controller: _controller,
+              keyboardType: TextInputType.text,
+              keyboardAppearance: Brightness.dark,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (text) => Navigator.of(context).maybePop<String>(text),
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              placeholder: '请输入内容',
+              placeholderStyle: const TextStyle(color: Color(0xFF9B7FE9)),
+              decoration: BoxDecoration(
+                color: Colors.transparent
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
