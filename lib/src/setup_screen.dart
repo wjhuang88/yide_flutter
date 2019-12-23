@@ -1,10 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:yide/src/components/header_bar.dart';
-import 'package:yide/src/interfaces/navigatable.dart';
 
+import 'interfaces/mixins/navigatable_menu_side.dart';
 import 'notification.dart';
 
-class SetupScreen extends StatelessWidget with SlideNavigatable {
+class SetupScreen extends StatelessWidget with NavigatableMenuSide {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(

@@ -122,10 +122,6 @@ class _MainMenuState extends State<MainMenu> {
           onTap: () async {
             final route = item['route'] as Function;
             final isSide = item['side'] as bool;
-            if (!isSide) {
-              MenuNotification(MenuNotificationType.closeMenu)
-                  .dispatch(context);
-            }
             if (route != null) {
               final page = route();
               if (page is Navigatable) {

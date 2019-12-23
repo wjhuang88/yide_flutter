@@ -10,7 +10,7 @@ import 'package:yide/src/components/location_methods.dart';
 import 'package:yide/src/components/timeline_list.dart';
 import 'package:yide/src/config.dart' as Config;
 import 'package:yide/src/globle_variable.dart';
-import 'package:yide/src/interfaces/navigatable.dart';
+import 'package:yide/src/interfaces/mixins/navigatable_with_menu.dart';
 import 'package:yide/src/screens/multiple_day_list_screen.dart';
 import 'package:yide/src/tools/common_tools.dart';
 import 'package:yide/src/tools/date_tools.dart';
@@ -22,8 +22,8 @@ import 'package:yide/src/screens/detail_list_screen.dart';
 import 'package:yide/src/screens/edit_main_screen.dart';
 import 'package:yide/src/tools/icon_tools.dart';
 
-class SingleDayListScreen extends StatefulWidget implements Navigatable {
-  const SingleDayListScreen({Key key}) : super(key: key);
+class SingleDayListScreen extends StatefulWidget with NavigatableWithMenu {
+  SingleDayListScreen({Key key}) : super(key: key);
 
   static SingleDayScreenController controller = SingleDayScreenController();
 
@@ -32,42 +32,17 @@ class SingleDayListScreen extends StatefulWidget implements Navigatable {
       _SingleDayListScreenState(controller);
 
   @override
-  Route get route {
-    return PageRouteBuilder(
-      pageBuilder: (context, anim1, anim2) {
-        anim2.addStatusListener((status) {
-          if (status == AnimationStatus.dismissed) {
-            controller.setVerticalMove(false);
-          }
-        });
-        return this;
-      },
-      transitionDuration: Duration(milliseconds: 400),
-      transitionsBuilder: (context, anim1, anim2, child) {
-        final anim1Curved = CurvedAnimation(
-          parent: anim1,
-          curve: Curves.easeOutCubic,
-          reverseCurve: Curves.easeInCubic,
-        );
-        final anim2Curved = CurvedAnimation(
-          parent: anim2,
-          curve: const ElasticOutCurve(1.0),
-          reverseCurve: const ElasticInCurve(1.0),
-        ).value;
-        controller.updateTransition(1 - anim2Curved);
-        return FadeTransition(
-          opacity: anim1Curved,
-          child: Transform.scale(
-            scale: 2 - anim1Curved.value,
-            child: child,
-          ),
-        );
-      },
-    );
+  Future<void> onDragNext(BuildContext context, double offset) async {
+    PushRouteNotification(MultipleDayListScreen(), callback: (d) {
+      controller?.updateListData();
+    }).dispatch(context);
+    haptic();
   }
 
   @override
-  bool get withMene => true;
+  void onTransitionValueChange(double value) {
+    controller?.updateTransition(value);
+  }
 }
 
 class _SingleDayListScreenState extends State<SingleDayListScreen> {
@@ -93,98 +68,93 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
     return CupertinoPageScaffold(
       backgroundColor: Colors.transparent,
       resizeToAvoidBottomInset: false,
-      child: _FadeContainer(
-        controller: _controller,
-        child: Container(
-          decoration: BoxDecoration(gradient: Config.backgroundGradient),
-          child: Stack(
-            children: <Widget>[
-              Column(
-                children: <Widget>[
-                  HeaderBar(
-                    indent: 17.0,
-                    endIndet: 17.0,
-                    title: '今日',
-                    leadingIcon: Icon(
-                      buildCupertinoIconData(0xf394),
-                      color: Color(0xFFD7CAFF),
-                      size: 30.0,
-                    ),
-                    onLeadingAction: () =>
-                        MenuNotification(MenuNotificationType.openMenu)
-                            .dispatch(context),
-                    actionIcon: _ButtonAndLoadingIcon(
-                      controller: _controller,
-                      isLoading: true,
-                    ),
-                    onAction: () {
-                      PushRouteNotification(MultipleDayListScreen(),
-                          callback: (pack) {
-                        setState(() {
-                          _controller.updateListData();
-                        });
-                      }).dispatch(context);
-                    },
+      child: Container(
+        decoration: BoxDecoration(gradient: Config.backgroundGradient),
+        child: Stack(
+          children: <Widget>[
+            Column(
+              children: <Widget>[
+                HeaderBar(
+                  indent: 17.0,
+                  endIndet: 17.0,
+                  title: '今日',
+                  leadingIcon: Icon(
+                    buildCupertinoIconData(0xf394),
+                    color: Color(0xFFD7CAFF),
+                    size: 30.0,
                   ),
-                  const SizedBox(
-                    height: 10.0,
-                  ),
-                  _TranslateContainer(
+                  onLeadingAction: widget.openMenu,
+                  actionIcon: _ButtonAndLoadingIcon(
                     controller: _controller,
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 17.0),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20.0, vertical: 15.0),
-                      height: 182.0,
-                      decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [Color(0xFF975ED8), Color(0xFF7352D0)]),
-                          borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                          boxShadow: [
-                            BoxShadow(
-                              offset: Offset(0.0, 6.0),
-                              blurRadius: 23.0,
-                              color: Color(0x8A4F3A8C),
-                            )
-                          ]),
-                      child: _HeaderPanel(
-                        dateTime: _dateTime,
-                        controller: _controller,
-                      ),
+                    isLoading: true,
+                  ),
+                  onAction: () {
+                    PushRouteNotification(MultipleDayListScreen(),
+                        callback: (pack) {
+                      setState(() {
+                        _controller.updateListData();
+                      });
+                    }).dispatch(context);
+                  },
+                ),
+                const SizedBox(
+                  height: 10.0,
+                ),
+                _TranslateContainer(
+                  controller: _controller,
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 17.0),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20.0, vertical: 15.0),
+                    height: 182.0,
+                    decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFF975ED8), Color(0xFF7352D0)]),
+                        borderRadius: BorderRadius.all(Radius.circular(10.0)),
+                        boxShadow: [
+                          BoxShadow(
+                            offset: Offset(0.0, 6.0),
+                            blurRadius: 23.0,
+                            color: Color(0x8A4F3A8C),
+                          )
+                        ]),
+                    child: _HeaderPanel(
+                      dateTime: _dateTime,
+                      controller: _controller,
                     ),
                   ),
-                  const SizedBox(
-                    height: 20.0,
-                  ),
-                  Expanded(
-                    child: _TranslateContainer(
+                ),
+                const SizedBox(
+                  height: 20.0,
+                ),
+                Expanded(
+                  child: _TranslateContainer(
+                      controller: _controller,
+                      child: _ListBody(
                         controller: _controller,
-                        child: _ListBody(
-                          controller: _controller,
-                          date: _dateTime,
-                        )),
-                  ),
-                ],
-              ),
-              AddButtonPositioned(
-                onPressed: () async {
-                  isScreenTransitionVertical = true;
-                  PushRouteNotification(
-                    EditMainScreen(),
-                    callback: (pack) async {
-                      final newTask = pack as TaskPack;
-                      if (newTask != null) {
-                        await TaskDBAction.saveTask(newTask.data);
-                        _controller.updateListData();
-                      }
-                    },
-                  ).dispatch(context);
-                },
-              ),
-            ],
-          ),
+                        date: _dateTime,
+                      )),
+                ),
+              ],
+            ),
+            AddButtonPositioned(
+              onPressed: () async {
+                isScreenTransitionVertical = true;
+                PushRouteNotification(
+                  EditMainScreen(),
+                  callback: (pack) async {
+                    final newTask = pack as TaskPack;
+                    if (newTask != null) {
+                      await TaskDBAction.saveTask(newTask.data);
+                      _controller.updateListData();
+                    }
+                  },
+                ).dispatch(context);
+              },
+            ),
+          ],
         ),
       ),
     );
@@ -502,7 +472,10 @@ class _ListBodyState extends State<_ListBody> {
             detailPopup(
               context,
               onDetail: () => _enterDetail(item),
-              onDone: () => TaskDBAction.toggleTaskFinish(item.data.id, true),
+              onDone: () async {
+                await TaskDBAction.toggleTaskFinish(item.data.id, true);
+                _controller.updateListData();
+              },
               onDelete: () async {
                 await TaskDBAction.deleteTask(item.data);
                 _controller.updateListData();
@@ -657,52 +630,11 @@ class _TranslateContainerState extends State<_TranslateContainer> {
   }
 }
 
-class _FadeContainer extends StatefulWidget {
-  final double initOpacity;
-  final Widget child;
-  final SingleDayScreenController controller;
-
-  const _FadeContainer({
-    Key key,
-    this.initOpacity,
-    @required this.child,
-    this.controller,
-  }) : super(key: key);
-  @override
-  _FadeContainerState createState() => _FadeContainerState();
-}
-
-class _FadeContainerState extends State<_FadeContainer> {
-  double _opacityValue;
-  double get opacity => _opacityValue;
-  set opacity(double value) => setState(() => _opacityValue = value);
-
-  SingleDayScreenController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _opacityValue = widget.initOpacity ?? 0.0;
-    _controller = widget.controller ?? SingleDayScreenController();
-    _controller._fadeStates.add(this);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedOpacity(
-      duration: Duration.zero,
-      opacity: opacity,
-      child: widget.child,
-    );
-  }
-}
-
 class SingleDayScreenController {
   _ListBodyState _listState;
   _HeaderPanelState _headerState;
   _ButtonAndLoadingIconState _loadingState;
   List<_TranslateContainerState> _transStates = List();
-  List<_FadeContainerState> _fadeStates = List();
 
   double _transitionFactor = 0.0;
   double _transitionExt = 0.0;
@@ -718,20 +650,12 @@ class SingleDayScreenController {
     _transitionFactor = value;
     _transStates.forEach(
         (state) => state.offset = _transitionFactor + _transitionExt - 1);
-    _fadeStates.forEach((state) =>
-        state.opacity = (_transitionFactor + _transitionExt).clamp(0.0, 1.0));
   }
 
   void updateTransitionExt(double value) {
     _transitionExt = value;
     _transStates.forEach(
         (state) => state.offset = _transitionFactor + _transitionExt - 1);
-    _fadeStates.forEach((state) =>
-        state.opacity = (_transitionFactor + _transitionExt).clamp(0.0, 1.0));
-  }
-
-  void setVerticalMove(bool value) {
-    isScreenTransitionVertical = value;
   }
 
   void updateCountInfo(int count, int doingCount) {

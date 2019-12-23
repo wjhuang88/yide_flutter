@@ -84,6 +84,116 @@ class _DetailRepeatScreenState extends State<DetailRepeatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final endCountItems = [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              const Icon(
+                FontAwesomeIcons.solidCircle,
+                color: Color(0xFFFAB807),
+                size: 8,
+              ),
+              const SizedBox(
+                width: 11.5,
+              ),
+              const Text(
+                '结束',
+                style: TextStyle(color: Color(0xFFEDE7FF), fontSize: 15.0),
+              ),
+            ],
+          ),
+          Text(
+            _repeatState.makeRepeatModeLabel(),
+            style: TextStyle(color: Color(0xFFEDE7FF), fontSize: 15.0),
+          ),
+        ],
+      ),
+      const SizedBox(height: 30.0),
+      FlippingTile(
+        selected: _repeatState.isNeverEnd,
+        title: '永不结束',
+        onTap: () {
+          setState(() {
+            _repeatState.resetMode();
+            _repeatState.reverseNeverEnd();
+          });
+        },
+      ),
+      const SizedBox(height: 10.0),
+      FlippingTile.extended(
+        selected: _repeatState.isCountEnd,
+        title: _repeatState.isCountEnd
+            ? '重复 ${_repeatState.repeatCount} 次后'
+            : '一定次数',
+        extend: GestureDetector(
+          onHorizontalDragUpdate: (detail) {
+            if (_countUpdateTime != null &&
+                DateTime.now().difference(_countUpdateTime) <
+                    const Duration(milliseconds: 300)) {
+              return;
+            }
+            _countUpdateTime = DateTime.now();
+            if (detail.primaryDelta < -0.0) {
+              _repeatState.decreaseCount();
+            } else if (detail.primaryDelta > 0.0) {
+              _repeatState.increaseCount();
+            }
+            setState(() {});
+            haptic();
+          },
+          child: Container(
+            height: 50.0,
+            color: const Color(0xFFE6A800),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                TapAnimator(
+                  behavior: HitTestBehavior.opaque,
+                  builder: (factor) => Icon(
+                    FontAwesomeIcons.caretLeft,
+                    color: Colors.white.withOpacity(1.0 - 0.3 * factor),
+                  ),
+                  onTap: () {
+                    setState(() {
+                      _repeatState.decreaseCount();
+                    });
+                  },
+                ),
+                const SizedBox(
+                  width: 20.0,
+                ),
+                Text(
+                  '${_repeatState.repeatCount} 次',
+                  style: TextStyle(fontSize: 15.0, color: Colors.white),
+                ),
+                const SizedBox(
+                  width: 20.0,
+                ),
+                TapAnimator(
+                  behavior: HitTestBehavior.opaque,
+                  builder: (factor) => Icon(FontAwesomeIcons.caretRight,
+                      color: Colors.white.withOpacity(1.0 - 0.3 * factor)),
+                  onTap: () {
+                    setState(() {
+                      _repeatState.increaseCount();
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+        onTap: () {
+          setState(() {
+            _repeatState.resetMode();
+            _repeatState.reverseCountEnd();
+          });
+        },
+      ),
+    ];
+
     return CupertinoPageScaffold(
       backgroundColor: Colors.transparent,
       child: Column(
@@ -251,120 +361,7 @@ class _DetailRepeatScreenState extends State<DetailRepeatScreen> {
                 const SizedBox(
                   height: 45.0,
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[
-                    Row(
-                      children: <Widget>[
-                        const Icon(
-                          FontAwesomeIcons.solidCircle,
-                          color: Color(0xFFFAB807),
-                          size: 8,
-                        ),
-                        const SizedBox(
-                          width: 11.5,
-                        ),
-                        const Text(
-                          '结束',
-                          style: TextStyle(
-                              color: Color(0xFFEDE7FF), fontSize: 15.0),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      _repeatState.makeRepeatModeLabel(),
-                      style:
-                          TextStyle(color: Color(0xFFEDE7FF), fontSize: 15.0),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 30.0),
-                FlippingTile(
-                  selected: _repeatState.isNeverEnd,
-                  title: '永不结束',
-                  onTap: () {
-                    setState(() {
-                      _repeatState.resetMode();
-                      _repeatState.reverseNeverEnd();
-                    });
-                  },
-                ),
-                const SizedBox(height: 10.0),
-                FlippingTile.extended(
-                  selected: _repeatState.isCountEnd,
-                  title: _repeatState.isCountEnd
-                      ? '重复 ${_repeatState.repeatCount} 次后'
-                      : '一定次数',
-                  extend: GestureDetector(
-                    onHorizontalDragUpdate: (detail) {
-                      if (_countUpdateTime != null &&
-                          DateTime.now().difference(_countUpdateTime) <
-                              const Duration(milliseconds: 300)) {
-                        return;
-                      }
-                      _countUpdateTime = DateTime.now();
-                      if (detail.primaryDelta < -0.0) {
-                        _repeatState.decreaseCount();
-                      } else if (detail.primaryDelta > 0.0) {
-                        _repeatState.increaseCount();
-                      }
-                      setState(() {});
-                      haptic();
-                    },
-                    child: Container(
-                      height: 50.0,
-                      color: const Color(0xFFE6A800),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          TapAnimator(
-                            behavior: HitTestBehavior.opaque,
-                            builder: (factor) => Icon(
-                              FontAwesomeIcons.caretLeft,
-                              color:
-                                  Colors.white.withOpacity(1.0 - 0.3 * factor),
-                            ),
-                            onTap: () {
-                              setState(() {
-                                _repeatState.decreaseCount();
-                              });
-                            },
-                          ),
-                          const SizedBox(
-                            width: 20.0,
-                          ),
-                          Text(
-                            '${_repeatState.repeatCount} 次',
-                            style:
-                                TextStyle(fontSize: 15.0, color: Colors.white),
-                          ),
-                          const SizedBox(
-                            width: 20.0,
-                          ),
-                          TapAnimator(
-                            behavior: HitTestBehavior.opaque,
-                            builder: (factor) => Icon(
-                                FontAwesomeIcons.caretRight,
-                                color: Colors.white
-                                    .withOpacity(1.0 - 0.3 * factor)),
-                            onTap: () {
-                              setState(() {
-                                _repeatState.increaseCount();
-                              });
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  onTap: () {
-                    setState(() {
-                      _repeatState.resetMode();
-                      _repeatState.reverseCountEnd();
-                    });
-                  },
-                ),
-              ],
+              ]..addAll(_repeatState.isNoneRepeat ? [] : endCountItems),
             ),
           ),
         ],

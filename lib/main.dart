@@ -22,16 +22,10 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  ScreenContainerController _screenController = ScreenContainerController();
 
   @override
   Widget build(BuildContext context) {
     return NotificationContainer(
-      onMenuInit: _screenController.resetMenu,
-      onMenuOpen: _screenController.openMenu,
-      onMenuClose: _screenController.closeMenu,
-      onMenuActive: _screenController.menuOn,
-      onMenuDeactive: _screenController.menuOff,
       child: CupertinoApp(
         navigatorKey: sideNavigatorKey,
         color: const Color(0xFF472478),
@@ -40,7 +34,6 @@ class _MyAppState extends State<MyApp> {
           final String name = settings.name;
           if ('page' == name) {
             return ScreenContainer(
-              controller: _screenController,
             ).route;
           } else {
             throw FlutterError(

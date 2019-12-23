@@ -7,11 +7,10 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:yide/src/components/add_button_positioned.dart';
 import 'package:yide/src/components/header_bar.dart';
-import 'package:yide/src/components/slide_drag_detector.dart';
 import 'package:yide/src/components/timeline_list.dart';
 import 'package:yide/src/config.dart' as Config;
 import 'package:yide/src/globle_variable.dart';
-import 'package:yide/src/interfaces/navigatable.dart';
+import 'package:yide/src/interfaces/mixins/navigatable_without_menu.dart';
 import 'package:yide/src/models/task_data.dart';
 import 'package:yide/src/notification.dart';
 import 'package:yide/src/tools/common_tools.dart';
@@ -21,7 +20,7 @@ import 'package:yide/src/tools/sqlite_manager.dart';
 import 'detail_list_screen.dart';
 import 'edit_main_screen.dart';
 
-class MultipleDayListScreen extends StatefulWidget implements Navigatable {
+class MultipleDayListScreen extends StatefulWidget with NavigatableWithOutMenu {
   final MultipleDayController controller = MultipleDayController();
 
   @override
@@ -29,35 +28,15 @@ class MultipleDayListScreen extends StatefulWidget implements Navigatable {
       _MultipleDayListScreenState(controller);
 
   @override
-  Route get route => PageRouteBuilder(
-        pageBuilder: (context, anim1, anim2) {
-          anim2.addStatusListener((status) {
-            if (status == AnimationStatus.dismissed) {
-              singleDayController.setVerticalMove(false);
-            }
-          });
-          return this;
-        },
-        transitionDuration: Duration(milliseconds: 1000),
-        transitionsBuilder: (context, anim1, anim2, child) {
-          final anim1Curved = Tween<double>(begin: 0.0, end: 1.0).animate(
-            CurvedAnimation(
-              parent: anim1,
-              curve: const ElasticOutCurve(1.0),
-              reverseCurve: const ElasticInCurve(1.0),
-            ),
-          );
-          final anim2Curved = const ElasticInCurve(1.0).transform(anim2.value);
-          controller.updateTransition(1 - anim1Curved.value - anim2Curved);
-          return FadeTransition(
-            opacity: anim1Curved,
-            child: child,
-          );
-        },
-      );
+  FutureOr<void> onDragNext(BuildContext context, double offset) {
+    PopRouteNotification().dispatch(context);
+    haptic();
+  }
 
   @override
-  bool get withMene => false;
+  void onTransitionValueChange(double value) {
+    controller.updateTransition(value);
+  }
 }
 
 class MultipleDayController {
@@ -84,7 +63,6 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
   ScrollController _scrollController;
 
   double _dragOffset = 0.0;
-  bool _isPoping = false;
 
   static const _cellHeight = 65.0;
   static const _headerHeight = 45.0;
@@ -131,102 +109,78 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
         decoration: BoxDecoration(
           gradient: Config.backgroundGradient,
         ),
-        child: SlideDragDetector(
-          leftBarrier: 0.0,
-          leftSecondBarrier: 0.0,
-          rightBarrier: 1.0,
-          onUpdate: (frac) {
-            setState(() {
-              frac = frac * 0.5;
-              _dragOffset = frac - frac * frac * frac;
-            });
-          },
-          onStartDrag: () => _isPoping = false,
-          onRightDragEnd: (f) {
-            if (_isPoping) return;
-            PopRouteNotification().dispatch(context);
-            haptic();
-            _isPoping = true;
-          },
-          onRightMoveHalf: (f) {
-            if (_isPoping) return;
-            PopRouteNotification().dispatch(context);
-            haptic();
-            _isPoping = true;
-          },
-          child: Stack(
-            children: <Widget>[
-              Column(
-                children: <Widget>[
-                  HeaderBar(
-                    indent: 10.0,
-                    endIndet: 15.0,
-                    leadingIcon: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: <Widget>[
-                        Icon(
-                          CupertinoIcons.left_chevron,
-                          size: 26.0,
+        child: Stack(
+          children: <Widget>[
+            Column(
+              children: <Widget>[
+                HeaderBar(
+                  indent: 10.0,
+                  endIndet: 15.0,
+                  leadingIcon: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: <Widget>[
+                      Icon(
+                        CupertinoIcons.left_chevron,
+                        size: 26.0,
+                        color: const Color(0xFFEDE7FF),
+                      ),
+                      Text(
+                        '今日',
+                        style: const TextStyle(
+                          fontSize: 16.0,
                           color: const Color(0xFFEDE7FF),
                         ),
-                        Text(
-                          '今日',
-                          style: const TextStyle(
-                            fontSize: 16.0,
-                            color: const Color(0xFFEDE7FF),
-                          ),
-                        ),
-                      ],
-                    ),
-                    onLeadingAction: () =>
-                        PopRouteNotification().dispatch(context),
-                    actionIcon: _isLoading
-                        ? CupertinoTheme(
-                            data: CupertinoThemeData(
-                              brightness: Brightness.dark,
-                            ),
-                            child: CupertinoActivityIndicator(),
-                          )
-                        : const Text(
-                            '编辑',
-                            style: TextStyle(
-                                fontSize: 16.0, color: Color(0xFFD7CAFF)),
-                          ),
-                    title: '日程',
-                  ),
-                  const SizedBox(
-                    height: 20.0,
-                  ),
-                  Expanded(
-                    child: FractionalTranslation(
-                      translation: Offset(_dragOffset, 0.0),
-                      child: _TranslateContainer(
-                        initOffset: 0.0,
-                        controller: _controller,
-                        child: _buildSectionList(),
                       ),
+                    ],
+                  ),
+                  onLeadingAction: () =>
+                      PopRouteNotification().dispatch(context),
+                  actionIcon: _isLoading
+                      ? CupertinoTheme(
+                          data: CupertinoThemeData(
+                            brightness: Brightness.dark,
+                          ),
+                          child: CupertinoActivityIndicator(),
+                        )
+                      : const Text(
+                          '编辑',
+                          style: TextStyle(
+                              fontSize: 16.0, color: Color(0xFFD7CAFF)),
+                        ),
+                  title: '日程',
+                ),
+                const SizedBox(
+                  height: 20.0,
+                ),
+                Expanded(
+                  child: FractionalTranslation(
+                    translation: Offset(_dragOffset, 0.0),
+                    child: _TranslateContainer(
+                      initOffset: 0.0,
+                      controller: _controller,
+                      child: _buildSectionList(),
                     ),
-                  )
-                ],
-              ),
-              AddButtonPositioned(
-                onPressed: () async {
-                  isScreenTransitionVertical = true;
-                  PushRouteNotification(
-                    EditMainScreen(),
-                    callback: (pack) async {
-                      final newTask = pack as TaskPack;
-                      if (newTask != null) {
-                        await TaskDBAction.saveTask(newTask.data);
-                        _update();
-                      }
-                    },
-                  ).dispatch(context);
-                },
-              ),
-            ],
-          ),
+                  ),
+                )
+              ],
+            ),
+            AddButtonPositioned(
+              onPressed: () async {
+                isScreenTransitionVertical = true;
+                PushRouteNotification(
+                  EditMainScreen(),
+                  callback: (pack) async {
+                    final newTask = pack as TaskPack;
+                    if (newTask != null) {
+                      await TaskDBAction.saveTask(newTask.data);
+                      _update();
+                    }
+                  },
+                ).dispatch(context);
+              },
+            ),
+          ],
         ),
       ),
     );
@@ -684,14 +638,17 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
         onTap: () => _enterDetail(pack),
         onLongPress: () {
           detailPopup(
-              context,
-              onDetail: () => _enterDetail(pack),
-              onDone: () => TaskDBAction.toggleTaskFinish(pack.data.id, true),
-              onDelete: () async {
-                await TaskDBAction.deleteTask(pack.data);
-                _update();
-              },
-            );
+            context,
+            onDetail: () => _enterDetail(pack),
+            onDone: () async {
+              await TaskDBAction.toggleTaskFinish(pack.data.id, true);
+              _update();
+            },
+            onDelete: () async {
+              await TaskDBAction.deleteTask(pack.data);
+              _update();
+            },
+          );
         },
         rows: <Widget>[
           Text(
@@ -732,7 +689,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
   }
 
   Future<TaskPack> _enterDetail(TaskPack item) {
-    singleDayController.setVerticalMove(true);
+    isScreenTransitionVertical = true;
     final future = Completer<TaskPack>();
     PushRouteNotification(
       DetailListScreen(taskPack: item),
