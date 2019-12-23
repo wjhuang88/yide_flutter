@@ -33,10 +33,13 @@ class SingleDayListScreen extends StatefulWidget with NavigatableWithMenu {
 
   @override
   Future<void> onDragNext(BuildContext context, double offset) async {
+    final future = Completer();
     PushRouteNotification(MultipleDayListScreen(), callback: (d) {
       controller?.updateListData();
+      future.complete();
     }).dispatch(context);
     haptic();
+    return future.future;
   }
 
   @override
@@ -76,7 +79,7 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
               children: <Widget>[
                 HeaderBar(
                   indent: 17.0,
-                  endIndet: 17.0,
+                  endIndet: 15.0,
                   title: '今日',
                   leadingIcon: Icon(
                     buildCupertinoIconData(0xf394),
@@ -617,6 +620,12 @@ class _TranslateContainerState extends State<_TranslateContainer> {
     _offsetValue = widget.initOffset ?? 0.0;
     _controller = widget.controller ?? SingleDayScreenController();
     _controller._transStates.add(this);
+  }
+
+  @override
+  void dispose() {
+    _controller._transStates.remove(this);
+    super.dispose();
   }
 
   @override

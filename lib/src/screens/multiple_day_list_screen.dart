@@ -13,6 +13,7 @@ import 'package:yide/src/globle_variable.dart';
 import 'package:yide/src/interfaces/mixins/navigatable_without_menu.dart';
 import 'package:yide/src/models/task_data.dart';
 import 'package:yide/src/notification.dart';
+import 'package:yide/src/screens/history_list_screen.dart';
 import 'package:yide/src/tools/common_tools.dart';
 import 'package:yide/src/tools/icon_tools.dart';
 import 'package:yide/src/tools/sqlite_manager.dart';
@@ -28,9 +29,27 @@ class MultipleDayListScreen extends StatefulWidget with NavigatableWithOutMenu {
       _MultipleDayListScreenState(controller);
 
   @override
-  FutureOr<void> onDragNext(BuildContext context, double offset) {
-    PopRouteNotification().dispatch(context);
+  FutureOr<void> onDragPrevious(BuildContext context, double offset) {
+    final future = Completer();
+    PopRouteNotification(callback: (d) {
+      future.complete();
+    }).dispatch(context);
     haptic();
+    return future.future;
+  }
+
+  @override
+  bool get hasNext => true;
+
+  @override
+  FutureOr<void> onDragNext(BuildContext context, double offset) {
+    final future = Completer();
+    PushRouteNotification(HistoryListScreen(), callback: (d) {
+      controller?.updateData();
+      future.complete();
+    }).dispatch(context);
+    haptic();
+    return future.future;
   }
 
   @override
@@ -41,9 +60,14 @@ class MultipleDayListScreen extends StatefulWidget with NavigatableWithOutMenu {
 
 class MultipleDayController {
   List<_TranslateContainerState> _transStates = List();
+  _MultipleDayListScreenState _state;
 
   void updateTransition(double value) {
     _transStates.forEach((state) => state.offset = value);
+  }
+
+  void updateData() {
+    _state?._update();
   }
 }
 
@@ -62,8 +86,6 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
 
   ScrollController _scrollController;
 
-  double _dragOffset = 0.0;
-
   static const _cellHeight = 65.0;
   static const _headerHeight = 45.0;
   static const _headerGap = 8.0;
@@ -76,6 +98,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
     _scrollController = ScrollController(keepScrollOffset: false);
     _update();
     _controller ??= MultipleDayController();
+    _controller._state = this;
   }
 
   @override
@@ -136,6 +159,11 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
                   ),
                   onLeadingAction: () =>
                       PopRouteNotification().dispatch(context),
+                  onAction: () {
+                    PushRouteNotification(HistoryListScreen(), callback: (d) {
+                      _controller.updateData();
+                    }).dispatch(context);
+                  },
                   actionIcon: _isLoading
                       ? CupertinoTheme(
                           data: CupertinoThemeData(
@@ -143,24 +171,34 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
                           ),
                           child: CupertinoActivityIndicator(),
                         )
-                      : const Text(
-                          '编辑',
-                          style: TextStyle(
-                              fontSize: 16.0, color: Color(0xFFD7CAFF)),
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: <Widget>[
+                            Text(
+                              '日志',
+                              style: const TextStyle(
+                                fontSize: 16.0,
+                                color: const Color(0xFFEDE7FF),
+                              ),
+                            ),
+                            Icon(
+                              CupertinoIcons.right_chevron,
+                              size: 26.0,
+                              color: const Color(0xFFEDE7FF),
+                            ),
+                          ],
                         ),
-                  title: '日程',
+                  title: '计划',
                 ),
                 const SizedBox(
                   height: 20.0,
                 ),
                 Expanded(
-                  child: FractionalTranslation(
-                    translation: Offset(_dragOffset, 0.0),
-                    child: _TranslateContainer(
-                      initOffset: 0.0,
-                      controller: _controller,
-                      child: _buildSectionList(),
-                    ),
+                  child: _TranslateContainer(
+                    initOffset: 0.0,
+                    controller: _controller,
+                    child: _buildSectionList(),
                   ),
                 )
               ],
@@ -730,6 +768,12 @@ class _TranslateContainerState extends State<_TranslateContainer> {
     _offsetValue = widget.initOffset ?? 0.0;
     _controller = widget.controller ?? MultipleDayController();
     _controller._transStates.add(this);
+  }
+
+  @override
+  void dispose() {
+    _controller._transStates.remove(this);
+    super.dispose();
   }
 
   @override

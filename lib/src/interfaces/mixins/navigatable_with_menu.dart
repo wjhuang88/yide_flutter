@@ -52,11 +52,9 @@ mixin NavigatableWithMenu on Widget implements Navigatable {
         onTransitionValueChange(anim1Curved.value - anim2Curved.value);
         return _WithMenuDragBuilder(
           builder: (context, dragOffset, isPopping) {
-            onTransitionValueChange(anim1Curved.value - anim2Curved.value + dragOffset);
-            return FadeTransition(
-              opacity: anim1Curved,
-              child: child,
-            );
+            final value = anim1Curved.value - anim2Curved.value + dragOffset;
+            onTransitionValueChange(value);
+            return child;
           },
           onDragNext: (frac) => onDragNext(context, frac),
         );
