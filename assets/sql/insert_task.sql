@@ -6,5 +6,6 @@ INSERT INTO `task_data` (
     `is_finished`,
     `remark`,
     `alarm_time`,
-    `time_type_code`
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+    `time_type_code`,
+    `finish_time`
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);

@@ -51,8 +51,8 @@ Future<void> haptic() async {
 Future<void> editPopup(BuildContext context,
     {VoidCallback onCancel,
     VoidCallback onEdit,
-    String editTitle = '编辑',
-    String clearTitle = '清除',
+    String editTitle = '进入编辑',
+    String clearTitle = '清除当前设置的内容',
     VoidCallback onClear}) async {
   final act = await showCupertinoModalPopup<bool>(
     context: context,
@@ -107,46 +107,55 @@ Future<void> detailPopup(
   VoidCallback onDetail,
   VoidCallback onDelete,
   VoidCallback onDone,
-  String detailTitle = '详情',
-  String deleteTitle = '删除',
-  String doneTitle = '完成',
+  String detailTitle = '查看任务详情',
+  String deleteTitle = '删除此任务',
+  String doneTitle = '设置此任务为已完成',
+  bool isDone = false,
 }) async {
+  final actions = <Widget>[
+    CupertinoActionSheetAction(
+      child: Text(
+        detailTitle,
+        style: const TextStyle(
+          fontSize: 16.0,
+          color: Color(0xFF000000),
+        ),
+      ),
+      onPressed: () => Navigator.of(context).maybePop(0),
+    )
+  ];
+  if (!isDone) {
+    actions.add(
+      CupertinoActionSheetAction(
+        child: Text(
+          doneTitle,
+          style: const TextStyle(
+            fontSize: 16.0,
+            color: Color(0xFF000000),
+          ),
+        ),
+        onPressed: () => Navigator.of(context).maybePop(1),
+      ),
+    );
+  }
+  actions.add(
+    CupertinoActionSheetAction(
+      isDestructiveAction: true,
+      child: Text(
+        deleteTitle,
+        style: const TextStyle(
+          fontSize: 16.0,
+          color: Color(0xDDFF0000),
+        ),
+      ),
+      onPressed: () => Navigator.of(context).maybePop(2),
+    ),
+  );
   final act = await showCupertinoModalPopup<int>(
     context: context,
     builder: (context) => CupertinoActionSheet(
-      actions: <Widget>[
-        CupertinoActionSheetAction(
-          child: Text(
-            detailTitle,
-            style: const TextStyle(
-              fontSize: 16.0,
-              color: Color(0xFF000000),
-            ),
-          ),
-          onPressed: () => Navigator.of(context).maybePop(0),
-        ),
-        CupertinoActionSheetAction(
-          child: Text(
-            doneTitle,
-            style: const TextStyle(
-              fontSize: 16.0,
-              color: Color(0xFF000000),
-            ),
-          ),
-          onPressed: () => Navigator.of(context).maybePop(1),
-        ),
-        CupertinoActionSheetAction(
-          isDestructiveAction: true,
-          child: Text(
-            deleteTitle,
-            style: const TextStyle(
-              fontSize: 16.0,
-              color: Color(0xDDFF0000),
-            ),
-          ),
-          onPressed: () => Navigator.of(context).maybePop(2),
-        ),
-      ],
+      message: Text('选择一个对此任务的操作：'),
+      actions: actions,
       cancelButton: CupertinoActionSheetAction(
         child: Text(
           '取消',

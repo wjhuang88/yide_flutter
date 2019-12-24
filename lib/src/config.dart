@@ -10,7 +10,12 @@ const backgroundGradient = const LinearGradient(
   colors: [Color(0xFF8346C8), Color(0xFF523F88)],
 );
 
-final listPlaceholder = Image.asset('assets/images/placeholder.png', fit: BoxFit.contain,);
+const finishedColor = const Color(0x88C9A2F5);
+
+final listPlaceholder = Image.asset(
+  'assets/images/placeholder.png',
+  fit: BoxFit.contain,
+);
 
 final mainNavigatorKey = GlobalKey<NavigatorState>();
 final sideNavigatorKey = GlobalKey<NavigatorState>();

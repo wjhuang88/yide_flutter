@@ -7,7 +7,8 @@ CREATE TABLE IF NOT EXISTS `task_data`(
     `is_finished` INTEGER,
     `remark` TEXT,
     `alarm_time` INTEGER,
-    `time_type_code` INTEGER
+    `time_type_code` INTEGER,
+    `finish_time` INTEGER
 );
 CREATE TABLE IF NOT EXISTS `task_detail`(
     `id` INTEGER PRIMARY KEY,

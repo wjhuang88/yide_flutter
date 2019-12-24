@@ -110,7 +110,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
 
   Future<void> _update() async {
     _isLoading = true;
-    final list = await TaskDBAction.getTaskListAfterDate(DateTime.now());
+    final list = await TaskDBAction.getTaskListReady(DateTime.now());
     _listData.clear();
     for (var item in list) {
       final taskTime = item.data.taskTime;
@@ -620,10 +620,11 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
       {bool isDateShow = false}) {
     return (context, index) {
       final pack = list[index];
+      final isFinished = pack.data.isFinished;
       final infoRow = <Widget>[
         Icon(
           FontAwesomeIcons.solidCircle,
-          color: pack.tag.iconColor,
+          color: isFinished ? Config.finishedColor : pack.tag.iconColor,
           size: 8.0,
         ),
         const SizedBox(
@@ -631,7 +632,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
         ),
         Text(
           pack.tag.name ?? '默认',
-          style: TextStyle(color: pack.tag.iconColor, fontSize: 12.0),
+          style: TextStyle(color: isFinished ? Config.finishedColor : pack.tag.iconColor, fontSize: 12.0),
         ),
         const SizedBox(
           width: 20.0,
@@ -642,8 +643,8 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
           ..add(
             Text(
               DateFormat('yyyy.MM.dd', 'zh').format(pack.data.taskTime),
-              style: const TextStyle(
-                color: Color(0xFFC9A2F5),
+              style: TextStyle(
+                color: isFinished ? Config.finishedColor : Color(0xFFC9A2F5),
                 fontSize: 12.0,
               ),
             ),
@@ -657,7 +658,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
       infoRow.addAll([
         Icon(
           buildCupertinoIconData(0xf402),
-          color: const Color(0xFFC9A2F5),
+          color: isFinished ? Config.finishedColor : const Color(0xFFC9A2F5),
           size: 12.0,
         ),
         const SizedBox(
@@ -665,8 +666,8 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
         ),
         Text(
           _makeTimeLabel(pack.data),
-          style: const TextStyle(
-            color: Color(0xFFC9A2F5),
+          style: TextStyle(
+            color: isFinished ? Config.finishedColor : Color(0xFFC9A2F5),
             fontSize: 12.0,
           ),
         ),
@@ -686,6 +687,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
               await TaskDBAction.deleteTask(pack.data);
               _update();
             },
+            isDone: isFinished,
           );
         },
         rows: <Widget>[
@@ -693,8 +695,8 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
             pack.data.content,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Color(0xFFD7CAFF),
+            style: TextStyle(
+              color: isFinished ? Config.finishedColor : Color(0xFFD7CAFF),
               fontSize: 15.0,
             ),
           ),

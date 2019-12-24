@@ -183,11 +183,10 @@ class _DetailListScreenState extends State<DetailListScreen>
                       final isDelete = await showCupertinoModalPopup<bool>(
                         context: context,
                         builder: (context) => CupertinoActionSheet(
-                          title: Text('将要删除本事项，请您确认'),
-                          message: Text('删除事项后将无法恢复'),
+                          message: Text('删除此任务？'),
                           actions: <Widget>[
                             CupertinoActionSheetAction(
-                              child: Text('删除', style: const TextStyle(color: Color(0xDDFF0000), fontSize: 16.0),),
+                              child: Text('是，我要删除！', style: const TextStyle(color: Color(0xDDFF0000), fontSize: 16.0),),
                               isDestructiveAction: true,
                               onPressed: () =>
                                   Navigator.of(context).maybePop(true),

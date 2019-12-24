@@ -8,6 +8,7 @@ SELECT
     `task_data`.`remark` as `remark`,
     `task_data`.`alarm_time` as `alarm_time`,
     `task_data`.`time_type_code` as `time_type_code`,
+    `task_data`.`finish_time` as `finish_time`,
     `task_tag`.`background_color` as `background_color`,
     `task_tag`.`icon_color` as `icon_color`,
     `task_tag`.`name` as `tag_name`

@@ -9,6 +9,7 @@ import 'package:yide/src/components/header_bar.dart';
 import 'package:yide/src/components/location_methods.dart';
 import 'package:yide/src/components/timeline_list.dart';
 import 'package:yide/src/config.dart' as Config;
+import 'package:yide/src/config.dart';
 import 'package:yide/src/globle_variable.dart';
 import 'package:yide/src/interfaces/mixins/navigatable_with_menu.dart';
 import 'package:yide/src/screens/multiple_day_list_screen.dart';
@@ -378,6 +379,7 @@ class _ListBodyState extends State<_ListBody> {
     width: 300.0,
     child: Config.listPlaceholder,
   );
+  Widget _blank = const SizedBox();
   List<TaskPack> _taskList;
   DateTime _dateTime;
 
@@ -411,20 +413,21 @@ class _ListBodyState extends State<_ListBody> {
   @override
   Widget build(BuildContext context) {
     if (_taskList == null || _taskList.isEmpty) {
-      return _placeholder;
+      return _controller.isLoading ? _blank : _placeholder;
     }
     return TimelineListView.build(
       placeholder: _placeholder,
       itemCount: _taskList.length,
       tileBuilder: (context, index) {
         final item = _taskList[index];
+        final isFinished = item.data.isFinished;
         final rows = <Widget>[
           Text(
             item.data.content,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Color(0xFFD7CAFF),
+            style: TextStyle(
+              color: isFinished ? finishedColor : Color(0xFFD7CAFF),
               fontSize: 15.0,
             ),
           ),
@@ -433,7 +436,9 @@ class _ListBodyState extends State<_ListBody> {
           ),
           Text(
             item.tag.name ?? '默认',
-            style: TextStyle(color: item.tag.iconColor, fontSize: 12.0),
+            style: TextStyle(
+                color: isFinished ? finishedColor : item.tag.iconColor,
+                fontSize: 12.0),
           ),
         ];
         if (item.data.catalog != null && item.data.catalog.isNotEmpty) {
@@ -447,7 +452,7 @@ class _ListBodyState extends State<_ListBody> {
               Text(
                 item.data.catalog,
                 style:
-                    const TextStyle(color: Color(0xFFC9A2F5), fontSize: 12.0),
+                    TextStyle(color: isFinished ? finishedColor : Color(0xFFC9A2F5), fontSize: 12.0),
               ),
             );
         }
@@ -464,7 +469,7 @@ class _ListBodyState extends State<_ListBody> {
               remarkVisable,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Color(0xFFC9A2F5), fontSize: 12.0),
+              style: TextStyle(color: isFinished ? finishedColor : const Color(0xFFC9A2F5), fontSize: 12.0),
             ),
           );
         rows.add(const SizedBox(height: 20.0));
@@ -483,12 +488,19 @@ class _ListBodyState extends State<_ListBody> {
                 await TaskDBAction.deleteTask(item.data);
                 _controller.updateListData();
               },
+              isDone: isFinished,
             );
           },
         );
       },
       onGenerateLabel: (index) => _makeTimeLabel(_taskList[index]?.data),
-      onGenerateDotColor: (index) => _taskList[index]?.tag?.iconColor,
+      onGenerateDotColor: (index) {
+        final pack = _taskList[index];
+        final isFinished = pack?.data?.isFinished ?? false;
+        return isFinished
+            ? finishedColor
+            : pack?.tag?.iconColor;
+      },
     );
   }
 
@@ -576,7 +588,7 @@ class _ButtonAndLoadingIconState extends State<_ButtonAndLoadingIcon> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               Text(
-                '日程',
+                '计划',
                 style: const TextStyle(
                   fontSize: 16.0,
                   color: const Color(0xFFEDE7FF),

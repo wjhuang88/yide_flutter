@@ -11,7 +11,7 @@ class SqliteManager {
       print('Database is null, try to open a new database.');
       _database = openDatabase(
         'yide_app.db',
-        version: 7,
+        version: 8,
         onCreate: (db, version) async {
           print('Init sqlite table at version $version.');
           _execute(db, 'assets/sql/table_create.sql');
@@ -35,6 +35,10 @@ class SqliteManager {
           if (oldVersion < 7) {
             print('Ready to execute upgrade sql from v6 to v7');
             await _execute(db, 'assets/sql/v6_to_v7.sql');
+          }
+          if (oldVersion < 8) {
+            print('Ready to execute upgrade sql from v7 to v8');
+            await _execute(db, 'assets/sql/v7_to_v8.sql');
           }
         },
       ).catchError((e) {
@@ -200,6 +204,9 @@ class TaskDBAction {
           ? DateTime.fromMillisecondsSinceEpoch(dataRaw['alarm_time'] as int)
           : null,
       timeTypeCode: dataRaw['time_type_code'] as int,
+      finishTime: dataRaw['finish_time'] is int
+          ? DateTime.fromMillisecondsSinceEpoch(dataRaw['finish_time'] as int)
+          : null,
     );
 
     final tag = TaskTag(
@@ -286,7 +293,7 @@ class TaskDBAction {
     return result.map(_makePackFromQueryResult).toList();
   }
 
-  static Future<List<TaskPack>> getTaskListAfterDate(DateTime date) async {
+  static Future<List<TaskPack>> getTaskListReady(DateTime date) async {
     if (date == null) {
       return null;
     }
@@ -294,21 +301,21 @@ class TaskDBAction {
     final queryDate = DateTime(date.year, date.month, date.day);
 
     final result = await _dbManager.query(
-        'assets/sql/query_task_after_date.sql',
+        'assets/sql/query_task_ready.sql',
         [queryDate.millisecondsSinceEpoch]);
 
     return result.map(_makePackFromQueryResult).toList();
   }
 
-  static Future<List<TaskPack>> getTaskListBeforeDate(DateTime date) async {
+  static Future<List<TaskPack>> getTaskListFinished(DateTime date) async {
     if (date == null) {
       return null;
     }
 
-    final queryDate = DateTime(date.year, date.month, date.day);
+    final queryDate = DateTime(date.year, date.month, date.day + 1);
 
     final result = await _dbManager.query(
-        'assets/sql/query_task_before_date.sql',
+        'assets/sql/query_task_finished.sql',
         [queryDate.millisecondsSinceEpoch]);
 
     return result.map(_makePackFromQueryResult).toList();
@@ -389,6 +396,7 @@ class TaskDBAction {
       taskData.remark,
       taskData.alarmTime?.millisecondsSinceEpoch,
       taskData.timeTypeCode,
+      taskData.finishTime?.millisecondsSinceEpoch,
     ];
     if (isUpdate) {
       body.add(taskData.id);

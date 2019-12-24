@@ -46,7 +46,8 @@ class TaskData {
         this.remark = data.remark,
         this.catalog = data.catalog,
         this.timeTypeCode = data.timeTypeCode,
-        this.alarmTime = data.alarmTime;
+        this.alarmTime = data.alarmTime,
+        this.finishTime = data.finishTime;
 
   TaskData({
     this.id,
@@ -59,6 +60,7 @@ class TaskData {
     this.catalog,
     this.timeTypeCode,
     this.alarmTime,
+    this.finishTime,
   });
 
   TaskData.defultNull()
@@ -83,6 +85,7 @@ class TaskData {
   int timeTypeCode;
   String catalog;
   DateTime alarmTime;
+  DateTime finishTime;
 
   DateTimeType get timeType {
     switch (timeTypeCode) {

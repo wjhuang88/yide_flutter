@@ -48,7 +48,18 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
 
   _HistoryListScreenController _controller;
 
-  Map<DateTime, List<TaskPack>> _listData = LinkedHashMap();
+  Widget _placeholder = Container(
+    alignment: Alignment.topCenter,
+    height: 300.0,
+    width: 300.0,
+    child: Config.listPlaceholder,
+  );
+  Widget _blank = const SizedBox();
+
+  List<TaskPack> _todayList;
+  List<TaskPack> _yestodyList;
+  Map<DateTime, List<TaskPack>> _monthList;
+  Map<int, List<TaskPack>> _yearsList;
 
   bool _isLoadingValue = false;
   bool get _isLoading => _isLoadingValue;
@@ -60,17 +71,70 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
 
   Future<void> _update() async {
     _isLoading = true;
-    final list = await TaskDBAction.getTaskListBeforeDate(DateTime.now());
-    _listData.clear();
+    final now = DateTime.now();
+    final yestoday = now.subtract(Duration(days: 1));
+    final list = await TaskDBAction.getTaskListFinished(now);
+    _todayList?.clear();
+    _yestodyList?.clear();
+    _monthList?.clear();
+    _yearsList?.clear();
     for (var item in list) {
       final taskTime = item.data.taskTime;
-      final sectionTime = DateTime(taskTime.year, taskTime.month, taskTime.day);
-      if (!_listData.containsKey(sectionTime)) {
-        _listData[sectionTime] = List();
+      if (_isSameDay(taskTime, now)) {
+        _todayList ??= List();
+        _todayList.add(item);
+      } else if (_isSameDay(taskTime, yestoday)) {
+        _yestodyList ??= List();
+        _yestodyList.add(item);
+      } else if (taskTime.year == now.year) {
+        _monthList ??= LinkedHashMap();
+        final sectionTime = DateTime(taskTime.year, taskTime.month);
+        if (!_monthList.containsKey(sectionTime)) {
+          _monthList[sectionTime] = List();
+        }
+        _monthList[sectionTime].add(item);
+      } else {
+        _yearsList ??= LinkedHashMap();
+        final sectionYear = taskTime.year;
+        if (!_yearsList.containsKey(sectionYear)) {
+          _yearsList[sectionYear] = List();
+        }
+        _yearsList[sectionYear].add(item);
       }
-      _listData[sectionTime].add(item);
     }
+
     _isLoading = false;
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  bool _isOutdated(TaskPack task) {
+    final type = task.data.timeType;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final taskTime = task.data.taskTime;
+    switch (type) {
+      case DateTimeType.fullday:
+        final day = DateTime(taskTime.year, taskTime.month, taskTime.day);
+        return day.isBefore(today);
+      case DateTimeType.someday:
+        return false;
+      case DateTimeType.datetime:
+        return taskTime.isBefore(now);
+    }
+    return false;
+  }
+
+  String _makeStatusLabel(TaskPack task) {
+    if (task.data.isFinished) {
+      return '已完成';
+    }
+    if (_isOutdated(task)) {
+      return '已过期';
+    }
+    return '进行中';
   }
 
   @override
@@ -123,6 +187,9 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
                   : const SizedBox(),
               title: '日志',
             ),
+            const SizedBox(
+              height: 20.0,
+            ),
             Expanded(
               child: _TranslateContainer(
                 initOffset: 0.0,
@@ -138,22 +205,75 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
 
   Widget _buildSectionList() {
     final slivers = <Widget>[];
+    if (_todayList != null && _todayList.isNotEmpty) {
+      slivers.add(_buildHeader('今天'));
+      final subList = SliverFixedExtentList(
+        itemExtent: 65.0,
+        delegate: SliverChildBuilderDelegate(_taskItemBuilder(_todayList),
+            childCount: _todayList.length),
+      );
+      slivers.add(subList);
+    }
+    if (_yestodyList != null && _yestodyList.isNotEmpty) {
+      slivers.add(_buildHeader('昨天'));
+      final subList = SliverFixedExtentList(
+        itemExtent: 65.0,
+        delegate: SliverChildBuilderDelegate(_taskItemBuilder(_yestodyList),
+            childCount: _yestodyList.length),
+      );
+      slivers.add(subList);
+    }
+    if (_monthList != null && _monthList.isNotEmpty) {
+      _monthList.forEach((section, list) {
+        slivers.add(_buildHeader(DateFormat.MMMM('zh').format(section)));
+        final subList = SliverFixedExtentList(
+          itemExtent: 65.0,
+          delegate: SliverChildBuilderDelegate(_taskItemBuilder(list),
+              childCount: list.length),
+        );
+        slivers.add(subList);
+      });
+    }
+    if (_yearsList != null && _yearsList.isNotEmpty) {
+      _yearsList.forEach((section, list) {
+        slivers.add(_buildHeader('$section年'));
+        final subList = SliverFixedExtentList(
+          itemExtent: 65.0,
+          delegate: SliverChildBuilderDelegate(_taskItemBuilder(list),
+              childCount: list.length),
+        );
+        slivers.add(subList);
+      });
+    }
+    if (slivers.isEmpty) {
+      return _isLoading ? _blank : _placeholder;
+    }
+    return CustomScrollView(
+      slivers: slivers,
+    );
   }
 
   SliverToBoxAdapter _buildHeader(String label) {
     return SliverToBoxAdapter(
       child: Container(
-        padding: const EdgeInsets.only(top: 1.0),
+        padding: const EdgeInsets.only(bottom: 1.0),
+        margin: const EdgeInsets.only(left: 15.0, right: 15.0, bottom: 15.0),
         alignment: Alignment.topLeft,
         decoration: BoxDecoration(
           border: Border(
-            top: BorderSide(
+            bottom: BorderSide(
               color: const Color(0x88FFFFFF),
               width: 0.3,
             ),
           ),
         ),
-        child: Text(label),
+        child: Text(
+          label,
+          style: const TextStyle(
+            color: Color(0xFFC9A2F5),
+            fontSize: 16.0,
+          ),
+        ),
       ),
     );
   }
@@ -178,7 +298,7 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
           width: 20.0,
         ),
         Text(
-          DateFormat('yyyy.MM.dd', 'zh').format(pack.data.taskTime),
+          DateFormat('yyyy/MM/dd', 'zh').format(pack.data.taskTime),
           style: const TextStyle(
             color: Color(0xFFC9A2F5),
             fontSize: 12.0,
@@ -203,39 +323,60 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
           ),
         ),
       ];
-      return TimelineTile(
-        padding: const EdgeInsets.only(left: 42.0, bottom: 0.0),
-        onTap: () => _enterDetail(pack),
-        onLongPress: () {
-          detailPopup(
-            context,
-            onDetail: () => _enterDetail(pack),
-            onDone: () async {
-              await TaskDBAction.toggleTaskFinish(pack.data.id, true);
-              _update();
-            },
-            onDelete: () async {
-              await TaskDBAction.deleteTask(pack.data);
-              _update();
-            },
-          );
-        },
-        rows: <Widget>[
-          Text(
-            pack.data.content,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Color(0xFFD7CAFF),
-              fontSize: 15.0,
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Container(
+            margin: const EdgeInsets.only(left: 15.0),
+            padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+            decoration: BoxDecoration(
+                color: const Color(0x88C9A2F5),
+                borderRadius: const BorderRadius.all(Radius.circular(10.0))),
+            child: Text(
+              _makeStatusLabel(pack),
+              style: const TextStyle(
+                color: Color(0x88FFFFFF),
+                fontSize: 10.0,
+              ),
             ),
           ),
-          const SizedBox(
-            height: 5.0,
-          ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: infoRow,
+          Expanded(
+            child: TimelineTile(
+              padding: const EdgeInsets.only(left: 10.0, right: 15.0, bottom: 0.0),
+              onTap: () => _enterDetail(pack),
+              onLongPress: () {
+                detailPopup(
+                  context,
+                  onDetail: () => _enterDetail(pack),
+                  onDone: () async {
+                    await TaskDBAction.toggleTaskFinish(pack.data.id, true);
+                    _update();
+                  },
+                  onDelete: () async {
+                    await TaskDBAction.deleteTask(pack.data);
+                    _update();
+                  },
+                );
+              },
+              rows: <Widget>[
+                Text(
+                  pack.data.content,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFFD7CAFF),
+                    fontSize: 15.0,
+                  ),
+                ),
+                const SizedBox(
+                  height: 5.0,
+                ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: infoRow,
+                ),
+              ],
+            ),
           ),
         ],
       );
