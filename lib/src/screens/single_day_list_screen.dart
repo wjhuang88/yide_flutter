@@ -481,7 +481,7 @@ class _ListBodyState extends State<_ListBody> {
               context,
               onDetail: () => _enterDetail(item),
               onDone: () async {
-                await TaskDBAction.toggleTaskFinish(item.data.id, true);
+                await TaskDBAction.toggleTaskFinish(item.data.id, true, DateTime.now());
                 _controller.updateListData();
               },
               onDelete: () async {

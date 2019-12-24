@@ -112,50 +112,54 @@ Future<void> detailPopup(
   String doneTitle = '设置此任务为已完成',
   bool isDone = false,
 }) async {
-  final actions = <Widget>[
-    CupertinoActionSheetAction(
-      child: Text(
-        detailTitle,
-        style: const TextStyle(
-          fontSize: 16.0,
-          color: Color(0xFF000000),
-        ),
-      ),
-      onPressed: () => Navigator.of(context).maybePop(0),
-    )
-  ];
-  if (!isDone) {
-    actions.add(
+  actions(BuildContext context) {
+    final actions = <Widget>[
       CupertinoActionSheetAction(
         child: Text(
-          doneTitle,
+          detailTitle,
           style: const TextStyle(
             fontSize: 16.0,
             color: Color(0xFF000000),
           ),
         ),
-        onPressed: () => Navigator.of(context).maybePop(1),
+        onPressed: () => Navigator.of(context).maybePop(0),
+      )
+    ];
+    if (!isDone) {
+      actions.add(
+        CupertinoActionSheetAction(
+          child: Text(
+            doneTitle,
+            style: const TextStyle(
+              fontSize: 16.0,
+              color: Color(0xFF000000),
+            ),
+          ),
+          onPressed: () => Navigator.of(context).maybePop(1),
+        ),
+      );
+    }
+    actions.add(
+      CupertinoActionSheetAction(
+        isDestructiveAction: true,
+        child: Text(
+          deleteTitle,
+          style: const TextStyle(
+            fontSize: 16.0,
+            color: Color(0xDDFF0000),
+          ),
+        ),
+        onPressed: () => Navigator.of(context).maybePop(2),
       ),
     );
+    return actions;
   }
-  actions.add(
-    CupertinoActionSheetAction(
-      isDestructiveAction: true,
-      child: Text(
-        deleteTitle,
-        style: const TextStyle(
-          fontSize: 16.0,
-          color: Color(0xDDFF0000),
-        ),
-      ),
-      onPressed: () => Navigator.of(context).maybePop(2),
-    ),
-  );
+
   final act = await showCupertinoModalPopup<int>(
     context: context,
     builder: (context) => CupertinoActionSheet(
       message: Text('选择一个对此任务的操作：'),
-      actions: actions,
+      actions: actions(context),
       cancelButton: CupertinoActionSheetAction(
         child: Text(
           '取消',

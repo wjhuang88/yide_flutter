@@ -1,3 +1,4 @@
 UPDATE `task_data` SET 
-    `is_finished` = ?
+    `is_finished` = ?,
+    `finish_time` = ?
 WHERE `id` = ?;

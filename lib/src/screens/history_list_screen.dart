@@ -73,29 +73,29 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
     _isLoading = true;
     final now = DateTime.now();
     final yestoday = now.subtract(Duration(days: 1));
-    final list = await TaskDBAction.getTaskListFinished(now);
+    final list = await TaskDBAction.getTaskListFinished();
     _todayList?.clear();
     _yestodyList?.clear();
     _monthList?.clear();
     _yearsList?.clear();
     for (var item in list) {
-      final taskTime = item.data.taskTime;
-      if (_isSameDay(taskTime, now)) {
+      final finishTime = item.data.finishTime;
+      if (_isSameDay(finishTime, now)) {
         _todayList ??= List();
         _todayList.add(item);
-      } else if (_isSameDay(taskTime, yestoday)) {
+      } else if (_isSameDay(finishTime, yestoday)) {
         _yestodyList ??= List();
         _yestodyList.add(item);
-      } else if (taskTime.year == now.year) {
+      } else if (finishTime.year == now.year) {
         _monthList ??= LinkedHashMap();
-        final sectionTime = DateTime(taskTime.year, taskTime.month);
+        final sectionTime = DateTime(finishTime.year, finishTime.month);
         if (!_monthList.containsKey(sectionTime)) {
           _monthList[sectionTime] = List();
         }
         _monthList[sectionTime].add(item);
       } else {
         _yearsList ??= LinkedHashMap();
-        final sectionYear = taskTime.year;
+        final sectionYear = finishTime.year;
         if (!_yearsList.containsKey(sectionYear)) {
           _yearsList[sectionYear] = List();
         }
@@ -349,7 +349,7 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
                   context,
                   onDetail: () => _enterDetail(pack),
                   onDone: () async {
-                    await TaskDBAction.toggleTaskFinish(pack.data.id, true);
+                    await TaskDBAction.toggleTaskFinish(pack.data.id, true, DateTime.now());
                     _update();
                   },
                   onDelete: () async {

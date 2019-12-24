@@ -307,17 +307,9 @@ class TaskDBAction {
     return result.map(_makePackFromQueryResult).toList();
   }
 
-  static Future<List<TaskPack>> getTaskListFinished(DateTime date) async {
-    if (date == null) {
-      return null;
-    }
+  static Future<List<TaskPack>> getTaskListFinished() async {
 
-    final queryDate = DateTime(date.year, date.month, date.day + 1);
-
-    final result = await _dbManager.query(
-        'assets/sql/query_task_finished.sql',
-        [queryDate.millisecondsSinceEpoch]);
-
+    final result = await _dbManager.query('assets/sql/query_task_finished.sql');
     return result.map(_makePackFromQueryResult).toList();
   }
 
@@ -416,11 +408,11 @@ class TaskDBAction {
     }
   }
 
-  static Future<int> toggleTaskFinish(int id, bool isFinished) async {
+  static Future<int> toggleTaskFinish(int id, bool isFinished, DateTime finishTime) async {
     const sql = 'assets/sql/toggle_task_finish.sql';
     final isExist = await isTaskExists(id);
     if (isExist) {
-      return _dbManager.update(sql, [isFinished ? 1 : 0, id]);
+      return _dbManager.update(sql, [isFinished ? 1 : 0, finishTime?.millisecondsSinceEpoch, id]);
     } else {
       return 0;
     }

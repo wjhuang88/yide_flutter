@@ -680,7 +680,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
             context,
             onDetail: () => _enterDetail(pack),
             onDone: () async {
-              await TaskDBAction.toggleTaskFinish(pack.data.id, true);
+              await TaskDBAction.toggleTaskFinish(pack.data.id, true, DateTime.now());
               _update();
             },
             onDelete: () async {
