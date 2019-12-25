@@ -385,6 +385,9 @@ class _ListBodyState extends State<_ListBody> {
 
   SingleDayScreenController _controller;
 
+  int _daytimeIndex;
+  int _nightIndex;
+
   @override
   void initState() {
     super.initState();
@@ -406,6 +409,20 @@ class _ListBodyState extends State<_ListBody> {
     _taskList = await TaskDBAction.getTaskListByDate(_dateTime);
     final taskCount = _taskList.length;
     final doingCount = _taskList.where((pack) => !pack.data.isFinished).length;
+    _daytimeIndex = null;
+    _nightIndex = null;
+    if (taskCount > 0) {
+      for (var i = 0; i < taskCount; i++) {
+        if (_daytimeIndex != null && _nightIndex != null) {
+          break;
+        }
+        if (_taskList[i].data.timeType == DateTimeType.daytime) {
+          _daytimeIndex ??= i;
+        } else if (_taskList[i].data.timeType == DateTimeType.night) {
+          _nightIndex ??= i;
+        }
+      }
+    }
     setState(() {});
     _controller.updateCountInfo(taskCount, doingCount);
   }
@@ -461,7 +478,7 @@ class _ListBodyState extends State<_ListBody> {
         if (item.data.remark != null && item.data.remark.isNotEmpty) {
           remarkVisable = item.data.remark;
         } else {
-          remarkVisable = ' - ';
+          remarkVisable = '';
         }
         rows
           ..add(const SizedBox(height: 10.0))
@@ -502,34 +519,18 @@ class _ListBodyState extends State<_ListBody> {
           },
         );
       },
-      onGenerateLabel: (index) => _makeTimeLabel(_taskList[index]?.data),
-      onGenerateDotColor: (index) {
-        final pack = _taskList[index];
-        final isFinished = pack?.data?.isFinished ?? false;
-        return isFinished ? const Color(0xFF9d77d4) : pack?.tag?.iconColor;
+      onGenerateLabel: (index) {
+        if (index == _daytimeIndex) {
+          return '白天';
+        } else if (index == _nightIndex) {
+          return '晚间';
+        } else {
+          return '';
+        }
       },
-      onGenerateLabelColor: (index) {
-        final pack = _taskList[index];
-        final isFinished = pack?.data?.isFinished ?? false;
-        return isFinished ? finishedColor : const Color(0xFFC9A2F5);
-      },
+      onGenerateDotColor: (index) => const Color(0xFFD7CAFF),
+      onGenerateLabelColor: (index) => const Color(0xFFC9A2F5),
     );
-  }
-
-  String _makeTimeLabel(TaskData data) {
-    switch (data?.timeType) {
-      case DateTimeType.daytime:
-        return '白天';
-      case DateTimeType.night:
-        return '晚间';
-      case DateTimeType.datetime:
-        final date = data?.taskTime;
-        return date == null || date.millisecondsSinceEpoch == 0
-            ? ' - '
-            : DateFormat('h:mm a').format(date);
-      default:
-        return ' - ';
-    }
   }
 
   Future<TaskPack> _enterDetail(TaskPack item) {
