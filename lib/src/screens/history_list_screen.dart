@@ -12,7 +12,6 @@ import 'package:yide/src/models/task_data.dart';
 import 'package:yide/src/notification.dart';
 import 'package:yide/src/tools/common_tools.dart';
 import 'package:yide/src/config.dart' as Config;
-import 'package:yide/src/tools/icon_tools.dart';
 import 'package:yide/src/tools/sqlite_manager.dart';
 
 import 'detail_list_screen.dart';
@@ -108,33 +107,6 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
 
   bool _isSameDay(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
-  }
-
-  bool _isOutdated(TaskPack task) {
-    final type = task.data.timeType;
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final taskTime = task.data.taskTime;
-    switch (type) {
-      case DateTimeType.fullday:
-        final day = DateTime(taskTime.year, taskTime.month, taskTime.day);
-        return day.isBefore(today);
-      case DateTimeType.someday:
-        return false;
-      case DateTimeType.datetime:
-        return taskTime.isBefore(now);
-    }
-    return false;
-  }
-
-  String _makeStatusLabel(TaskPack task) {
-    if (task.data.isFinished) {
-      return '已完成';
-    }
-    if (_isOutdated(task)) {
-      return '已过期';
-    }
-    return '进行中';
   }
 
   @override
@@ -295,28 +267,10 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
           style: TextStyle(color: pack.tag.iconColor, fontSize: 12.0),
         ),
         const SizedBox(
-          width: 20.0,
+          width: 15.0,
         ),
         Text(
-          DateFormat('yyyy/MM/dd', 'zh').format(pack.data.taskTime),
-          style: const TextStyle(
-            color: Color(0xFFC9A2F5),
-            fontSize: 12.0,
-          ),
-        ),
-        const SizedBox(
-          width: 20.0,
-        ),
-        Icon(
-          buildCupertinoIconData(0xf402),
-          color: const Color(0xFFC9A2F5),
-          size: 12.0,
-        ),
-        const SizedBox(
-          width: 5.0,
-        ),
-        Text(
-          _makeTimeLabel(pack.data),
+          '于 ${DateFormat("yyyy/MM/dd HH:mm").format(pack.data.finishTime)} 完成',
           style: const TextStyle(
             color: Color(0xFFC9A2F5),
             fontSize: 12.0,
@@ -324,38 +278,43 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
         ),
       ];
       return Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.ideographic,
         children: <Widget>[
-          Container(
-            margin: const EdgeInsets.only(left: 15.0),
-            padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
-            decoration: BoxDecoration(
-                color: const Color(0x88C9A2F5),
-                borderRadius: const BorderRadius.all(Radius.circular(10.0))),
-            child: Text(
-              _makeStatusLabel(pack),
-              style: const TextStyle(
-                color: Color(0x88FFFFFF),
-                fontSize: 10.0,
-              ),
+          const SizedBox(
+            width: 15.0,
+          ),
+          Text(
+            DateFormat('MM/dd', 'zh').format(pack.data.finishTime),
+            style: const TextStyle(
+              color: Color(0x88C9A2F5),
+              fontSize: 12.0,
             ),
           ),
           Expanded(
             child: TimelineTile(
-              padding: const EdgeInsets.only(left: 10.0, right: 15.0, bottom: 0.0),
+              padding:
+                  const EdgeInsets.only(left: 10.0, right: 15.0, bottom: 0.0),
               onTap: () => _enterDetail(pack),
               onLongPress: () {
                 detailPopup(
                   context,
                   onDetail: () => _enterDetail(pack),
                   onDone: () async {
-                    await TaskDBAction.toggleTaskFinish(pack.data.id, true, DateTime.now());
+                    await TaskDBAction.toggleTaskFinish(
+                        pack.data.id, true, DateTime.now());
+                    _update();
+                  },
+                  onReactive: () async {
+                    await TaskDBAction.toggleTaskFinish(
+                        pack.data.id, false, DateTime.now());
                     _update();
                   },
                   onDelete: () async {
                     await TaskDBAction.deleteTask(pack.data);
                     _update();
                   },
+                  isDone: true,
                 );
               },
               rows: <Widget>[
@@ -381,22 +340,6 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
         ],
       );
     };
-  }
-
-  String _makeTimeLabel(TaskData data) {
-    switch (data?.timeType) {
-      case DateTimeType.fullday:
-        return '全天';
-      case DateTimeType.someday:
-        return '某天';
-      case DateTimeType.datetime:
-        final date = data?.taskTime;
-        return date == null || date.millisecondsSinceEpoch == 0
-            ? ' - '
-            : DateFormat('HH:mm').format(date);
-      default:
-        return ' - ';
-    }
   }
 
   Future<TaskPack> _enterDetail(TaskPack item) {

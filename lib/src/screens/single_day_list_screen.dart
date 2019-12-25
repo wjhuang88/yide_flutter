@@ -451,8 +451,9 @@ class _ListBodyState extends State<_ListBody> {
             ..add(
               Text(
                 item.data.catalog,
-                style:
-                    TextStyle(color: isFinished ? finishedColor : Color(0xFFC9A2F5), fontSize: 12.0),
+                style: TextStyle(
+                    color: isFinished ? finishedColor : Color(0xFFC9A2F5),
+                    fontSize: 12.0),
               ),
             );
         }
@@ -469,7 +470,9 @@ class _ListBodyState extends State<_ListBody> {
               remarkVisable,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: isFinished ? finishedColor : const Color(0xFFC9A2F5), fontSize: 12.0),
+              style: TextStyle(
+                  color: isFinished ? finishedColor : const Color(0xFFC9A2F5),
+                  fontSize: 12.0),
             ),
           );
         rows.add(const SizedBox(height: 20.0));
@@ -481,11 +484,17 @@ class _ListBodyState extends State<_ListBody> {
               context,
               onDetail: () => _enterDetail(item),
               onDone: () async {
-                await TaskDBAction.toggleTaskFinish(item.data.id, true, DateTime.now());
+                await TaskDBAction.toggleTaskFinish(
+                    item.data.id, true, DateTime.now());
                 _controller.updateListData();
               },
               onDelete: () async {
                 await TaskDBAction.deleteTask(item.data);
+                _controller.updateListData();
+              },
+              onReactive: () async {
+                await TaskDBAction.toggleTaskFinish(
+                    item.data.id, false, DateTime.now());
                 _controller.updateListData();
               },
               isDone: isFinished,
@@ -497,19 +506,22 @@ class _ListBodyState extends State<_ListBody> {
       onGenerateDotColor: (index) {
         final pack = _taskList[index];
         final isFinished = pack?.data?.isFinished ?? false;
-        return isFinished
-            ? finishedColor
-            : pack?.tag?.iconColor;
+        return isFinished ? const Color(0xFF9d77d4) : pack?.tag?.iconColor;
+      },
+      onGenerateLabelColor: (index) {
+        final pack = _taskList[index];
+        final isFinished = pack?.data?.isFinished ?? false;
+        return isFinished ? finishedColor : const Color(0xFFC9A2F5);
       },
     );
   }
 
   String _makeTimeLabel(TaskData data) {
     switch (data?.timeType) {
-      case DateTimeType.fullday:
-        return '全天';
-      case DateTimeType.someday:
-        return '某天';
+      case DateTimeType.daytime:
+        return '白天';
+      case DateTimeType.night:
+        return '晚间';
       case DateTimeType.datetime:
         final date = data?.taskTime;
         return date == null || date.millisecondsSinceEpoch == 0

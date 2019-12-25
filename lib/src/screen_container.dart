@@ -5,7 +5,6 @@ import 'package:yide/src/interfaces/navigatable.dart';
 import 'package:yide/src/notification.dart';
 import 'package:yide/src/tools/common_tools.dart';
 
-import 'components/stage_with_menu.dart';
 import 'config.dart' as Config;
 import 'globle_variable.dart';
 import 'screens/splash_screen.dart';

@@ -714,9 +714,9 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
 
   String _makeTimeLabel(TaskData data) {
     switch (data?.timeType) {
-      case DateTimeType.fullday:
+      case DateTimeType.daytime:
         return '全天';
-      case DateTimeType.someday:
+      case DateTimeType.night:
         return '某天';
       case DateTimeType.datetime:
         final date = data?.taskTime;

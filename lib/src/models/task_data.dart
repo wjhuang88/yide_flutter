@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:yide/src/models/geo_data.dart';
 import 'package:yide/src/tools/date_tools.dart';
 
-enum DateTimeType { fullday, someday, datetime }
+enum DateTimeType { daytime, night, datetime }
 
 class TaskTag {
   TaskTag.copy(TaskTag tag)
@@ -92,22 +92,22 @@ class TaskData {
       case 0:
         return DateTimeType.datetime;
       case 2:
-        return DateTimeType.someday;
+        return DateTimeType.night;
       case 1:
-        return DateTimeType.fullday;
+        return DateTimeType.daytime;
       default:
         print(
             'Unsupported DateTimeType code: $timeTypeCode, set to default value: fullday.');
-        return DateTimeType.fullday;
+        return DateTimeType.daytime;
     }
   }
 
   set timeType(DateTimeType value) {
     switch (value) {
-      case DateTimeType.fullday:
+      case DateTimeType.daytime:
         timeTypeCode = 1;
         break;
-      case DateTimeType.someday:
+      case DateTimeType.night:
         timeTypeCode = 2;
         break;
       case DateTimeType.datetime:

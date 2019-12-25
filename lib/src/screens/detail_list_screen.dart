@@ -160,6 +160,7 @@ class _DetailListScreenState extends State<DetailListScreen>
         gradient: backgroundGradient,
       ),
       child: CupertinoPageScaffold(
+        resizeToAvoidBottomInset: false,
         backgroundColor: Colors.transparent,
         child: Column(
           children: <Widget>[
@@ -358,8 +359,8 @@ class _DetailListScreenState extends State<DetailListScreen>
                     child: _data.remark != null && _data.remark.isNotEmpty
                         ? Text(
                             _data.remark,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                            // maxLines: 1,
+                            // overflow: TextOverflow.ellipsis,
                             style: contentStyle,
                           )
                         : Text('点击添加备注', style: nocontentStyle),
@@ -469,10 +470,10 @@ class _HeaderPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     var dateTimeString;
     switch (timeType) {
-      case DateTimeType.fullday:
+      case DateTimeType.daytime:
         dateTimeString = DateFormat('MM月dd日 全天').format(dateTime);
         break;
-      case DateTimeType.someday:
+      case DateTimeType.night:
         dateTimeString = '某天';
         break;
       case DateTimeType.datetime:
@@ -570,13 +571,17 @@ class _ListItem extends StatelessWidget {
             ..rotateX(-(1 - _factor) * Math.pi / 2),
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 15.0),
-            padding: const EdgeInsets.only(right: 20.0),
-            height: 60.0,
+            padding: const EdgeInsets.only(right: 20.0, top: 15.0, bottom: 15.0),
+            //height: 60.0,
             decoration: const BoxDecoration(
               color: Color(0x12FFFFFF),
               borderRadius: BorderRadius.all(Radius.circular(10.0)),
             ),
+            constraints: BoxConstraints(
+              minHeight: 60.0,
+            ),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
                 const SizedBox(
                   width: 20.0,

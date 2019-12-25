@@ -107,9 +107,11 @@ Future<void> detailPopup(
   VoidCallback onDetail,
   VoidCallback onDelete,
   VoidCallback onDone,
+  VoidCallback onReactive,
   String detailTitle = '查看任务详情',
   String deleteTitle = '删除此任务',
   String doneTitle = '设置此任务为已完成',
+  String reactiveTitle = '重新激活任务',
   bool isDone = false,
 }) async {
   actions(BuildContext context) {
@@ -136,6 +138,19 @@ Future<void> detailPopup(
             ),
           ),
           onPressed: () => Navigator.of(context).maybePop(1),
+        ),
+      );
+    } else {
+      actions.add(
+        CupertinoActionSheetAction(
+          child: Text(
+            reactiveTitle,
+            style: const TextStyle(
+              fontSize: 16.0,
+              color: Color(0xFF000000),
+            ),
+          ),
+          onPressed: () => Navigator.of(context).maybePop(-1),
         ),
       );
     }
@@ -180,5 +195,7 @@ Future<void> detailPopup(
     (onDone ?? () {})();
   } else if (act == 2) {
     (onDelete ?? () {})();
+  } else if (act == -1) {
+    (onReactive ?? () {})();
   }
 }

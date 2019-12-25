@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:yide/src/components/header_bar.dart';
-import 'package:yide/src/config.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
 import 'package:yide/src/notification.dart';
 
@@ -43,7 +42,7 @@ class DetailCommentsScreen extends StatelessWidget implements Navigatable {
               keyboardType: TextInputType.text,
               keyboardAppearance: Brightness.dark,
               textInputAction: TextInputAction.done,
-              onSubmitted: (text) => Navigator.of(context).maybePop<String>(text),
+              onSubmitted: (text) => PopRouteNotification(result: text).dispatch(context),
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               placeholder: '请输入内容',
               placeholderStyle: const TextStyle(color: Color(0xFF9B7FE9)),

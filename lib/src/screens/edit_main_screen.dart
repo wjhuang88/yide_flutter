@@ -5,7 +5,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:yide/src/components/fade_in.dart';
 import 'package:yide/src/components/infinity_page_view.dart';
 import 'package:yide/src/components/panel_switcher.dart';
 import 'package:yide/src/components/tap_animator.dart';
@@ -13,6 +12,7 @@ import 'package:yide/src/config.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
 import 'package:yide/src/notification.dart';
 import 'package:yide/src/tools/date_tools.dart';
+import 'package:yide/src/tools/icon_tools.dart';
 import 'package:yide/src/tools/sqlite_manager.dart';
 import 'package:yide/src/models/task_data.dart';
 import 'package:yide/src/screens/detail_screens/panels/detail_datetime_panel.dart';
@@ -85,6 +85,10 @@ class _EditMainScreenState extends State<EditMainScreen>
     super.initState();
     _defaultAnimController = AnimationController(vsync: this);
     _taskData = TaskData.copy(widget.taskPack?.data ?? TaskData.defultNull());
+    final now = DateTime.now();
+    if (_taskData.taskTime.isBefore(now)) {
+      _taskData.taskTime = now;
+    }
     _tagData = widget.taskPack?.tag;
     if (_tagData == null) {
       TaskDBAction.getFirstTag().then((tag) {
@@ -193,19 +197,6 @@ class _EditMainScreenState extends State<EditMainScreen>
                     ),
                   ),
                 ),
-                Container(
-                  transform: Matrix4.translationValues(
-                      0.0, 60.0 * (1 - _factorAnimation.value), 0.0),
-                  height: 40.0,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      _buildTypeSwitcher('设置时间', DateTimeType.datetime),
-                      _buildTypeSwitcher('全天', DateTimeType.fullday),
-                      _buildTypeSwitcher('某天', DateTimeType.someday),
-                    ],
-                  ),
-                ),
                 _BottomPanel(
                   factorAnimation: _factorAnimation,
                   controller: _controller,
@@ -214,37 +205,6 @@ class _EditMainScreenState extends State<EditMainScreen>
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildTypeSwitcher(String label, DateTimeType type) {
-    return Expanded(
-      child: TapAnimator(
-        behavior: HitTestBehavior.opaque,
-        onTap: () {
-          if (_taskData.timeType == type) {
-            return;
-          }
-          _controller.switchToDateType(type);
-          _focus();
-        },
-        builder: (animValue) {
-          final highlightColor = const Color(0xFFFFFFFF);
-          final normalColor = const Color(0xFFBBADE7);
-          final tapColor = const Color(0x88BBADE7);
-          return Center(
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                  color: _taskData.timeType == type
-                      ? Color.lerp(highlightColor, tapColor, animValue)
-                      : Color.lerp(normalColor, tapColor, animValue),
-                  fontSize: 14.0),
-            ),
-          );
-        },
       ),
     );
   }
@@ -270,9 +230,34 @@ class _EditMainScreenState extends State<EditMainScreen>
           ]),
       child: Column(
         children: <Widget>[
+          ConstrainedBox(
+            constraints: BoxConstraints(minHeight: 70.0),
+            child: CupertinoTextField(
+              autofocus: true,
+              minLines: 1,
+              maxLines: 3,
+              cursorWidth: 1.0,
+              cursorColor: const Color(0xFFFAB807),
+              controller: _textEditingController,
+              focusNode: _focusNode,
+              style: TextStyle(color: Colors.white, fontSize: 16.0, height: 1.5),
+              textAlign: TextAlign.center,
+              textAlignVertical: TextAlignVertical.center,
+              keyboardAppearance: Brightness.dark,
+              keyboardType: TextInputType.text,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (value) {
+                _saveAndBack(context, _taskData, _tagData);
+              },
+              placeholder: '记录你的任务',
+              placeholderStyle: const TextStyle(color: Color(0xFF9B7FE9)),
+              decoration: const BoxDecoration(color: Colors.transparent),
+            ),
+          ),
           TapAnimator(
             behavior: HitTestBehavior.opaque,
             builder: (factor) => Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 Icon(
                   FontAwesomeIcons.solidCircle,
@@ -280,14 +265,16 @@ class _EditMainScreenState extends State<EditMainScreen>
                   size: 10.0,
                 ),
                 SizedBox(
-                  width: 11.0,
+                  width: 4.0,
                 ),
                 Text(
                   _tagData?.name ?? '默认',
                   style: TextStyle(
-                      color: Color.lerp(
-                          Colors.white, const Color(0xFFBBADE7), factor),
-                      fontSize: 12.0),
+                    color: Color.lerp(const Color(0xFFFFFFFF),
+                        const Color(0xFFBBADE7), factor),
+                    fontSize: 13.0,
+                    fontWeight: FontWeight.w200,
+                  ),
                 ),
               ],
             ),
@@ -295,30 +282,7 @@ class _EditMainScreenState extends State<EditMainScreen>
               _controller.changeSetupPanel(DetailTagPanel.panelName, '标签');
             },
           ),
-          const SizedBox(
-            height: 8.0,
-          ),
-          CupertinoTextField(
-            autofocus: true,
-            minLines: 3,
-            maxLines: 4,
-            cursorWidth: 1.0,
-            cursorColor: const Color(0xFFFAB807),
-            controller: _textEditingController,
-            focusNode: _focusNode,
-            style: TextStyle(color: Colors.white, fontSize: 16.0),
-            textAlign: TextAlign.center,
-            textAlignVertical: TextAlignVertical.center,
-            keyboardAppearance: Brightness.dark,
-            keyboardType: TextInputType.text,
-            textInputAction: TextInputAction.done,
-            onSubmitted: (value) {
-              _saveAndBack(context, _taskData, _tagData);
-            },
-            placeholder: '记录你的任务',
-            placeholderStyle: const TextStyle(color: Color(0xFF9B7FE9)),
-            decoration: const BoxDecoration(color: Colors.transparent),
-          ),
+          const SizedBox(height: 8.0,),
         ],
       ),
     );
@@ -342,33 +306,18 @@ class _DateInfoState extends State<_DateInfo>
     with SingleTickerProviderStateMixin {
   EditScreenController _controller;
 
-  FadeInController _fadeInController;
-
-  AnimationController _dateListController;
-  Animation _dateListAnimation;
+  bool _isNight = false;
 
   @override
   void initState() {
     super.initState();
     _controller = widget._controller ?? EditScreenController();
     _controller._dateInfoState = this;
-    _dateListController = AnimationController(
-        vsync: this,
-        duration: Duration(milliseconds: 250),
-        value:
-            _controller.taskData.timeType == DateTimeType.someday ? 1.0 : 0.0);
-    _dateListAnimation = CurvedAnimation(
-        parent: _dateListController,
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.easeInCubic)
-      ..addListener(() => setState(() {}));
-
-    _fadeInController = FadeInController();
+    _isNight = _controller.taskData.timeType == DateTimeType.night;
   }
 
   @override
   void dispose() {
-    _dateListController.dispose();
     super.dispose();
   }
 
@@ -376,83 +325,69 @@ class _DateInfoState extends State<_DateInfo>
     final taskData = _controller.taskData;
     taskData.timeType = type;
     _controller.taskData = taskData;
-    if (type == DateTimeType.someday) {
-      _dateListController.forward();
+    if (type == DateTimeType.night) {
+      _isNight = true;
     } else {
-      _dateListController.reverse();
+      _isNight = false;
     }
-    _fadeInController.fadeIn();
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
-        GestureDetector(
-          onTap: () {
-            widget._controller
-                .changeSetupPanel(DetailDateTimePanel.panelName, '日期');
-          },
-          child: Container(
-            height: 80.0,
-            child: FractionalTranslation(
-              translation: Offset(0.0, -_dateListAnimation.value * 0.1),
-              child: FadeTransition(
-                opacity: ReverseAnimation(_dateListAnimation),
-                child: _DatePage(
-                  baseTime: _controller.taskData.taskTime,
-                  controller: widget._controller,
-                ),
-              ),
+        Expanded(
+          child: GestureDetector(
+            onTap: () {
+              widget._controller
+                  .changeSetupPanel(DetailDateTimePanel.panelName, '日期');
+            },
+            child: _DatePage(
+              baseTime: _controller.taskData.taskTime,
+              controller: widget._controller,
             ),
           ),
         ),
-        const SizedBox(
-          height: 12.0,
-        ),
-        FractionalTranslation(
-          translation: Offset(0.0, -_dateListAnimation.value),
-          child: FadeIn(
-            duration: const Duration(milliseconds: 250),
-            controller: _fadeInController,
-            child: _buildDatetimeField(_controller.taskData.timeType),
+        Container(
+          height: 100.0,
+          alignment: Alignment.topCenter,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              CupertinoButton(
+                child: Row(
+                  children: <Widget>[
+                    Icon(buildCupertinoIconData(0xf4b7), color: !_isNight ? Colors.white : const Color(0xFFBBADE7),),
+                    Text(
+                      '白天',
+                      style: TextStyle(
+                          color: !_isNight ? Colors.white : const Color(0xFFBBADE7),
+                          fontSize: 20.0, fontWeight: FontWeight.w300,),
+                    ),
+                  ],
+                ),
+                onPressed: () => _switchToType(DateTimeType.daytime),
+              ),
+              CupertinoButton(
+                child: Row(
+                  children: <Widget>[
+                    Icon(buildCupertinoIconData(0xf468), color: _isNight ? Colors.white : const Color(0xFFBBADE7),),
+                    Text(
+                      '晚间',
+                      style: TextStyle(
+                          color: _isNight ? Colors.white : const Color(0xFFBBADE7),
+                          fontSize: 20.0, fontWeight: FontWeight.w300,),
+                    ),
+                  ],
+                ),
+                onPressed: () => _switchToType(DateTimeType.night),
+              ),
+            ],
           ),
         ),
       ],
     );
-  }
-
-  Widget _buildDatetimeField(DateTimeType type) {
-    switch (type) {
-      case DateTimeType.fullday:
-        return Text(
-          '全天',
-          style: const TextStyle(color: Colors.white, fontSize: 20.0),
-        );
-      case DateTimeType.someday:
-        return Text(
-          '某天',
-          style: const TextStyle(color: Colors.white, fontSize: 20.0),
-        );
-      case DateTimeType.datetime:
-        return GestureDetector(
-          onTap: () {
-            _controller.changeSetupPanel(DetailTimePanel.panelName, '时间');
-          },
-          child: Container(
-            child: Text(
-              DateFormat('HH:mm').format(_controller.taskData.taskTime),
-              style: const TextStyle(
-                  color: Colors.white, fontSize: 20.0, fontFamily: ''),
-            ),
-          ),
-        );
-      default:
-        return Text(
-          '未设定',
-          style: const TextStyle(color: Colors.white, fontSize: 20.0),
-        );
-    }
   }
 }
 
@@ -521,15 +456,15 @@ class _DatePageState extends State<_DatePage> {
       itemBuilder: (context, i) {
         final timeToRender = _baseTime.add(Duration(days: i));
         return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Text(
               _getWeekDayName(timeToRender),
-              style: const TextStyle(color: Colors.white, fontSize: 20.0),
+              style: const TextStyle(color: Colors.white, fontSize: 24.0, fontWeight: FontWeight.w300),
             ),
             Text(
               DateFormat('MM月dd日').format(timeToRender),
-              style: const TextStyle(
-                  color: Color(0xFFBBADE7), fontSize: 14.0, fontFamily: ''),
+              style: const TextStyle(color: Color(0xFFBBADE7), fontSize: 12.0),
             ),
           ],
         );

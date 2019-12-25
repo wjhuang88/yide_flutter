@@ -2,7 +2,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:yide/src/components/tap_animator.dart';
-import 'package:yide/src/config.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
 
 import 'notification.dart';
