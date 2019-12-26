@@ -29,3 +29,14 @@ INSERT INTO `task_tag` (`background_color`, `icon_color`, `name`) VALUES (428466
 INSERT INTO `task_tag` (`background_color`, `icon_color`, `name`) VALUES (4289688053, 4289688053, '生活');
 INSERT INTO `task_tag` (`background_color`, `icon_color`, `name`) VALUES (4291797871, 4291797871, '休息');
 INSERT INTO `task_tag` (`background_color`, `icon_color`, `name`) VALUES (4293975078, 4293975078, '健康');
+CREATE TABLE IF NOT EXISTS `task_recurring`(
+    `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+    `task_id` INTEGER,
+    `repeat_mode` INTEGER,
+    `repeat_max_num` INTEGER,
+    `days_of_week_code` INTEGER,
+    `days_of_month_code` INTEGER,
+    `months_of_year_code` INTEGER,
+    `task_time` INTEGER,
+    `create_time` INTEGER
+);

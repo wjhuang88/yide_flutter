@@ -134,6 +134,84 @@ class TaskDetail {
   static TaskDetail nullDetail = TaskDetail.defultNull();
 }
 
+enum RepeatMode { daily, weekly, monthly, annual, none }
+
+class TaskRecurring {
+  final int id;
+  int taskId;
+  int repeatModeCode;
+  int repeatMaxNum;
+  int daysOfWeekCode;
+  int daysOfMonthCode;
+  int monthsOfYearCode;
+  DateTime taskTime;
+
+  TaskRecurring({
+    this.id,
+    this.taskId,
+    this.repeatModeCode,
+    this.repeatMaxNum,
+    this.daysOfWeekCode,
+    this.daysOfMonthCode,
+    this.monthsOfYearCode,
+    this.taskTime,
+  });
+
+  TaskRecurring.fromBitMap(RepeatBitMap bitMap)
+      : id = null,
+        repeatModeCode = bitMap.isDailySelected
+            ? 0
+            : bitMap.isWeekSelected
+                ? 1
+                : bitMap.isMonthSelected ? 2 : bitMap.isYearSelected ? 3 : null,
+        daysOfWeekCode = bitMap.isWeekSelected ? bitMap.getDaysOfWeek() : null;
+
+  List<int> get daysOfWeek {
+    final result = List<int>();
+    for (var i = 0; i < 7; i++) {
+      if (daysOfWeekCode & (1 << i) != 0) {
+        result.add(i);
+      }
+    }
+    return result;
+  }
+
+  RepeatMode get repeatMode {
+    switch (repeatModeCode) {
+      case 0:
+        return RepeatMode.daily;
+      case 1:
+        return RepeatMode.weekly;
+      case 2:
+        return RepeatMode.monthly;
+      case 3:
+        return RepeatMode.annual;
+      default:
+        return RepeatMode.none;
+    }
+  }
+
+  set repeatMode(RepeatMode value) {
+    switch (value) {
+      case RepeatMode.daily:
+        repeatModeCode = 0;
+        break;
+      case RepeatMode.weekly:
+        repeatModeCode = 1;
+        break;
+      case RepeatMode.monthly:
+        repeatModeCode = 2;
+        break;
+      case RepeatMode.annual:
+        repeatModeCode = 3;
+        break;
+      case RepeatMode.none:
+        repeatModeCode = null;
+        break;
+    }
+  }
+}
+
 class TaskPack {
   final TaskData data;
   final TaskTag tag;
@@ -353,5 +431,9 @@ class RepeatBitMap {
     } else {
       return '';
     }
+  }
+
+  int getDaysOfWeek() {
+    return (bitMap & _allWeekMask) >> 1;
   }
 }

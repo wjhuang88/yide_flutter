@@ -632,7 +632,9 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
         ),
         Text(
           pack.tag.name ?? '默认',
-          style: TextStyle(color: isFinished ? Config.finishedColor : pack.tag.iconColor, fontSize: 12.0),
+          style: TextStyle(
+              color: isFinished ? Config.finishedColor : pack.tag.iconColor,
+              fontSize: 12.0),
         ),
         const SizedBox(
           width: 20.0,
@@ -642,7 +644,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
         infoRow
           ..add(
             Text(
-              DateFormat('yyyy.MM.dd', 'zh').format(pack.data.taskTime),
+              DateFormat('yyyy/MM/dd', 'zh').format(pack.data.taskTime),
               style: TextStyle(
                 color: isFinished ? Config.finishedColor : Color(0xFFC9A2F5),
                 fontSize: 12.0,
@@ -656,14 +658,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
           );
       }
       infoRow.addAll([
-        Icon(
-          buildCupertinoIconData(0xf402),
-          color: isFinished ? Config.finishedColor : const Color(0xFFC9A2F5),
-          size: 12.0,
-        ),
-        const SizedBox(
-          width: 5.0,
-        ),
+        _makeTimeIcon(pack.data),
         Text(
           _makeTimeLabel(pack.data),
           style: TextStyle(
@@ -680,7 +675,8 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
             context,
             onDetail: () => _enterDetail(pack),
             onDone: () async {
-              await TaskDBAction.toggleTaskFinish(pack.data.id, true, DateTime.now());
+              await TaskDBAction.toggleTaskFinish(
+                  pack.data.id, true, DateTime.now());
               _update();
             },
             onDelete: () async {
@@ -715,9 +711,9 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
   String _makeTimeLabel(TaskData data) {
     switch (data?.timeType) {
       case DateTimeType.daytime:
-        return '全天';
+        return '白天';
       case DateTimeType.night:
-        return '某天';
+        return '晚间';
       case DateTimeType.datetime:
         final date = data?.taskTime;
         return date == null || date.millisecondsSinceEpoch == 0
@@ -725,6 +721,30 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
             : DateFormat('HH:mm').format(date);
       default:
         return ' - ';
+    }
+  }
+
+  Icon _makeTimeIcon(TaskData data) {
+    final isFinished = data.isFinished;
+    switch (data?.timeType) {
+      case DateTimeType.daytime:
+        return Icon(
+          buildCupertinoIconData(0xf4b7),
+          color: isFinished ? Config.finishedColor : const Color(0xFFC9A2F5),
+          size: 16.0,
+        );
+      case DateTimeType.night:
+        return Icon(
+          buildCupertinoIconData(0xf468),
+          color: isFinished ? Config.finishedColor : const Color(0xFFC9A2F5),
+          size: 16.0,
+        );
+      default:
+        return Icon(
+          buildCupertinoIconData(0xf402),
+          color: isFinished ? Config.finishedColor : const Color(0xFFC9A2F5),
+          size: 12.0,
+        );
     }
   }
 

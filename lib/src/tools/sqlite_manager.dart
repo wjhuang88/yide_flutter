@@ -11,7 +11,7 @@ class SqliteManager {
       print('Database is null, try to open a new database.');
       _database = openDatabase(
         'yide_app.db',
-        version: 8,
+        version: 9,
         onCreate: (db, version) async {
           print('Init sqlite table at version $version.');
           _execute(db, 'assets/sql/table_create.sql');
@@ -39,6 +39,10 @@ class SqliteManager {
           if (oldVersion < 8) {
             print('Ready to execute upgrade sql from v7 to v8');
             await _execute(db, 'assets/sql/v7_to_v8.sql');
+          }
+          if (oldVersion < 9) {
+            print('Ready to execute upgrade sql from v8 to v9');
+            await _execute(db, 'assets/sql/v8_to_v9.sql');
           }
         },
       ).catchError((e) {
@@ -266,6 +270,21 @@ class TaskDBAction {
     return _makeTagFromQueryResult(tagRaw);
   }
 
+  static Future<bool> isTaskExists(int id) async {
+    if (id == null) {
+      return false;
+    }
+    final result =
+        await _dbManager.query('assets/sql/query_task_count.sql', [id]);
+    if (result == null) {
+      return false;
+    }
+    assert(result.length == 1,
+        'Querying task count by id should return 1 and only 1 result, but ${result.length} found.');
+    final count = result.first['count'] as int;
+    return count > 0;
+  }
+
   static Future<TaskPack> getTaskById(int id) async {
     if (id == null) {
       return null;
@@ -291,90 +310,6 @@ class TaskDBAction {
         [dateBegin.millisecondsSinceEpoch, dateEnd.millisecondsSinceEpoch]);
 
     return result.map(_makePackFromQueryResult).toList();
-  }
-
-  static Future<List<TaskPack>> getTaskListReady(DateTime date) async {
-    if (date == null) {
-      return null;
-    }
-
-    final queryDate = DateTime(date.year, date.month, date.day);
-
-    final result = await _dbManager.query(
-        'assets/sql/query_task_ready.sql',
-        [queryDate.millisecondsSinceEpoch]);
-
-    return result.map(_makePackFromQueryResult).toList();
-  }
-
-  static Future<List<TaskPack>> getTaskListFinished() async {
-
-    final result = await _dbManager.query('assets/sql/query_task_finished.sql');
-    return result.map(_makePackFromQueryResult).toList();
-  }
-
-  static Future<List<TaskPack>> getTaskListByPage(
-      int pagination, int perPage) async {
-    final result = await _dbManager.query(
-        'assets/sql/query_task_by_page.sql', [perPage, perPage * pagination]);
-    return result.map(_makePackFromQueryResult).toList();
-  }
-
-  static Future<TaskDetail> getTaskDetailById(int id) async {
-    if (id == null) {
-      return null;
-    }
-    final result =
-        await _dbManager.query('assets/sql/query_task_detail_by_id.sql', [id]);
-    if (result.length == 0) {
-      return null;
-    } else {
-      final raw = result.first;
-      return TaskDetail(
-        id: raw['id'] as int,
-        reminderBitMap:
-            ReminderBitMap(bitMap: raw['reminder_bitmap'] as int ?? 0),
-        repeatBitMap: raw['repeat_bitmap'] != null
-            ? RepeatBitMap(bitMap: raw['repeat_bitmap'] as int)
-            : RepeatBitMap.selectNone(),
-        address: AroundData(
-          name: raw['address'] as String,
-          coordinate: Coordinate(
-              latitude: raw['latitude'] as double,
-              longitude: raw['longitude'] as double),
-        ),
-      );
-    }
-  }
-
-  static Future<bool> isTaskDetailExists(int id) async {
-    if (id == null) {
-      return false;
-    }
-    final result =
-        await _dbManager.query('assets/sql/query_task_detail_count.sql', [id]);
-    if (result == null) {
-      return false;
-    }
-    assert(result.length == 1,
-        'Querying detail count by id should return 1 and only 1 result, but ${result.length} found.');
-    final count = result.first['count'] as int;
-    return count > 0;
-  }
-
-  static Future<bool> isTaskExists(int id) async {
-    if (id == null) {
-      return false;
-    }
-    final result =
-        await _dbManager.query('assets/sql/query_task_count.sql', [id]);
-    if (result == null) {
-      return false;
-    }
-    assert(result.length == 1,
-        'Querying task count by id should return 1 and only 1 result, but ${result.length} found.');
-    final count = result.first['count'] as int;
-    return count > 0;
   }
 
   static List<dynamic> _makeTaskQueryArgs(TaskData taskData,
@@ -408,13 +343,93 @@ class TaskDBAction {
     }
   }
 
-  static Future<int> toggleTaskFinish(int id, bool isFinished, DateTime finishTime) async {
+  static Future<int> deleteTask(TaskData task) async {
+    assert(task != null);
+    final isExist = await isTaskExists(task.id);
+    if (!isExist) {
+      return 0;
+    } else {
+      return _dbManager
+          .deleteInTransaction('assets/sql/delete_task.sql', [task.id]);
+    }
+  }
+
+  static Future<int> toggleTaskFinish(
+      int id, bool isFinished, DateTime finishTime) async {
     const sql = 'assets/sql/toggle_task_finish.sql';
     final isExist = await isTaskExists(id);
     if (isExist) {
-      return _dbManager.update(sql, [isFinished ? 1 : 0, finishTime?.millisecondsSinceEpoch, id]);
+      return _dbManager.update(
+          sql, [isFinished ? 1 : 0, finishTime?.millisecondsSinceEpoch, id]);
     } else {
       return 0;
+    }
+  }
+
+  static Future<List<TaskPack>> getTaskListReady(DateTime date) async {
+    if (date == null) {
+      return null;
+    }
+
+    final queryDate = DateTime(date.year, date.month, date.day);
+
+    final result = await _dbManager.query(
+        'assets/sql/query_task_ready.sql', [queryDate.millisecondsSinceEpoch]);
+
+    return result.map(_makePackFromQueryResult).toList();
+  }
+
+  static Future<List<TaskPack>> getTaskListFinished() async {
+    final result = await _dbManager.query('assets/sql/query_task_finished.sql');
+    return result.map(_makePackFromQueryResult).toList();
+  }
+
+  static Future<List<TaskPack>> getTaskListByPage(
+      int pagination, int perPage) async {
+    final result = await _dbManager.query(
+        'assets/sql/query_task_by_page.sql', [perPage, perPage * pagination]);
+    return result.map(_makePackFromQueryResult).toList();
+  }
+
+  static Future<bool> isTaskDetailExists(int id) async {
+    if (id == null) {
+      return false;
+    }
+    final result =
+        await _dbManager.query('assets/sql/query_task_detail_count.sql', [id]);
+    if (result == null) {
+      return false;
+    }
+    assert(result.length == 1,
+        'Querying detail count by id should return 1 and only 1 result, but ${result.length} found.');
+    final count = result.first['count'] as int;
+    return count > 0;
+  }
+
+  static Future<TaskDetail> getTaskDetailById(int id) async {
+    if (id == null) {
+      return null;
+    }
+    final result =
+        await _dbManager.query('assets/sql/query_task_detail_by_id.sql', [id]);
+    if (result.length == 0) {
+      return null;
+    } else {
+      final raw = result.first;
+      return TaskDetail(
+        id: raw['id'] as int,
+        reminderBitMap:
+            ReminderBitMap(bitMap: raw['reminder_bitmap'] as int ?? 0),
+        repeatBitMap: raw['repeat_bitmap'] != null
+            ? RepeatBitMap(bitMap: raw['repeat_bitmap'] as int)
+            : RepeatBitMap.selectNone(),
+        address: AroundData(
+          name: raw['address'] as String,
+          coordinate: Coordinate(
+              latitude: raw['latitude'] as double,
+              longitude: raw['longitude'] as double),
+        ),
+      );
     }
   }
 
@@ -449,14 +464,75 @@ class TaskDBAction {
     }
   }
 
-  static Future<int> deleteTask(TaskData task) async {
-    assert(task != null);
-    final isExist = await isTaskExists(task.id);
-    if (!isExist) {
-      return 0;
+  static Future<bool> isTaskRecurringExists(int taskId) async {
+    if (taskId == null) {
+      return false;
+    }
+    final result = await _dbManager
+        .query('assets/sql/query_task_recurring_count.sql', [taskId]);
+    if (result == null) {
+      return false;
+    }
+    assert(result.length == 1,
+        'Querying task recurring count by id should return 1 and only 1 result, but ${result.length} found.');
+    final count = result.first['count'] as int;
+    return count > 0;
+  }
+
+  static Future<List<TaskRecurring>> getAllTaskRecurring() async {
+    final result =
+        await _dbManager.query('assets/sql/query_task_recurring_all.sql');
+    return result.map((map) {
+      return TaskRecurring(
+        id: map['id'] as int,
+        taskId: map['task_id'] as int,
+        repeatModeCode: map['repeat_mode'] as int,
+        repeatMaxNum: map['repeat_max_num'] as int,
+        daysOfWeekCode: map['days_of_week_code'] as int,
+        daysOfMonthCode: map['days_of_month_code'] as int,
+        monthsOfYearCode: map['months_of_year_code'] as int,
+        taskTime: map['task_time'] is int
+            ? DateTime.fromMillisecondsSinceEpoch(map['task_time'] as int)
+            : null,
+      );
+    }).toList();
+  }
+
+  static List<dynamic> _makeRecurringQueryArgs(TaskRecurring recurring,
+      [bool isUpdate = false]) {
+    final body = [
+      recurring.taskId,
+      recurring.repeatModeCode,
+      recurring.repeatMaxNum,
+      recurring.daysOfWeekCode,
+      recurring.daysOfMonthCode,
+      recurring.monthsOfYearCode,
+      recurring.taskTime?.millisecondsSinceEpoch,
+      DateTime.now().millisecondsSinceEpoch,
+    ];
+    if (isUpdate) {
+      body.add(recurring.taskId);
+    }
+    return body;
+  }
+
+  static Future<int> saveTaskRecurring(TaskRecurring recurring) async {
+    assert(recurring != null);
+    const insertSqlPath = 'assets/sql/insert_task_recurring.sql';
+    const updateSqlPath = 'assets/sql/update_task_recurring_by_task_id.sql';
+    const deleteSqlPath = 'assets/sql/delete_task_recurring.sql';
+
+    if (recurring.repeatMode == RepeatMode.none) {
+      return _dbManager.deleteInTransaction(deleteSqlPath, [recurring.taskId]);
+    }
+
+    final isExist = await isTaskRecurringExists(recurring.taskId);
+    if (isExist) {
+      return _dbManager.update(
+          updateSqlPath, _makeRecurringQueryArgs(recurring, true));
     } else {
-      return _dbManager
-          .deleteInTransaction('assets/sql/delete_task.sql', [task.id]);
+      return _dbManager.insert(
+          insertSqlPath, _makeRecurringQueryArgs(recurring));
     }
   }
 }

@@ -131,7 +131,7 @@ class _DetailRepeatScreenState extends State<DetailRepeatScreen> {
           onHorizontalDragUpdate: (detail) {
             if (_countUpdateTime != null &&
                 DateTime.now().difference(_countUpdateTime) <
-                    const Duration(milliseconds: 300)) {
+                    const Duration(milliseconds: 100)) {
               return;
             }
             _countUpdateTime = DateTime.now();

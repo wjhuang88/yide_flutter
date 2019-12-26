@@ -77,6 +77,8 @@ class _DetailListScreenState extends State<DetailListScreen>
 
   TaskDetail _savedDetail;
 
+  int _repeatCodeBeforeSave = null;
+
   bool _isLoadingValue = true;
   bool get _isLoading => _isLoadingValue;
   set _isLoading(bool value) {
@@ -137,6 +139,11 @@ class _DetailListScreenState extends State<DetailListScreen>
     _isLoading = true;
     _savedDetail.id = _data.id;
     final r = await TaskDBAction.saveTaskDetail(_savedDetail);
+    if (_savedDetail.repeatBitMap.bitMap != _repeatCodeBeforeSave) {
+      final recurring = TaskRecurring.fromBitMap(_savedDetail.repeatBitMap);
+      recurring.taskId = _data.id;
+      await TaskDBAction.saveTaskRecurring(recurring);
+    }
     _isLoading = false;
     return r;
   }
@@ -187,14 +194,22 @@ class _DetailListScreenState extends State<DetailListScreen>
                           message: Text('删除此任务？'),
                           actions: <Widget>[
                             CupertinoActionSheetAction(
-                              child: Text('是，我要删除！', style: const TextStyle(color: Color(0xDDFF0000), fontSize: 16.0),),
+                              child: Text(
+                                '是，我要删除！',
+                                style: const TextStyle(
+                                    color: Color(0xDDFF0000), fontSize: 16.0),
+                              ),
                               isDestructiveAction: true,
                               onPressed: () =>
                                   Navigator.of(context).maybePop(true),
                             ),
                           ],
                           cancelButton: CupertinoActionSheetAction(
-                            child: Text('取消', style: const TextStyle(color: Color(0xFF000000), fontSize: 16.0),),
+                            child: Text(
+                              '取消',
+                              style: const TextStyle(
+                                  color: Color(0xFF000000), fontSize: 16.0),
+                            ),
                             isDefaultAction: true,
                             onPressed: () =>
                                 Navigator.of(context).maybePop(false),
@@ -276,9 +291,9 @@ class _DetailListScreenState extends State<DetailListScreen>
                     child: _savedDetail.repeatBitMap != null &&
                             !(_savedDetail.repeatBitMap.isNoneRepeat)
                         ? Text(
-                            _savedDetail.repeatBitMap.makeRepeatModeLabel() +
-                                ' - ' +
-                                _savedDetail.repeatBitMap.makeRepeatTimeLabel(),
+                            _savedDetail.repeatBitMap.makeRepeatTimeLabel() +
+                                ' / ' +
+                                _savedDetail.repeatBitMap.makeRepeatModeLabel(),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: contentStyle,
@@ -404,8 +419,9 @@ class _DetailListScreenState extends State<DetailListScreen>
 
   Future<void> _repeatForward() async {
     final codeAsync = Completer<int>();
+    _repeatCodeBeforeSave = _savedDetail.repeatBitMap.bitMap;
     PushRouteNotification(
-      DetailRepeatScreen(stateCode: _savedDetail.repeatBitMap.bitMap ?? 0),
+      DetailRepeatScreen(stateCode: _repeatCodeBeforeSave ?? 0),
       callback: (ret) => codeAsync.complete(ret as int),
     ).dispatch(context);
     final code = await codeAsync.future;
@@ -571,7 +587,8 @@ class _ListItem extends StatelessWidget {
             ..rotateX(-(1 - _factor) * Math.pi / 2),
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 15.0),
-            padding: const EdgeInsets.only(right: 20.0, top: 15.0, bottom: 15.0),
+            padding:
+                const EdgeInsets.only(right: 20.0, top: 15.0, bottom: 15.0),
             //height: 60.0,
             decoration: const BoxDecoration(
               color: Color(0x12FFFFFF),
