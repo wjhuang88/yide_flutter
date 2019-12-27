@@ -1,1 +1,1 @@
-SELECT * FROM `task_recurring` WHERE `next_time` >= ? AND `next_time` < ?;
+SELECT * FROM `task_recurring`;

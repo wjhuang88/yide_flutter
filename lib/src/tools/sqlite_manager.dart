@@ -499,7 +499,25 @@ class TaskDBAction {
     return count > 0;
   }
 
-  static Future<List<TaskRecurring>> getTaskRecurringByDate(
+  static TaskRecurring _makeRecurringFromQueryMap(Map<String, dynamic> map) {
+    return TaskRecurring(
+      id: map['id'] as int,
+      taskId: map['task_id'] as int,
+      repeatModeCode: map['repeat_mode'] as int,
+      repeatMaxNum: map['repeat_max_num'] as int,
+      daysOfWeekCode: map['days_of_week_code'] as int,
+      daysOfMonthCode: map['days_of_month_code'] as int,
+      monthsOfYearCode: map['months_of_year_code'] as int,
+      taskTime: map['task_time'] is int
+          ? DateTime.fromMillisecondsSinceEpoch(map['task_time'] as int)
+          : null,
+      nextTime: map['next_time'] is int
+          ? DateTime.fromMillisecondsSinceEpoch(map['next_time'] as int)
+          : null,
+    );
+  }
+
+  static Future<Iterable<TaskRecurring>> getTaskRecurringByDate(
       DateTime date) async {
     DateTime dateBegin = DateTime(date.year, date.month, date.day);
     DateTime dateEnd = DateTime(date.year, date.month, date.day + 1);
@@ -507,23 +525,52 @@ class TaskDBAction {
     final result = await _dbManager.query(
         'assets/sql/query_task_recurring_by_date.sql',
         [dateBegin.millisecondsSinceEpoch, dateEnd.millisecondsSinceEpoch]);
-    return result.map((map) {
-      return TaskRecurring(
-        id: map['id'] as int,
-        taskId: map['task_id'] as int,
-        repeatModeCode: map['repeat_mode'] as int,
-        repeatMaxNum: map['repeat_max_num'] as int,
-        daysOfWeekCode: map['days_of_week_code'] as int,
-        daysOfMonthCode: map['days_of_month_code'] as int,
-        monthsOfYearCode: map['months_of_year_code'] as int,
-        taskTime: map['task_time'] is int
-            ? DateTime.fromMillisecondsSinceEpoch(map['task_time'] as int)
-            : null,
-        nextTime: map['next_time'] is int
-            ? DateTime.fromMillisecondsSinceEpoch(map['next_time'] as int)
-            : null,
-      );
-    }).toList();
+    return result.map(_makeRecurringFromQueryMap);
+  }
+
+  static Future<Iterable<TaskRecurring>> getAllTaskRecurring() async {
+    final result =
+        await _dbManager.query('assets/sql/query_task_recurring_all.sql');
+    return result.map(_makeRecurringFromQueryMap);
+  }
+
+  static Future<int> updateRecurringNextTime() async {
+    final now = DateTime.now();
+    final today =
+        DateTime(now.year, now.month, now.day + 1).subtract(Duration(days: 1));
+    final srcList = await getAllTaskRecurring();
+    final updatedList = srcList.map((recurring) {
+      if (recurring.nextTime.isAfter(today)) {
+        return recurring;
+      }
+      switch (recurring.repeatMode) {
+        case RepeatMode.daily:
+          recurring.nextTime = recurring.nextTime.add(Duration(days: 1));
+          return recurring;
+        case RepeatMode.weekly:
+          final weekList = recurring.daysOfWeek;
+          if (weekList.isEmpty) {
+            return recurring;
+          }
+          var date = recurring.nextTime;
+          while (!weekList.contains(date.weekday)) {
+            date = date.add(Duration(days: 1));
+          }
+          recurring.nextTime = date;
+          return recurring;
+        case RepeatMode.monthly:
+          final prev = recurring.nextTime;
+          recurring.nextTime = DateTime(prev.year, prev.month + 1, prev.day);
+          return recurring;
+        case RepeatMode.annual:
+          final prev = recurring.nextTime;
+          recurring.nextTime = DateTime(prev.year + 1, prev.month, prev.day);
+          return recurring;
+        case RepeatMode.none:
+          return recurring;
+      }
+    });
+    return updateTaskRecurringBatch(updatedList);
   }
 
   static List<dynamic> _makeRecurringQueryArgs(TaskRecurring recurring,
@@ -563,5 +610,14 @@ class TaskDBAction {
       return _dbManager.insert(
           insertSqlPath, _makeRecurringQueryArgs(recurring));
     }
+  }
+
+  static Future<int> updateTaskRecurringBatch(
+      Iterable<TaskRecurring> recurrings) {
+    const updateSqlPath = 'assets/sql/update_task_recurring_by_task_id.sql';
+    final args = recurrings
+        .map((recurring) => _makeRecurringQueryArgs(recurring, true))
+        .toList();
+    return _dbManager.batchUpdate(updateSqlPath, args);
   }
 }
