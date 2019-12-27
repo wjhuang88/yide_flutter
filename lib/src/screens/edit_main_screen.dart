@@ -49,7 +49,7 @@ class EditMainScreen extends StatefulWidget implements Navigatable {
 }
 
 class _EditMainScreenState extends State<EditMainScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   _EditMainScreenState(this._controller);
 
   TextEditingController _textEditingController;
@@ -83,6 +83,7 @@ class _EditMainScreenState extends State<EditMainScreen>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _defaultAnimController = AnimationController(vsync: this);
     _taskData = TaskData.copy(widget.taskPack?.data ?? TaskData.defultNull());
     final now = DateTime.now();
@@ -113,6 +114,17 @@ class _EditMainScreenState extends State<EditMainScreen>
         _controller.forceSwitchToPanel('blank');
       }
     });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.paused:
+        _focus();
+        break;
+      default:
+      // donothing.
+    }
   }
 
   @override
@@ -158,6 +170,7 @@ class _EditMainScreenState extends State<EditMainScreen>
     _textEditingController.dispose();
     _focusNode.dispose();
     _controller._mainState = null;
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
@@ -240,7 +253,8 @@ class _EditMainScreenState extends State<EditMainScreen>
               cursorColor: const Color(0xFFFAB807),
               controller: _textEditingController,
               focusNode: _focusNode,
-              style: TextStyle(color: Colors.white, fontSize: 16.0, height: 1.5),
+              style:
+                  TextStyle(color: Colors.white, fontSize: 16.0, height: 1.5),
               textAlign: TextAlign.center,
               textAlignVertical: TextAlignVertical.center,
               keyboardAppearance: Brightness.dark,
@@ -282,7 +296,9 @@ class _EditMainScreenState extends State<EditMainScreen>
               _controller.changeSetupPanel(DetailTagPanel.panelName, '标签');
             },
           ),
-          const SizedBox(height: 8.0,),
+          const SizedBox(
+            height: 8.0,
+          ),
         ],
       ),
     );
@@ -358,12 +374,18 @@ class _DateInfoState extends State<_DateInfo>
               CupertinoButton(
                 child: Row(
                   children: <Widget>[
-                    Icon(buildCupertinoIconData(0xf4b7), color: !_isNight ? Colors.white : const Color(0xFFBBADE7),),
+                    Icon(
+                      buildCupertinoIconData(0xf4b7),
+                      color: !_isNight ? Colors.white : const Color(0xFFBBADE7),
+                    ),
                     Text(
                       '白天',
                       style: TextStyle(
-                          color: !_isNight ? Colors.white : const Color(0xFFBBADE7),
-                          fontSize: 20.0, fontWeight: FontWeight.w300,),
+                        color:
+                            !_isNight ? Colors.white : const Color(0xFFBBADE7),
+                        fontSize: 20.0,
+                        fontWeight: FontWeight.w300,
+                      ),
                     ),
                   ],
                 ),
@@ -372,12 +394,18 @@ class _DateInfoState extends State<_DateInfo>
               CupertinoButton(
                 child: Row(
                   children: <Widget>[
-                    Icon(buildCupertinoIconData(0xf468), color: _isNight ? Colors.white : const Color(0xFFBBADE7),),
+                    Icon(
+                      buildCupertinoIconData(0xf468),
+                      color: _isNight ? Colors.white : const Color(0xFFBBADE7),
+                    ),
                     Text(
                       '晚间',
                       style: TextStyle(
-                          color: _isNight ? Colors.white : const Color(0xFFBBADE7),
-                          fontSize: 20.0, fontWeight: FontWeight.w300,),
+                        color:
+                            _isNight ? Colors.white : const Color(0xFFBBADE7),
+                        fontSize: 20.0,
+                        fontWeight: FontWeight.w300,
+                      ),
                     ),
                   ],
                 ),
@@ -460,7 +488,10 @@ class _DatePageState extends State<_DatePage> {
           children: <Widget>[
             Text(
               _getWeekDayName(timeToRender),
-              style: const TextStyle(color: Colors.white, fontSize: 24.0, fontWeight: FontWeight.w300),
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 24.0,
+                  fontWeight: FontWeight.w300),
             ),
             Text(
               DateFormat('MM月dd日').format(timeToRender),

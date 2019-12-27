@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:yide/src/components/add_button_positioned.dart';
 import 'package:yide/src/components/header_bar.dart';
@@ -249,7 +251,7 @@ class _HeaderPanelState extends State<_HeaderPanel> {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
         Text(
-          '总共$_taskCount件事项还剩',
+          '今日共计 $_taskCount 项事务，剩余',
           style: const TextStyle(
               fontSize: 14.0,
               color: Color(0xFFDEC0FF),
@@ -406,7 +408,28 @@ class _ListBodyState extends State<_ListBody> {
   }
 
   Future<void> _execUpdateListData() async {
-    _taskList = await TaskDBAction.getTaskListByDate(_dateTime);
+    final baseList = await TaskDBAction.getTaskListTodo(_dateTime);
+    final finishedList =
+        await TaskDBAction.getTaskFinishedListByDate(_dateTime);
+    final dayTimeSet = SplayTreeSet<TaskPack>(
+        (a, b) => a.data.taskTime.compareTo(b.data.taskTime));
+    final nightSet = SplayTreeSet<TaskPack>(
+        (a, b) => a.data.taskTime.compareTo(b.data.taskTime));
+    baseList.forEach((item) {
+      if (item.data.timeType == DateTimeType.night) {
+        nightSet.add(item);
+      } else {
+        dayTimeSet.add(item);
+      }
+    });
+    finishedList.forEach((item) {
+      if (item.data.timeType == DateTimeType.night) {
+        nightSet.add(item);
+      } else {
+        dayTimeSet.add(item);
+      }
+    });
+    _taskList = dayTimeSet.toList()..addAll(nightSet);
     final taskCount = _taskList.length;
     final doingCount = _taskList.where((pack) => !pack.data.isFinished).length;
     _daytimeIndex = null;
@@ -416,9 +439,10 @@ class _ListBodyState extends State<_ListBody> {
         if (_daytimeIndex != null && _nightIndex != null) {
           break;
         }
-        if (_taskList[i].data.timeType == DateTimeType.daytime) {
+        final type = _taskList[i].data.timeType;
+        if (type == DateTimeType.daytime || type == DateTimeType.datetime) {
           _daytimeIndex ??= i;
-        } else if (_taskList[i].data.timeType == DateTimeType.night) {
+        } else if (type == DateTimeType.night) {
           _nightIndex ??= i;
         }
       }
@@ -449,27 +473,48 @@ class _ListBodyState extends State<_ListBody> {
             ),
           ),
           const SizedBox(
-            height: 10.0,
+            height: 5.0,
           ),
           Text(
-            item.tag.name ?? '默认',
+            '于 ${_makeTimeLabel(item.data.taskTime)} 开始',
             style: TextStyle(
-                color: isFinished ? finishedColor : item.tag.iconColor,
+                color: isFinished ? finishedColor : const Color(0xFFC9A2F5),
                 fontSize: 12.0),
+          ),
+          const SizedBox(
+            height: 5.0,
+          ),
+          Row(
+            children: <Widget>[
+              Icon(
+                FontAwesomeIcons.solidCircle,
+                color: isFinished ? finishedColor : item.tag.iconColor,
+                size: 8.0,
+              ),
+              const SizedBox(
+                width: 5.0,
+              ),
+              Text(
+                item.tag.name ?? '默认',
+                style: TextStyle(
+                    color: isFinished ? finishedColor : item.tag.iconColor,
+                    fontSize: 12.0),
+              ),
+            ],
           ),
         ];
         if (item.data.catalog != null && item.data.catalog.isNotEmpty) {
           rows
             ..add(
               const SizedBox(
-                height: 10.0,
+                height: 5.0,
               ),
             )
             ..add(
               Text(
                 item.data.catalog,
                 style: TextStyle(
-                    color: isFinished ? finishedColor : Color(0xFFC9A2F5),
+                    color: isFinished ? finishedColor : const Color(0xFFC9A2F5),
                     fontSize: 12.0),
               ),
             );
@@ -481,7 +526,7 @@ class _ListBodyState extends State<_ListBody> {
           remarkVisable = '';
         }
         rows
-          ..add(const SizedBox(height: 10.0))
+          ..add(const SizedBox(height: 5.0))
           ..add(
             Text(
               remarkVisable,
@@ -528,6 +573,23 @@ class _ListBodyState extends State<_ListBody> {
           return '';
         }
       },
+      onGenerateDotIcon: (index) {
+        final type = _taskList[index].data.timeType;
+        switch (type) {
+          case DateTimeType.night:
+            return Icon(
+              buildCupertinoIconData(0xf468),
+              size: 22.0,
+              color: const Color(0xFFD7CAFF),
+            );
+          default:
+            return Icon(
+              buildCupertinoIconData(0xf4b7),
+              size: 22.0,
+              color: const Color(0xFFD7CAFF),
+            );
+        }
+      },
       onGenerateDotColor: (index) => const Color(0xFFD7CAFF),
       onGenerateLabelColor: (index) => const Color(0xFFC9A2F5),
     );
@@ -546,6 +608,17 @@ class _ListBodyState extends State<_ListBody> {
       },
     ).dispatch(context);
     return future.future;
+  }
+}
+
+String _makeTimeLabel(DateTime time) {
+  final now = DateTime.now();
+  if (time.year == now.year && time.month == now.month && time.day == now.day) {
+    return '今天';
+  } else if (time.year == now.year) {
+    return DateFormat('MM月dd日').format(time);
+  } else {
+    return DateFormat('yyyy年MM月dd日').format(time);
   }
 }
 

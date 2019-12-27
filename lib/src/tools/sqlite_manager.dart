@@ -11,7 +11,7 @@ class SqliteManager {
       print('Database is null, try to open a new database.');
       _database = openDatabase(
         'yide_app.db',
-        version: 9,
+        version: 10,
         onCreate: (db, version) async {
           print('Init sqlite table at version $version.');
           _execute(db, 'assets/sql/table_create.sql');
@@ -43,6 +43,10 @@ class SqliteManager {
           if (oldVersion < 9) {
             print('Ready to execute upgrade sql from v8 to v9');
             await _execute(db, 'assets/sql/v8_to_v9.sql');
+          }
+          if (oldVersion < 10) {
+            print('Ready to execute upgrade sql from v9 to v10');
+            await _execute(db, 'assets/sql/v9_to_v10.sql');
           }
         },
       ).catchError((e) {
@@ -298,7 +302,8 @@ class TaskDBAction {
     return _makePackFromQueryResult(dataRaw);
   }
 
-  static Future<List<TaskPack>> getTaskListByDate(DateTime date) async {
+  static Future<Iterable<TaskPack>> getTaskFinishedListByDate(
+      DateTime date) async {
     if (date == null) {
       return null;
     }
@@ -306,10 +311,25 @@ class TaskDBAction {
     DateTime dateBegin = DateTime(date.year, date.month, date.day);
     DateTime dateEnd = DateTime(date.year, date.month, date.day + 1);
 
-    final result = await _dbManager.query('assets/sql/query_task_by_date.sql',
+    final result = await _dbManager.query(
+        'assets/sql/query_task_finished_by_date.sql',
         [dateBegin.millisecondsSinceEpoch, dateEnd.millisecondsSinceEpoch]);
 
-    return result.map(_makePackFromQueryResult).toList();
+    return result.map(_makePackFromQueryResult);
+  }
+
+  static Future<Iterable<TaskPack>> getTaskListTodo(DateTime date) async {
+    if (date == null) {
+      return null;
+    }
+
+    DateTime queryDate = DateTime(date.year, date.month, date.day + 1)
+        .subtract(Duration(seconds: 1));
+
+    final result = await _dbManager.query(
+        'assets/sql/query_task_todo.sql', [queryDate.millisecondsSinceEpoch]);
+
+    return result.map(_makePackFromQueryResult);
   }
 
   static List<dynamic> _makeTaskQueryArgs(TaskData taskData,
@@ -479,9 +499,14 @@ class TaskDBAction {
     return count > 0;
   }
 
-  static Future<List<TaskRecurring>> getAllTaskRecurring() async {
-    final result =
-        await _dbManager.query('assets/sql/query_task_recurring_all.sql');
+  static Future<List<TaskRecurring>> getTaskRecurringByDate(
+      DateTime date) async {
+    DateTime dateBegin = DateTime(date.year, date.month, date.day);
+    DateTime dateEnd = DateTime(date.year, date.month, date.day + 1);
+
+    final result = await _dbManager.query(
+        'assets/sql/query_task_recurring_by_date.sql',
+        [dateBegin.millisecondsSinceEpoch, dateEnd.millisecondsSinceEpoch]);
     return result.map((map) {
       return TaskRecurring(
         id: map['id'] as int,
@@ -493,6 +518,9 @@ class TaskDBAction {
         monthsOfYearCode: map['months_of_year_code'] as int,
         taskTime: map['task_time'] is int
             ? DateTime.fromMillisecondsSinceEpoch(map['task_time'] as int)
+            : null,
+        nextTime: map['next_time'] is int
+            ? DateTime.fromMillisecondsSinceEpoch(map['next_time'] as int)
             : null,
       );
     }).toList();
@@ -509,6 +537,7 @@ class TaskDBAction {
       recurring.monthsOfYearCode,
       recurring.taskTime?.millisecondsSinceEpoch,
       DateTime.now().millisecondsSinceEpoch,
+      recurring.nextTime?.millisecondsSinceEpoch,
     ];
     if (isUpdate) {
       body.add(recurring.taskId);

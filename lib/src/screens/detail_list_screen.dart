@@ -77,7 +77,7 @@ class _DetailListScreenState extends State<DetailListScreen>
 
   TaskDetail _savedDetail;
 
-  int _repeatCodeBeforeSave = null;
+  int _repeatCodeBeforeSave;
 
   bool _isLoadingValue = true;
   bool get _isLoading => _isLoadingValue;
@@ -142,6 +142,7 @@ class _DetailListScreenState extends State<DetailListScreen>
     if (_savedDetail.repeatBitMap.bitMap != _repeatCodeBeforeSave) {
       final recurring = TaskRecurring.fromBitMap(_savedDetail.repeatBitMap);
       recurring.taskId = _data.id;
+      recurring.taskTime = recurring.nextTime = _data.taskTime;
       await TaskDBAction.saveTaskRecurring(recurring);
     }
     _isLoading = false;
@@ -487,10 +488,11 @@ class _HeaderPanel extends StatelessWidget {
     var dateTimeString;
     switch (timeType) {
       case DateTimeType.daytime:
-        dateTimeString = DateFormat('MM月dd日 全天').format(dateTime);
+        dateTimeString = DateFormat('MM月dd日 白天').format(dateTime);
         break;
       case DateTimeType.night:
-        dateTimeString = '某天';
+        dateTimeString = DateFormat('MM月dd日 晚间').format(dateTime);
+        ;
         break;
       case DateTimeType.datetime:
         dateTimeString = DateFormat('MM月dd日 HH:mm').format(dateTime);

@@ -6,5 +6,6 @@ INSERT INTO `task_recurring` (
     `days_of_month_code`,
     `months_of_year_code`,
     `task_time`,
-    `create_time`
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+    `create_time`,
+    `next_time`
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);

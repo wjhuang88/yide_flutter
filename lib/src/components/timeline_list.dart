@@ -12,6 +12,7 @@ class TimelineListView extends StatelessWidget {
         onGenerateLabel = null,
         onGenerateLabelColor = null,
         onGenerateDotColor = null,
+        onGenerateDotIcon = null,
         itemCount = 0,
         placeholder = null;
 
@@ -21,6 +22,7 @@ class TimelineListView extends StatelessWidget {
     @required this.tileBuilder,
     this.onGenerateLabel,
     this.onGenerateDotColor,
+    this.onGenerateDotIcon,
     @required this.itemCount,
     this.placeholder = const SizedBox(),
     this.onGenerateLabelColor,
@@ -32,6 +34,7 @@ class TimelineListView extends StatelessWidget {
   final String Function(int index) onGenerateLabel;
   final Color Function(int index) onGenerateLabelColor;
   final Color Function(int index) onGenerateDotColor;
+  final Icon Function(int index) onGenerateDotIcon;
   final int itemCount;
   final Widget placeholder;
 
@@ -55,7 +58,9 @@ class TimelineListView extends StatelessWidget {
                             onGenerateLabel(index),
                             maxLines: 1,
                             style: TextStyle(
-                              color: onGenerateLabelColor != null ? onGenerateLabelColor(index) : const Color(0xFFC9A2F5),
+                              color: onGenerateLabelColor != null
+                                  ? onGenerateLabelColor(index)
+                                  : const Color(0xFFC9A2F5),
                               fontSize: 12.0,
                             ),
                           ),
@@ -63,6 +68,7 @@ class TimelineListView extends StatelessWidget {
                       : SizedBox(),
                   Expanded(
                     child: TimelineDecorated(
+                      decorationIcon: onGenerateDotIcon != null ? onGenerateDotIcon(index) : null,
                       decorationColor: (onGenerateDotColor ??
                           (i) => const Color(0xFFFFFFFF))(index),
                       isBorderShow: index + 1 != itemCount,
@@ -81,11 +87,13 @@ class TimelineDecorated extends StatelessWidget {
   const TimelineDecorated({
     Key key,
     this.decorationColor,
+    this.decorationIcon,
     this.child,
     this.isBorderShow = true,
   }) : super(key: key);
 
   final Color decorationColor;
+  final Widget decorationIcon;
   final Widget child;
   final bool isBorderShow;
 
@@ -107,12 +115,12 @@ class TimelineDecorated extends StatelessWidget {
           ),
         ),
         Transform.translate(
-          offset: const Offset(-4.5, 3.0),
-          child: Icon(
+          offset: const Offset(-10.5, -2.0),
+          child: decorationIcon == null ? Icon(
             FontAwesomeIcons.solidCircle,
             color: decorationColor,
             size: 10.0,
-          ),
+          ) : decorationIcon,
         ),
       ],
     );

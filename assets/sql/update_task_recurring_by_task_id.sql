@@ -6,5 +6,6 @@ UPDATE `task_recurring` SET
     `days_of_month_code` = ?,
     `months_of_year_code` = ?,
     `task_time` = ?,
-    `create_time` = ?
+    `create_time` = ?,
+    `next_time` = ?
 WHERE `task_id` = ?;

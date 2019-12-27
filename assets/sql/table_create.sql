@@ -38,5 +38,6 @@ CREATE TABLE IF NOT EXISTS `task_recurring`(
     `days_of_month_code` INTEGER,
     `months_of_year_code` INTEGER,
     `task_time` INTEGER,
-    `create_time` INTEGER
+    `create_time` INTEGER,
+    `next_time` INTEGER
 );

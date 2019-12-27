@@ -145,6 +145,7 @@ class TaskRecurring {
   int daysOfMonthCode;
   int monthsOfYearCode;
   DateTime taskTime;
+  DateTime nextTime;
 
   TaskRecurring({
     this.id,
@@ -155,6 +156,7 @@ class TaskRecurring {
     this.daysOfMonthCode,
     this.monthsOfYearCode,
     this.taskTime,
+    this.nextTime,
   });
 
   TaskRecurring.fromBitMap(RepeatBitMap bitMap)
@@ -164,13 +166,14 @@ class TaskRecurring {
             : bitMap.isWeekSelected
                 ? 1
                 : bitMap.isMonthSelected ? 2 : bitMap.isYearSelected ? 3 : null,
-        daysOfWeekCode = bitMap.isWeekSelected ? bitMap.getDaysOfWeek() : null;
+        daysOfWeekCode = bitMap.isWeekSelected ? bitMap.getDaysOfWeek() : null,
+        repeatMaxNum = bitMap.isCountEnd ? bitMap.repeatCount : null;
 
   List<int> get daysOfWeek {
     final result = List<int>();
     for (var i = 0; i < 7; i++) {
       if (daysOfWeekCode & (1 << i) != 0) {
-        result.add(i);
+        result.add(i + 1);
       }
     }
     return result;
@@ -215,10 +218,12 @@ class TaskRecurring {
 class TaskPack {
   final TaskData data;
   final TaskTag tag;
+  bool isRecurring;
 
   TaskPack(
     this.data,
     this.tag,
+    {this.isRecurring = false,}
   );
 }
 

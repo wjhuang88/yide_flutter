@@ -1,0 +1,1 @@
+ALTER TABLE `task_recurring` ADD COLUMN `next_time` INTEGER;

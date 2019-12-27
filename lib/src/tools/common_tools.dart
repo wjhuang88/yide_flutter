@@ -110,7 +110,7 @@ Future<void> detailPopup(
   VoidCallback onReactive,
   String detailTitle = '查看任务详情',
   String deleteTitle = '删除此任务',
-  String doneTitle = '设置此任务为已完成',
+  String doneTitle = '完成此任务',
   String reactiveTitle = '重新激活任务',
   bool isDone = false,
 }) async {
