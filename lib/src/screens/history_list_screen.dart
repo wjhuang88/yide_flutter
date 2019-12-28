@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:yide/src/components/header_bar.dart';
 import 'package:yide/src/components/timeline_list.dart';
 import 'package:yide/src/globle_variable.dart';
+import 'package:yide/src/interfaces/mixins/app_lifecycle_resume_provider.dart';
 import 'package:yide/src/interfaces/mixins/navigatable_without_menu.dart';
 import 'package:yide/src/models/task_data.dart';
 import 'package:yide/src/notification.dart';
@@ -42,7 +43,8 @@ class _HistoryListScreenController {
   }
 }
 
-class _HistoryListScreenState extends State<HistoryListScreen> {
+class _HistoryListScreenState extends State<HistoryListScreen>
+    with AppLifecycleResumeProvider {
   _HistoryListScreenState(this._controller);
 
   _HistoryListScreenController _controller;
@@ -353,6 +355,11 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
       },
     ).dispatch(context);
     return future.future;
+  }
+
+  @override
+  void onResumed() {
+    _update();
   }
 }
 

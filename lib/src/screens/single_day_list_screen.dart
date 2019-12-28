@@ -13,6 +13,7 @@ import 'package:yide/src/components/timeline_list.dart';
 import 'package:yide/src/config.dart' as Config;
 import 'package:yide/src/config.dart';
 import 'package:yide/src/globle_variable.dart';
+import 'package:yide/src/interfaces/mixins/app_lifecycle_resume_provider.dart';
 import 'package:yide/src/interfaces/mixins/navigatable_with_menu.dart';
 import 'package:yide/src/screens/multiple_day_list_screen.dart';
 import 'package:yide/src/tools/common_tools.dart';
@@ -51,7 +52,8 @@ class SingleDayListScreen extends StatefulWidget with NavigatableWithMenu {
   }
 }
 
-class _SingleDayListScreenState extends State<SingleDayListScreen> {
+class _SingleDayListScreenState extends State<SingleDayListScreen>
+    with AppLifecycleResumeProvider {
   _SingleDayListScreenState(this._controller);
 
   SingleDayScreenController _controller;
@@ -164,6 +166,11 @@ class _SingleDayListScreenState extends State<SingleDayListScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void onResumed() {
+    _controller?.updateListData();
   }
 }
 

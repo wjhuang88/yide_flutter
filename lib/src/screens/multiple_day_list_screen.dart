@@ -10,6 +10,7 @@ import 'package:yide/src/components/header_bar.dart';
 import 'package:yide/src/components/timeline_list.dart';
 import 'package:yide/src/config.dart' as Config;
 import 'package:yide/src/globle_variable.dart';
+import 'package:yide/src/interfaces/mixins/app_lifecycle_resume_provider.dart';
 import 'package:yide/src/interfaces/mixins/navigatable_without_menu.dart';
 import 'package:yide/src/models/task_data.dart';
 import 'package:yide/src/notification.dart';
@@ -71,7 +72,8 @@ class MultipleDayController {
   }
 }
 
-class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
+class _MultipleDayListScreenState extends State<MultipleDayListScreen>
+    with AppLifecycleResumeProvider {
   _MultipleDayListScreenState(this._controller);
 
   MultipleDayController _controller;
@@ -759,6 +761,11 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen> {
       },
     ).dispatch(context);
     return future.future;
+  }
+
+  @override
+  void onResumed() {
+    _update();
   }
 }
 

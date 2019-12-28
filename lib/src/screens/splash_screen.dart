@@ -29,7 +29,6 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void initState() {
     super.initState();
-
     _moveController = AnimationController(
         vsync: this, duration: Duration(milliseconds: 2000), value: 0.0);
     _moveAnimation = CurvedAnimation(

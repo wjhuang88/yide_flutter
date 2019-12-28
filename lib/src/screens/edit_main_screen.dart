@@ -9,6 +9,7 @@ import 'package:yide/src/components/infinity_page_view.dart';
 import 'package:yide/src/components/panel_switcher.dart';
 import 'package:yide/src/components/tap_animator.dart';
 import 'package:yide/src/config.dart';
+import 'package:yide/src/interfaces/mixins/app_lifecycle_resume_provider.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
 import 'package:yide/src/notification.dart';
 import 'package:yide/src/tools/date_tools.dart';
@@ -49,7 +50,7 @@ class EditMainScreen extends StatefulWidget implements Navigatable {
 }
 
 class _EditMainScreenState extends State<EditMainScreen>
-    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+    with SingleTickerProviderStateMixin, AppLifecycleResumeProvider {
   _EditMainScreenState(this._controller);
 
   TextEditingController _textEditingController;
@@ -83,7 +84,6 @@ class _EditMainScreenState extends State<EditMainScreen>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _defaultAnimController = AnimationController(vsync: this);
     _taskData = TaskData.copy(widget.taskPack?.data ?? TaskData.defultNull());
     final now = DateTime.now();
@@ -119,7 +119,7 @@ class _EditMainScreenState extends State<EditMainScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch (state) {
-      case AppLifecycleState.paused:
+      case AppLifecycleState.resumed:
         _focus();
         break;
       default:
@@ -170,7 +170,6 @@ class _EditMainScreenState extends State<EditMainScreen>
     _textEditingController.dispose();
     _focusNode.dispose();
     _controller._mainState = null;
-    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
@@ -302,6 +301,11 @@ class _EditMainScreenState extends State<EditMainScreen>
         ],
       ),
     );
+  }
+
+  @override
+  void onResumed() {
+    _focus();
   }
 }
 

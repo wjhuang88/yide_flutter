@@ -540,6 +540,7 @@ class TaskDBAction {
         DateTime(now.year, now.month, now.day + 1).subtract(Duration(days: 1));
     final srcList = await getAllTaskRecurring();
     final updatedList = srcList.map((recurring) {
+      recurring.nextTime ??= recurring.taskTime ?? DateTime.now();
       if (recurring.nextTime.isAfter(today)) {
         return recurring;
       }
@@ -569,6 +570,7 @@ class TaskDBAction {
         case RepeatMode.none:
           return recurring;
       }
+      return recurring;
     });
     return updateTaskRecurringBatch(updatedList);
   }
