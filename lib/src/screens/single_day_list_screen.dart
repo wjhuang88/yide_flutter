@@ -42,7 +42,7 @@ class SingleDayListScreen extends StatefulWidget with NavigatableWithMenu {
       controller?.updateListData();
       future.complete();
     }).dispatch(context);
-    haptic();
+    //haptic();
     return future.future;
   }
 
@@ -436,6 +436,18 @@ class _ListBodyState extends State<_ListBody> {
         dayTimeSet.add(item);
       }
     });
+    final repeatTaskList = await getRecurringTaskByDate(_dateTime);
+    repeatTaskList.forEach((item) {
+      if (item == null) {
+        return;
+      }
+      item.isRecurring = true;
+      if (item.data.timeType == DateTimeType.night) {
+        nightSet.add(item);
+      } else {
+        dayTimeSet.add(item);
+      }
+    });
     _taskList = dayTimeSet.toList()..addAll(nightSet);
     final taskCount = _taskList.length;
     final doingCount = _taskList.where((pack) => !pack.data.isFinished).length;
@@ -581,6 +593,13 @@ class _ListBodyState extends State<_ListBody> {
         }
       },
       onGenerateDotIcon: (index) {
+        if (_taskList[index].isRecurring) {
+          return Icon(
+            buildCupertinoIconData(0xf49a),
+            size: 22.0,
+            color: const Color(0xFFD7CAFF),
+          );
+        }
         final type = _taskList[index].data.timeType;
         switch (type) {
           case DateTimeType.night:

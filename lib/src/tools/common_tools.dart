@@ -1,6 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:yide/src/models/task_data.dart';
+
+import 'sqlite_manager.dart';
 
 Future<void> showToast(
     String content, BuildContext context, Duration duration) async {
@@ -198,4 +201,26 @@ Future<void> detailPopup(
   } else if (act == -1) {
     (onReactive ?? () {})();
   }
+}
+
+Future<List<TaskPack>> getRecurringTaskByDate(DateTime date) async {
+  final repeatList = await TaskDBAction.getTaskRecurringByDate(date);
+  return Future.wait(repeatList.map((recurring) async {
+    return TaskDBAction.getTaskById(recurring.taskId)
+      ..then((pack) {
+        pack.nextTime = recurring.nextTime;
+        pack.isRecurring = true;
+      });
+  }));
+}
+
+Future<List<TaskPack>> getRecurringTaskReady(DateTime date) async {
+  final repeatList = await TaskDBAction.getTaskRecurringReady(date);
+  return Future.wait(repeatList.map((recurring) async {
+    return TaskDBAction.getTaskById(recurring.taskId)
+      ..then((pack) {
+        pack.nextTime = recurring.nextTime;
+        pack.isRecurring = true;
+      });
+  }));
 }

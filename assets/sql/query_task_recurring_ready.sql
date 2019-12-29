@@ -1,0 +1,1 @@
+SELECT * FROM `task_recurring` WHERE `next_time` >= ?;

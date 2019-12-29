@@ -35,7 +35,7 @@ class MultipleDayListScreen extends StatefulWidget with NavigatableWithOutMenu {
     PopRouteNotification(callback: (d) {
       future.complete();
     }).dispatch(context);
-    haptic();
+    //haptic();
     return future.future;
   }
 
@@ -49,7 +49,7 @@ class MultipleDayListScreen extends StatefulWidget with NavigatableWithOutMenu {
       controller?.updateData();
       future.complete();
     }).dispatch(context);
-    haptic();
+    //haptic();
     return future.future;
   }
 
@@ -92,7 +92,8 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
   static const _headerHeight = 45.0;
   static const _headerGap = 8.0;
 
-  Map<DateTime, List<TaskPack>> _listData = LinkedHashMap();
+  Map<DateTime, List<TaskPack>> _listData =
+      SplayTreeMap((a, b) => a.compareTo(b));
 
   @override
   void initState() {
@@ -112,7 +113,9 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
 
   Future<void> _update() async {
     _isLoading = true;
-    final list = await TaskDBAction.getTaskListReady(DateTime.now());
+    final now = DateTime.now();
+    final list = await TaskDBAction.getTaskListReady(now);
+    final recurringList = await getRecurringTaskReady(now);
     _listData.clear();
     for (var item in list) {
       final taskTime = item.data.taskTime;
@@ -122,6 +125,14 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
       }
       _listData[sectionTime].add(item);
     }
+    recurringList.forEach((item) {
+      final nextTime = item.nextTime;
+      final sectionTime = DateTime(nextTime.year, nextTime.month, nextTime.day);
+      if (!_listData.containsKey(sectionTime)) {
+        _listData[sectionTime] = List();
+      }
+      _listData[sectionTime].add(item);
+    });
     _isLoading = false;
   }
 
@@ -689,15 +700,26 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
           );
         },
         rows: <Widget>[
-          Text(
-            pack.data.content,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: isFinished ? Config.finishedColor : Color(0xFFD7CAFF),
-              fontSize: 15.0,
-            ),
-          ),
+          pack.isRecurring
+              ? Transform.translate(
+                  offset: const Offset(-23.0, 0.0),
+                  child: Row(
+                    children: <Widget>[
+                      Icon(
+                        buildCupertinoIconData(0xf49a),
+                        size: 18.0,
+                        color: const Color(0xFFD7CAFF),
+                      ),
+                      const SizedBox(
+                        width: 5.0,
+                      ),
+                      Expanded(
+                        child: _makeContentWidget(pack.data.content, isFinished),
+                      ),
+                    ],
+                  ),
+                )
+              : _makeContentWidget(pack.data.content, isFinished),
           const SizedBox(
             height: 5.0,
           ),
@@ -708,6 +730,18 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
         ],
       );
     };
+  }
+
+  Widget _makeContentWidget(String content, bool isFinished) {
+    return Text(
+      content,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        color: isFinished ? Config.finishedColor : Color(0xFFD7CAFF),
+        fontSize: 15.0,
+      ),
+    );
   }
 
   String _makeTimeLabel(TaskData data) {

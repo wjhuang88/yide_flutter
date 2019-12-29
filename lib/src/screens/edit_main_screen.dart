@@ -117,17 +117,6 @@ class _EditMainScreenState extends State<EditMainScreen>
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    switch (state) {
-      case AppLifecycleState.resumed:
-        _focus();
-        break;
-      default:
-      // donothing.
-    }
-  }
-
-  @override
   void didUpdateWidget(EditMainScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.taskPack.data.content != oldWidget.taskPack.data.content) {
@@ -611,9 +600,9 @@ class _BottomPanelState extends State<_BottomPanel>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
                     Icon(
-                      FontAwesomeIcons.arrowAltCircleLeft,
+                      buildCupertinoIconData(0xf2d7),
                       color: color,
-                      size: 16.0,
+                      size: 18.0,
                     ),
                     const SizedBox(
                       width: 5.5,
@@ -639,7 +628,7 @@ class _BottomPanelState extends State<_BottomPanel>
               onTap: () {},
               builder: (factor) => Center(
                 child: Text(
-                  '更多设置',
+                  '',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                       color:
@@ -664,11 +653,12 @@ class _BottomPanelState extends State<_BottomPanel>
                     const Color(0xFFBBADE7).withOpacity(1 - factor * 0.5);
                 return Row(
                   mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: <Widget>[
                     Icon(
-                      FontAwesomeIcons.save,
+                      buildCupertinoIconData(0xf383),
                       color: color,
-                      size: 16.0,
+                      size: 18.0,
                     ),
                     const SizedBox(
                       width: 5.5,

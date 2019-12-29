@@ -26,7 +26,7 @@ class HistoryListScreen extends StatefulWidget with NavigatableWithOutMenu {
   @override
   FutureOr<void> onDragPrevious(BuildContext context, double offset) {
     PopRouteNotification().dispatch(context);
-    haptic();
+    //haptic();
   }
 
   @override

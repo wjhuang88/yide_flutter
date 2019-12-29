@@ -142,8 +142,8 @@ class _DetailListScreenState extends State<DetailListScreen>
     if (_savedDetail.repeatBitMap.bitMap != _repeatCodeBeforeSave) {
       final recurring = TaskRecurring.fromBitMap(_savedDetail.repeatBitMap);
       recurring.taskId = _data.id;
-      recurring.taskTime = recurring.nextTime = _data.taskTime;
-      await TaskDBAction.saveTaskRecurring(recurring);
+      recurring.taskTime = _data.taskTime;
+      await TaskDBAction.updateRecurring(recurring);
     }
     _isLoading = false;
     return r;

@@ -75,7 +75,7 @@ class TaskData {
         timeTypeCode = 1,
         alarmTime = null;
 
-  final int id;
+  int id;
   DateTime createTime;
   DateTime taskTime;
   int tagId;
@@ -219,12 +219,14 @@ class TaskPack {
   final TaskData data;
   final TaskTag tag;
   bool isRecurring;
+  DateTime nextTime;
 
   TaskPack(
     this.data,
-    this.tag,
-    {this.isRecurring = false,}
-  );
+    this.tag, {
+    this.isRecurring = false,
+    this.nextTime,
+  });
 }
 
 class ReminderBitMap {

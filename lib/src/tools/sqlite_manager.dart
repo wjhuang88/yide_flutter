@@ -391,7 +391,7 @@ class TaskDBAction {
       return null;
     }
 
-    final queryDate = DateTime(date.year, date.month, date.day);
+    final queryDate = DateTime(date.year, date.month, date.day + 1);
 
     final result = await _dbManager.query(
         'assets/sql/query_task_ready.sql', [queryDate.millisecondsSinceEpoch]);
@@ -519,6 +519,9 @@ class TaskDBAction {
 
   static Future<Iterable<TaskRecurring>> getTaskRecurringByDate(
       DateTime date) async {
+    if (date == null) {
+      return null;
+    }
     DateTime dateBegin = DateTime(date.year, date.month, date.day);
     DateTime dateEnd = DateTime(date.year, date.month, date.day + 1);
 
@@ -528,10 +531,72 @@ class TaskDBAction {
     return result.map(_makeRecurringFromQueryMap);
   }
 
+  static Future<Iterable<TaskRecurring>> getTaskRecurringReady(
+      DateTime date) async {
+    if (date == null) {
+      return null;
+    }
+    DateTime dateQuery = DateTime(date.year, date.month, date.day + 1);
+
+    final result = await _dbManager.query(
+        'assets/sql/query_task_recurring_ready.sql',
+        [dateQuery.millisecondsSinceEpoch]);
+    return result.map(_makeRecurringFromQueryMap);
+  }
+
   static Future<Iterable<TaskRecurring>> getAllTaskRecurring() async {
     final result =
         await _dbManager.query('assets/sql/query_task_recurring_all.sql');
     return result.map(_makeRecurringFromQueryMap);
+  }
+
+  static TaskRecurring _makeRecurringNextTime(
+      TaskRecurring recurring, DateTime today) {
+    recurring.nextTime ??= recurring.taskTime ?? DateTime.now();
+    if (recurring.nextTime.isAfter(today) || recurring.nextTime.isAtSameMomentAs(today)) {
+      return recurring;
+    }
+    switch (recurring.repeatMode) {
+      case RepeatMode.daily:
+        recurring.nextTime = today.add(Duration(days: 1));
+        return recurring;
+      case RepeatMode.weekly:
+        final weekList = recurring.daysOfWeek;
+        if (weekList.isEmpty) {
+          return recurring;
+        }
+        var date = recurring.nextTime;
+        while (!weekList.contains(date.weekday) || date.isBefore(today)) {
+          date = date.add(Duration(days: 1));
+        }
+        recurring.nextTime = date;
+        return recurring;
+      case RepeatMode.monthly:
+        var date = recurring.nextTime;
+        while (date.isBefore(today)) {
+          date = DateTime(date.year, date.month + 1, date.day);
+        }
+        recurring.nextTime = date;
+        return recurring;
+      case RepeatMode.annual:
+        var date = recurring.nextTime;
+        while (date.isBefore(today)) {
+          date = DateTime(date.year + 1, date.month, date.day);
+        }
+        recurring.nextTime = date;
+        return recurring;
+      case RepeatMode.none:
+        return recurring;
+    }
+    return recurring;
+  }
+
+  static Future<int> updateRecurring(TaskRecurring recurring) async {
+    final now = DateTime.now();
+    final today =
+        DateTime(now.year, now.month, now.day + 1).subtract(Duration(days: 1));
+    final recurringForSave = _makeRecurringNextTime(recurring, today);
+    return saveTaskRecurring(recurringForSave);
   }
 
   static Future<int> updateRecurringNextTime() async {
@@ -540,37 +605,7 @@ class TaskDBAction {
         DateTime(now.year, now.month, now.day + 1).subtract(Duration(days: 1));
     final srcList = await getAllTaskRecurring();
     final updatedList = srcList.map((recurring) {
-      recurring.nextTime ??= recurring.taskTime ?? DateTime.now();
-      if (recurring.nextTime.isAfter(today)) {
-        return recurring;
-      }
-      switch (recurring.repeatMode) {
-        case RepeatMode.daily:
-          recurring.nextTime = recurring.nextTime.add(Duration(days: 1));
-          return recurring;
-        case RepeatMode.weekly:
-          final weekList = recurring.daysOfWeek;
-          if (weekList.isEmpty) {
-            return recurring;
-          }
-          var date = recurring.nextTime;
-          while (!weekList.contains(date.weekday)) {
-            date = date.add(Duration(days: 1));
-          }
-          recurring.nextTime = date;
-          return recurring;
-        case RepeatMode.monthly:
-          final prev = recurring.nextTime;
-          recurring.nextTime = DateTime(prev.year, prev.month + 1, prev.day);
-          return recurring;
-        case RepeatMode.annual:
-          final prev = recurring.nextTime;
-          recurring.nextTime = DateTime(prev.year + 1, prev.month, prev.day);
-          return recurring;
-        case RepeatMode.none:
-          return recurring;
-      }
-      return recurring;
+      return _makeRecurringNextTime(recurring, today);
     });
     return updateTaskRecurringBatch(updatedList);
   }
