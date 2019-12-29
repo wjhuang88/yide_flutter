@@ -15,6 +15,7 @@
 		6A5717E5238D031D00C2DE1E /* MapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A5717E4238D031D00C2DE1E /* MapView.swift */; };
 		6A5717E8238D75D400C2DE1E /* style_extra.data in Resources */ = {isa = PBXBuildFile; fileRef = 6A5717E6238D75D400C2DE1E /* style_extra.data */; };
 		6A5717E9238D75D400C2DE1E /* style.data in Resources */ = {isa = PBXBuildFile; fileRef = 6A5717E7238D75D400C2DE1E /* style.data */; };
+		6AE50E1C23B877450083587E /* NativeTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AE50E1B23B877450083587E /* NativeTextField.swift */; };
 		6AE55F8423823B4D00180258 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		9705A1C61CF904A100538489 /* Flutter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9740EEBA1CF902C7004384FC /* Flutter.framework */; };
@@ -50,6 +51,7 @@
 		6A5717E4238D031D00C2DE1E /* MapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapView.swift; sourceTree = "<group>"; };
 		6A5717E6238D75D400C2DE1E /* style_extra.data */ = {isa = PBXFileReference; lastKnownFileType = file; path = style_extra.data; sourceTree = "<group>"; };
 		6A5717E7238D75D400C2DE1E /* style.data */ = {isa = PBXFileReference; lastKnownFileType = file; path = style.data; sourceTree = "<group>"; };
+		6AE50E1B23B877450083587E /* NativeTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeTextField.swift; sourceTree = "<group>"; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
@@ -135,6 +137,7 @@
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 				6A5717E4238D031D00C2DE1E /* MapView.swift */,
 				6A06468B2394E0BD0024A6D4 /* LocationMethod.swift */,
+				6AE50E1B23B877450083587E /* NativeTextField.swift */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -320,6 +323,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6AE50E1C23B877450083587E /* NativeTextField.swift in Sources */,
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				6A06468C2394E0BD0024A6D4 /* LocationMethod.swift in Sources */,
 				6A5717E5238D031D00C2DE1E /* MapView.swift in Sources */,

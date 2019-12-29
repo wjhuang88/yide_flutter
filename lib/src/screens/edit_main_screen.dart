@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:yide/src/components/infinity_page_view.dart';
+import 'package:yide/src/components/native_textfield.dart';
 import 'package:yide/src/components/panel_switcher.dart';
 import 'package:yide/src/components/tap_animator.dart';
 import 'package:yide/src/config.dart';
@@ -53,9 +54,6 @@ class _EditMainScreenState extends State<EditMainScreen>
     with SingleTickerProviderStateMixin, AppLifecycleResumeProvider {
   _EditMainScreenState(this._controller);
 
-  TextEditingController _textEditingController;
-  FocusNode _focusNode;
-
   AnimationController _defaultAnimController;
   Animation<double> _factorAnimationStorage;
   Animation<double> get _factorAnimation =>
@@ -66,8 +64,12 @@ class _EditMainScreenState extends State<EditMainScreen>
 
   EditScreenController _controller;
 
+  NativeTextFieldController _fieldController = NativeTextFieldController();
+
   TaskData _taskData;
   TaskTag _tagData;
+
+  String _inputText;
 
   void _updateTaskData(TaskData taskData) {
     setState(() {
@@ -86,10 +88,6 @@ class _EditMainScreenState extends State<EditMainScreen>
     super.initState();
     _defaultAnimController = AnimationController(vsync: this);
     _taskData = TaskData.copy(widget.taskPack?.data ?? TaskData.defultNull());
-    final now = DateTime.now();
-    if (_taskData.taskTime.isBefore(now)) {
-      _taskData.taskTime = now;
-    }
     _tagData = widget.taskPack?.tag;
     if (_tagData == null) {
       TaskDBAction.getFirstTag().then((tag) {
@@ -104,16 +102,7 @@ class _EditMainScreenState extends State<EditMainScreen>
 
     _controller ??= EditScreenController();
     _controller._mainState = this;
-    _textEditingController = TextEditingController(text: _taskData.content);
-    _focusNode = FocusNode();
-    _focusNode.addListener(() {
-      if (_focusNode.hasFocus) {
-        _controller.hideBottomBar(
-          callback: () => _controller.setBottomPanelTitle(''),
-        );
-        _controller.forceSwitchToPanel('blank');
-      }
-    });
+    _inputText = _taskData.content;
   }
 
   @override
@@ -133,7 +122,7 @@ class _EditMainScreenState extends State<EditMainScreen>
 
   Future<bool> _saveAndBack(
       BuildContext context, TaskData data, TaskTag tag) async {
-    data.content = _textEditingController.text;
+    data.content = _inputText;
     if (data.content.isEmpty) {
       _focus();
       return false;
@@ -156,19 +145,16 @@ class _EditMainScreenState extends State<EditMainScreen>
 
   @override
   void dispose() {
-    _textEditingController.dispose();
-    _focusNode.dispose();
     _controller._mainState = null;
     super.dispose();
   }
 
   void _unfocus() {
-    _focusNode.unfocus();
-    _controller.showBottomBar();
+    _fieldController.unfocus();
   }
 
   void _focus() {
-    FocusScope.of(context).requestFocus(_focusNode);
+    _fieldController.focus();
   }
 
   @override
@@ -233,27 +219,24 @@ class _EditMainScreenState extends State<EditMainScreen>
         children: <Widget>[
           ConstrainedBox(
             constraints: BoxConstraints(minHeight: 70.0),
-            child: CupertinoTextField(
+            child: NativeTextField(
+              placeholder: '记录你的任务',
+              text: _inputText,
               autofocus: true,
-              minLines: 1,
-              maxLines: 3,
-              cursorWidth: 1.0,
-              cursorColor: const Color(0xFFFAB807),
-              controller: _textEditingController,
-              focusNode: _focusNode,
-              style:
-                  TextStyle(color: Colors.white, fontSize: 16.0, height: 1.5),
-              textAlign: TextAlign.center,
-              textAlignVertical: TextAlignVertical.center,
-              keyboardAppearance: Brightness.dark,
-              keyboardType: TextInputType.text,
-              textInputAction: TextInputAction.done,
+              controller: _fieldController,
               onSubmitted: (value) {
                 _saveAndBack(context, _taskData, _tagData);
               },
-              placeholder: '记录你的任务',
-              placeholderStyle: const TextStyle(color: Color(0xFF9B7FE9)),
-              decoration: const BoxDecoration(color: Colors.transparent),
+              onChanged: (value) {
+                _inputText = value;
+              },
+              onFocus: () {
+                _controller.hideBottomBar(
+                  callback: () => _controller.setBottomPanelTitle(''),
+                );
+                _controller.forceSwitchToPanel('blank');
+              },
+              onUnfocus: _controller.showBottomBar,
             ),
           ),
           TapAnimator(
@@ -592,7 +575,10 @@ class _BottomPanelState extends State<_BottomPanel>
           Expanded(
             child: TapAnimator(
               behavior: HitTestBehavior.opaque,
-              onTap: () => PopRouteNotification().dispatch(context),
+              onTap: () {
+                _controller.unfocusInput();
+                PopRouteNotification().dispatch(context);
+              },
               builder: (factor) {
                 final color =
                     const Color(0xFFBBADE7).withOpacity(1 - factor * 0.5);

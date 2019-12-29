@@ -68,6 +68,7 @@ target 'Runner' do
   pod 'AMapLocation'
   pod 'AMapSearch'
   pod 'AMap3DMap'
+  pod 'UITextView+Placeholder'
 
   # Prepare symlinks folder. We use symlinks to avoid having Podfile.lock
   # referring to absolute paths on developers' machines.

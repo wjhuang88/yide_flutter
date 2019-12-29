@@ -13,6 +13,7 @@ PODS:
   - sqflite (0.0.1):
     - Flutter
     - FMDB (~> 2.7.2)
+  - "UITextView+Placeholder (1.3.3)"
 
 DEPENDENCIES:
   - AMap3DMap
@@ -20,6 +21,7 @@ DEPENDENCIES:
   - AMapSearch
   - Flutter (from `Flutter`)
   - sqflite (from `.symlinks/plugins/sqflite/ios`)
+  - "UITextView+Placeholder"
 
 SPEC REPOS:
   trunk:
@@ -28,6 +30,7 @@ SPEC REPOS:
     - AMapLocation
     - AMapSearch
     - FMDB
+    - "UITextView+Placeholder"
 
 EXTERNAL SOURCES:
   Flutter:
@@ -43,7 +46,8 @@ SPEC CHECKSUMS:
   Flutter: 0e3d915762c693b495b44d77113d4970485de6ec
   FMDB: 2ce00b547f966261cd18927a3ddb07cb6f3db82a
   sqflite: ff1d9da63c06588cc8d1faf7256d741f16989d5a
+  "UITextView+Placeholder": c407b27599ea23cca425946fee3cf1db5d547008
 
-PODFILE CHECKSUM: 05461cf10b817be4cc468bcb4dcd6b9bbdd09bb7
+PODFILE CHECKSUM: 652aa5f09e9e9cb622065c5b5f79bbb8c614bae4
 
 COCOAPODS: 1.8.4

@@ -15,12 +15,16 @@ import Flutter
     let messenger = (window?.rootViewController as! FlutterViewController).binaryMessenger
     let locationManager = AMapLocationManager()
     
-    let viewFactory = MapViewFactory(messager: messenger, locationManager: locationManager)
-    let mapRigister = registrar(forPlugin: viewFactory.flutterId)
+    
+    let textFieldFactory = NativeTextFieldFactory(messager: messenger)
+    let textFieldRigister = registrar(forPlugin: textFieldFactory.flutterId)
+    textFieldRigister.register(textFieldFactory, withId: textFieldFactory.flutterId)
     
     let locationChannel = FlutterMethodChannel(name: "amap_location_method", binaryMessenger: messenger)
     let _ = LocationMethod(channel: locationChannel, locationManager: locationManager)
     
+    let viewFactory = MapViewFactory(messager: messenger, locationManager: locationManager)
+    let mapRigister = registrar(forPlugin: viewFactory.flutterId)
     mapRigister.register(viewFactory, withId: viewFactory.flutterId)
     
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
