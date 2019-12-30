@@ -633,7 +633,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
       {bool isDateShow = false}) {
     return (context, index) {
       final pack = list[index];
-      final isFinished = pack.data.isFinished;
+      final isFinished = pack.data.isFinished && !pack.isRecurring;
       final infoRow = <Widget>[
         Icon(
           FontAwesomeIcons.solidCircle,

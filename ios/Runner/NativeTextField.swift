@@ -18,7 +18,6 @@ public class NativeTextField : NSObject, FlutterPlatformView, UITextViewDelegate
         _textField = UITextView(frame: frame)
         _textField.sizeToFit()
         _textField.returnKeyType = UIReturnKeyType.done
-        _textField.textAlignment = NSTextAlignment.center
         _textField.font = UIFont.systemFont(ofSize: 16.0)
         _textField.tintColor = UIColor(red: 0.98, green: 0.73333, blue: 0.02745, alpha: 1.0)
         _textField.textColor = UIColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0)
@@ -52,6 +51,15 @@ public class NativeTextField : NSObject, FlutterPlatformView, UITextViewDelegate
             if let text = map["text"] as? String {
                 if !text.isEmpty {
                     _textField.text = text
+                }
+            }
+            if let align = map["alignment"] as? Int {
+                if align == 2 {
+                    _textField.textAlignment = NSTextAlignment.right
+                } else if align == 1 {
+                    _textField.textAlignment = NSTextAlignment.center
+                } else {
+                    _textField.textAlignment = NSTextAlignment.left
                 }
             }
         }

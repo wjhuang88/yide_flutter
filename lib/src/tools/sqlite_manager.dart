@@ -595,7 +595,7 @@ class TaskDBAction {
   static Future<int> updateRecurring(TaskRecurring recurring) async {
     final now = DateTime.now();
     final today =
-        DateTime(now.year, now.month, now.day + 1).subtract(Duration(days: 1));
+        DateTime(now.year, now.month, now.day + 1).subtract(Duration(seconds: 1));
     final recurringForSave = _makeRecurringNextTime(recurring, today);
     return saveTaskRecurring(recurringForSave);
   }
@@ -603,7 +603,7 @@ class TaskDBAction {
   static Future<int> updateRecurringNextTime() async {
     final now = DateTime.now();
     final today =
-        DateTime(now.year, now.month, now.day + 1).subtract(Duration(days: 1));
+        DateTime(now.year, now.month, now.day + 1).subtract(Duration(seconds: 1));
     final srcList = await getAllTaskRecurring();
     final updatedList = srcList.map((recurring) {
       return _makeRecurringNextTime(recurring, today);

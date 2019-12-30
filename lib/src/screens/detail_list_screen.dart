@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:yide/src/components/header_bar.dart';
+import 'package:yide/src/components/svg_icon.dart';
 import 'package:yide/src/components/tap_animator.dart';
 import 'package:yide/src/config.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
@@ -257,7 +258,7 @@ class _DetailListScreenState extends State<DetailListScreen>
                     height: 40.0,
                   ),
                   _ListItem(
-                    iconData: buildCupertinoIconData(0xf3c8),
+                    icon: SvgIcon.reminder,
                     child: _savedDetail.reminderBitMap != null &&
                             _savedDetail.reminderBitMap.bitMap != 0
                         ? Text(
@@ -288,7 +289,7 @@ class _DetailListScreenState extends State<DetailListScreen>
                     height: 10.0,
                   ),
                   _ListItem(
-                    iconData: CupertinoIcons.restart,
+                    icon: SvgIcon.recurring,
                     child: _savedDetail.repeatBitMap != null &&
                             !(_savedDetail.repeatBitMap.isNoneRepeat)
                         ? Text(
@@ -322,7 +323,7 @@ class _DetailListScreenState extends State<DetailListScreen>
                     height: 10.0,
                   ),
                   _ListItem(
-                    iconData: buildCupertinoIconData(0xf3a3),
+                    icon: SvgIcon.address,
                     child: _savedDetail.address != null &&
                             _savedDetail.address.name?.isNotEmpty == true
                         ? Text(
@@ -353,7 +354,7 @@ class _DetailListScreenState extends State<DetailListScreen>
                     height: 10.0,
                   ),
                   _ListItem(
-                    iconData: CupertinoIcons.folder_solid,
+                    icon: SvgIcon.project,
                     child: _data.catalog != null && _data.catalog.isNotEmpty
                         ? Text(
                             _data.catalog,
@@ -371,7 +372,7 @@ class _DetailListScreenState extends State<DetailListScreen>
                     height: 10.0,
                   ),
                   _ListItem(
-                    iconData: buildCupertinoIconData(0xf418),
+                    icon: SvgIcon.remark,
                     child: _data.remark != null && _data.remark.isNotEmpty
                         ? Text(
                             _data.remark,
@@ -563,13 +564,13 @@ class _HeaderPanel extends StatelessWidget {
 
 class _ListItem extends StatelessWidget {
   _ListItem({
-    @required this.iconData,
+    @required this.icon,
     @required this.child,
     @required this.onTap,
     this.onLongPress,
   });
 
-  final IconData iconData;
+  final Widget icon;
   final Widget child;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
@@ -605,11 +606,7 @@ class _ListItem extends StatelessWidget {
                 const SizedBox(
                   width: 20.0,
                 ),
-                Icon(
-                  iconData,
-                  size: 25.0,
-                  color: Color(0x88EDE7FF),
-                ),
+                icon,
                 const SizedBox(
                   width: 20.0,
                 ),

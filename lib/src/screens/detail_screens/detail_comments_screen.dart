@@ -1,60 +1,17 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:yide/src/components/header_bar.dart';
+import 'package:yide/src/components/native_textfield.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
 import 'package:yide/src/notification.dart';
 
-class DetailCommentsScreen extends StatelessWidget implements Navigatable {
-  final TextEditingController _controller;
+class DetailCommentsScreen extends StatefulWidget implements Navigatable {
+  DetailCommentsScreen({Key key, this.value}) : super(key: key);
 
-  DetailCommentsScreen({Key key, String value})
-      : _controller = TextEditingController(text: value),
-        super(key: key);
+  final String value;
 
   @override
-  Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      backgroundColor: Colors.transparent,
-      child: Column(
-        children: <Widget>[
-          HeaderBar(
-            leadingIcon: const Icon(
-              CupertinoIcons.clear,
-              color: Color(0xFFD7CAFF),
-              size: 40.0,
-            ),
-            onLeadingAction: () => PopRouteNotification().dispatch(context),
-            actionIcon: const Text(
-              '完成',
-              style: const TextStyle(
-                  fontSize: 15.0, color: const Color(0xFFEDE7FF)),
-            ),
-            onAction: () => PopRouteNotification(result: _controller.text).dispatch(context),
-            title: '备注',
-          ),
-          Container(
-            margin: const EdgeInsets.only(top: 50.0),
-            child: CupertinoTextField(
-              style: const TextStyle(color: Colors.white, fontSize: 14.0),
-              autofocus: true,
-              maxLines: null,
-              controller: _controller,
-              keyboardType: TextInputType.text,
-              keyboardAppearance: Brightness.dark,
-              textInputAction: TextInputAction.done,
-              onSubmitted: (text) => PopRouteNotification(result: text).dispatch(context),
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              placeholder: '请输入内容',
-              placeholderStyle: const TextStyle(color: Color(0xFF9B7FE9)),
-              decoration: BoxDecoration(
-                color: Colors.transparent
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  _DetailCommentsScreenState createState() => _DetailCommentsScreenState();
 
   @override
   Route get route {
@@ -81,4 +38,53 @@ class DetailCommentsScreen extends StatelessWidget implements Navigatable {
 
   @override
   bool get withMene => false;
+}
+
+class _DetailCommentsScreenState extends State<DetailCommentsScreen> {
+  NativeTextFieldController _controller = NativeTextFieldController();
+
+  @override
+  Widget build(BuildContext context) {
+    return CupertinoPageScaffold(
+      backgroundColor: Colors.transparent,
+      child: Column(
+        children: <Widget>[
+          HeaderBar(
+            leadingIcon: const Icon(
+              CupertinoIcons.clear,
+              color: Color(0xFFD7CAFF),
+              size: 40.0,
+            ),
+            onLeadingAction: () {
+              _controller.unfocus();
+              PopRouteNotification().dispatch(context);
+            },
+            actionIcon: const Text(
+              '完成',
+              style: const TextStyle(
+                  fontSize: 15.0, color: const Color(0xFFEDE7FF)),
+            ),
+            onAction: () {
+              _controller.unfocus();
+              PopRouteNotification(result: _controller.text).dispatch(context);
+            },
+            title: '备注',
+          ),
+          Container(
+            margin: const EdgeInsets.only(top: 40.0, left: 15.0, right: 15.0),
+            child: NativeTextField(
+              autofocus: true,
+              text: widget.value,
+              height: 200.0,
+              controller: _controller,
+              onSubmitted: (text) =>
+                  PopRouteNotification(result: text).dispatch(context),
+              placeholder: '请输入内容',
+              alignment: Alignment.centerLeft,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

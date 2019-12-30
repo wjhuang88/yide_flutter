@@ -130,6 +130,7 @@ class _EditMainScreenState extends State<EditMainScreen>
     data.tagId = tag.id;
     final pack = TaskPack(data, tag);
     final callback = Completer<bool>();
+    _unfocus();
     PopRouteNotification(
       result: pack,
       callback: callback.complete,
@@ -182,7 +183,9 @@ class _EditMainScreenState extends State<EditMainScreen>
                     controller: _controller,
                   ),
                 ),
-                const SizedBox(height: 15.0,),
+                const SizedBox(
+                  height: 15.0,
+                ),
                 _BottomPanel(
                   factorAnimation: _factorAnimation,
                   controller: _controller,
@@ -354,8 +357,7 @@ class _DateInfoState extends State<_DateInfo>
                   Text(
                     '白天',
                     style: TextStyle(
-                      color:
-                          !_isNight ? Colors.white : const Color(0xFFBBADE7),
+                      color: !_isNight ? Colors.white : const Color(0xFFBBADE7),
                       fontSize: 16.0,
                       fontWeight: FontWeight.w300,
                     ),
@@ -374,8 +376,7 @@ class _DateInfoState extends State<_DateInfo>
                   Text(
                     '晚间',
                     style: TextStyle(
-                      color:
-                          _isNight ? Colors.white : const Color(0xFFBBADE7),
+                      color: _isNight ? Colors.white : const Color(0xFFBBADE7),
                       fontSize: 16.0,
                       fontWeight: FontWeight.w300,
                     ),

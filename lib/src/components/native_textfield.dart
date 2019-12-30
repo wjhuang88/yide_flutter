@@ -13,6 +13,8 @@ class NativeTextField extends StatefulWidget {
     this.onUnfocus,
     this.autofocus,
     this.controller,
+    this.alignment = Alignment.center,
+    this.height = 70.0,
   }) : super(key: key);
 
   final ValueChanged<String> onSubmitted;
@@ -23,6 +25,8 @@ class NativeTextField extends StatefulWidget {
   final String text;
   final bool autofocus;
   final NativeTextFieldController controller;
+  final Alignment alignment;
+  final double height;
 
   @override
   _NativeTextFieldState createState() => _NativeTextFieldState(controller);
@@ -38,6 +42,8 @@ class NativeTextFieldController {
   void unfocus() {
     _state?._unfocus();
   }
+
+  String get text => _state?._text;
 }
 
 class _NativeTextFieldState extends State<NativeTextField> {
@@ -48,6 +54,8 @@ class _NativeTextFieldState extends State<NativeTextField> {
   MethodChannel platform;
   NativeTextFieldController _controller;
 
+  String _text;
+
   @override
   void initState() {
     super.initState();
@@ -56,16 +64,22 @@ class _NativeTextFieldState extends State<NativeTextField> {
     _textEditingController = widget.text != null && widget.text.isNotEmpty
         ? TextEditingController(text: widget.text)
         : TextEditingController();
+    _textEditingController.addListener(() {
+      _text = _textEditingController.text;
+    });
+    _text = widget.text ?? '';
     platform = const MethodChannel("yide_native_textfield_view_method");
     platform.setMethodCallHandler((call) async {
       if (call.method == 'onChanged' && call.arguments is String) {
         if (widget.onChanged != null) {
           final text = call.arguments as String;
+          _text = text;
           widget.onChanged(text);
         }
       } else if (call.method == 'onSubmitted' && call.arguments is String) {
         if (widget.onSubmitted != null) {
           final text = call.arguments as String;
+          _text = text;
           widget.onSubmitted(text);
         }
       } else if (call.method == 'onFocus') {
@@ -106,6 +120,19 @@ class _NativeTextFieldState extends State<NativeTextField> {
     return platform.invokeMethod('unfocus');
   }
 
+  int _getAlignCode() {
+    final align = widget.alignment;
+    return align == Alignment.centerLeft ||
+            align == Alignment.topLeft ||
+            align == Alignment.bottomLeft
+        ? 0
+        : align == Alignment.topCenter ||
+                align == Alignment.bottomCenter ||
+                align == Alignment.center
+            ? 1
+            : 2;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (defaultTargetPlatform == TargetPlatform.iOS) {
@@ -114,9 +141,10 @@ class _NativeTextFieldState extends State<NativeTextField> {
         "autofocus": widget.autofocus,
         "placeholder": widget.placeholder,
         "text": widget.text,
+        "alignment": _getAlignCode(),
       };
       return Container(
-        height: 70.0,
+        height: widget.height,
         child: UiKitView(
           viewType: "yide_native_textfield_view",
           creationParams: params,

@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:yide/src/components/add_button_positioned.dart';
 import 'package:yide/src/components/header_bar.dart';
 import 'package:yide/src/components/location_methods.dart';
+import 'package:yide/src/components/svg_icon.dart';
 import 'package:yide/src/components/timeline_list.dart';
 import 'package:yide/src/config.dart' as Config;
 import 'package:yide/src/config.dart';
@@ -86,11 +87,7 @@ class _SingleDayListScreenState extends State<SingleDayListScreen>
                   indent: 17.0,
                   endIndet: 15.0,
                   title: '今日',
-                  leadingIcon: Icon(
-                    buildCupertinoIconData(0xf394),
-                    color: Color(0xFFD7CAFF),
-                    size: 30.0,
-                  ),
+                  leadingIcon: SvgIcon.menu,
                   onLeadingAction: widget.openMenu,
                   actionIcon: _ButtonAndLoadingIcon(
                     controller: _controller,
