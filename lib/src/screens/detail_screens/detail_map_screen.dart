@@ -41,6 +41,9 @@ class DetailMapScreen extends StatefulWidget implements Navigatable {
 
   @override
   bool get withMene => false;
+
+  @override
+  String get name => '地址';
 }
 
 const _gradient = const LinearGradient(

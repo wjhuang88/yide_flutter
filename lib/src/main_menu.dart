@@ -8,11 +8,13 @@ import 'notification.dart';
 
 class MainMenu extends StatefulWidget {
   final List<List<Map<String, Object>>> menuConfig;
+  final VoidCallback closeAction;
 
   static const contentPadding =
       EdgeInsets.symmetric(horizontal: 25.0, vertical: 14.0);
 
-  const MainMenu({Key key, @required this.menuConfig}) : super(key: key);
+  const MainMenu({Key key, @required this.menuConfig, this.closeAction})
+      : super(key: key);
 
   @override
   _MainMenuState createState() => _MainMenuState();
@@ -122,9 +124,15 @@ class _MainMenuState extends State<MainMenu> {
           onTap: () async {
             final route = item['route'] as Function;
             final isSide = item['side'] as bool;
+            if (!isSide && widget.closeAction != null) {
+              widget.closeAction();
+            }
             if (route != null) {
               final page = route();
               if (page is Navigatable) {
+                if (!isSide && widget.closeAction != null) {
+                  widget.closeAction();
+                }
                 PushRouteNotification(page, isSide: isSide).dispatch(context);
               }
             }

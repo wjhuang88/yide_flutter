@@ -57,6 +57,9 @@ class MultipleDayListScreen extends StatefulWidget with NavigatableWithOutMenu {
   void onTransitionValueChange(double value) {
     controller.updateTransition(value);
   }
+
+  @override
+  String get name => '计划';
 }
 
 class MultipleDayController {
@@ -162,7 +165,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
                         color: const Color(0xFFEDE7FF),
                       ),
                       Text(
-                        '今日',
+                        lastRouteName,
                         style: const TextStyle(
                           fontSize: 16.0,
                           color: const Color(0xFFEDE7FF),
@@ -202,7 +205,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
                             ),
                           ],
                         ),
-                  title: '计划',
+                  title: widget.name,
                 ),
                 const SizedBox(
                   height: 20.0,

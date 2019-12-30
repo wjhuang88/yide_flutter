@@ -51,7 +51,7 @@ class TimelineListView extends StatelessWidget {
                 children: <Widget>[
                   showTime
                       ? Container(
-                          width: 80.0,
+                          width: 60.0,
                           alignment: Alignment.topRight,
                           padding: const EdgeInsets.only(right: 23.5),
                           child: Text(

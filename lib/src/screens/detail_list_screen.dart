@@ -17,7 +17,6 @@ import 'package:yide/src/tools/common_tools.dart';
 import 'package:yide/src/tools/sqlite_manager.dart';
 import 'package:yide/src/models/task_data.dart';
 import 'package:yide/src/screens/edit_main_screen.dart';
-import 'package:yide/src/tools/icon_tools.dart';
 
 import 'detail_screens/detail_comments_screen.dart';
 import 'detail_screens/detail_map_screen.dart';
@@ -59,6 +58,9 @@ class DetailListScreen extends StatefulWidget implements Navigatable {
 
   @override
   bool get withMene => false;
+
+  @override
+  String get name => '详情';
 }
 
 class AnimationPageFade extends CompoundAnimation<double> {

@@ -42,6 +42,9 @@ class DetailReminderScreen extends StatefulWidget implements Navigatable {
 
   @override
   bool get withMene => false;
+
+  @override
+  String get name => '设置提醒';
 }
 
 class _DetailReminderScreenState extends State<DetailReminderScreen> {
@@ -99,7 +102,7 @@ class _DetailReminderScreenState extends State<DetailReminderScreen> {
               PopRouteNotification(result: _reminderState.bitMap)
                   .dispatch(context);
             },
-            title: '设置提醒',
+            title: widget.name,
           ),
           Expanded(
             child: ListView(

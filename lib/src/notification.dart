@@ -37,6 +37,8 @@ class NotificationContainer extends StatefulWidget {
 class _NotificationContainerState extends State<NotificationContainer> {
   bool _lastRouteWithMenu = false;
 
+  List<String> _routeNames = List();
+
   @override
   void initState() {
     super.initState();
@@ -51,6 +53,16 @@ class _NotificationContainerState extends State<NotificationContainer> {
             return true;
           }
           lastPageType = n.page.runtimeType;
+          if (n.isReplacement) {
+            if (_routeNames.isNotEmpty) {
+              _routeNames.removeLast();
+            }
+          } else {
+            if (_routeNames.isNotEmpty) {
+              lastRouteName = _routeNames.last;
+            }
+          }
+          _routeNames.add(n.page.name);
           (() async {
             final temp = _lastRouteWithMenu;
             _lastRouteWithMenu = n.page.withMene;
@@ -75,6 +87,10 @@ class _NotificationContainerState extends State<NotificationContainer> {
             nav = Config.sideNavigatorKey.currentState;
           } else {
             nav = Config.mainNavigatorKey.currentState;
+          }
+          _routeNames.removeLast();
+          if (_routeNames.length > 1) {
+            lastRouteName = _routeNames[_routeNames.length - 2];
           }
           lastPageType = null;
           nav.maybePop(n.result).then((ret) {

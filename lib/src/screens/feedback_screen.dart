@@ -133,4 +133,7 @@ class FeedbackScreen extends StatelessWidget with NavigatableMenuSide {
       ),
     );
   }
+
+  @override
+  String get name => '反馈';
 }

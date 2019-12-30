@@ -104,6 +104,7 @@ class _WithMenuDragBuilderState extends State<_WithMenuDragBuilder> {
         menu: MainMenu(
           menuConfig: Config.menuConfig,
           key: ValueKey(Config.menuConfig.hashCode),
+          closeAction: _closeMenu,
         ),
         onSideTap: _closeMenu,
         child: widget.builder(context, dragOffset, _pageMoving),

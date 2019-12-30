@@ -48,6 +48,9 @@ class EditMainScreen extends StatefulWidget implements Navigatable {
 
   @override
   bool get withMene => false;
+
+  @override
+  String get name => '编辑';
 }
 
 class _EditMainScreenState extends State<EditMainScreen>

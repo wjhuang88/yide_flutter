@@ -52,6 +52,9 @@ class ScreenContainer extends StatefulWidget implements Navigatable {
 
   @override
   bool get withMene => false;
+
+  @override
+  String get name => '菜单';
 }
 
 class _ScreenContainerState extends State<ScreenContainer> {
@@ -100,9 +103,7 @@ class _ScreenContainerState extends State<ScreenContainer> {
         return true;
       },
       child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: Config.backgroundGradient
-        ),
+        decoration: BoxDecoration(gradient: Config.backgroundGradient),
         child: Navigator(
           key: Config.mainNavigatorKey,
           initialRoute: '/',

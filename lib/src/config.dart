@@ -1,8 +1,10 @@
 import 'package:flutter/widgets.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:yide/src/components/svg_icon.dart';
+import 'package:yide/src/screens/history_list_screen.dart';
+import 'package:yide/src/screens/multiple_day_list_screen.dart';
+import 'package:yide/src/screens/single_day_list_screen.dart';
 
-import 'screens/feedback_screen.dart';
 import 'setup_screen.dart';
 
 const backgroundGradient = const LinearGradient(
@@ -36,14 +38,14 @@ final menuConfig = [
     },
     {
       'name': '计划',
-      'route': null,
+      'route': () => MultipleDayListScreen(),
       'icon': SvgIcon.plan,
       'level': 0,
       'side': false,
     },
     {
       'name': '日志',
-      'route': null,
+      'route': () => HistoryListScreen(),
       'icon': SvgIcon.history,
       'level': 0,
       'side': false,

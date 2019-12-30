@@ -33,6 +33,9 @@ class HistoryListScreen extends StatefulWidget with NavigatableWithOutMenu {
   void onTransitionValueChange(double value) {
     _controller.updateTransitionValue(value);
   }
+
+  @override
+  String get name => '日志';
 }
 
 class _HistoryListScreenController {
@@ -142,7 +145,7 @@ class _HistoryListScreenState extends State<HistoryListScreen>
                     color: const Color(0xFFEDE7FF),
                   ),
                   Text(
-                    '计划',
+                    lastRouteName,
                     style: const TextStyle(
                       fontSize: 16.0,
                       color: const Color(0xFFEDE7FF),
@@ -159,7 +162,7 @@ class _HistoryListScreenState extends State<HistoryListScreen>
                       child: CupertinoActivityIndicator(),
                     )
                   : const SizedBox(),
-              title: '日志',
+              title: widget.name,
             ),
             const SizedBox(
               height: 20.0,

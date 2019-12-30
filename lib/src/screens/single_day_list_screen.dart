@@ -51,6 +51,9 @@ class SingleDayListScreen extends StatefulWidget with NavigatableWithMenu {
   void onTransitionValueChange(double value) {
     controller?.updateTransition(value);
   }
+
+  @override
+  String get name => '今日';
 }
 
 class _SingleDayListScreenState extends State<SingleDayListScreen>
@@ -86,7 +89,7 @@ class _SingleDayListScreenState extends State<SingleDayListScreen>
                 HeaderBar(
                   indent: 17.0,
                   endIndet: 15.0,
-                  title: '今日',
+                  title: widget.name,
                   leadingIcon: SvgIcon.menu,
                   onLeadingAction: widget.openMenu,
                   actionIcon: _ButtonAndLoadingIcon(

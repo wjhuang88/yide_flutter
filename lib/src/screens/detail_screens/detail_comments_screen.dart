@@ -38,6 +38,9 @@ class DetailCommentsScreen extends StatefulWidget implements Navigatable {
 
   @override
   bool get withMene => false;
+
+  @override
+  String get name => '备注';
 }
 
 class _DetailCommentsScreenState extends State<DetailCommentsScreen> {
@@ -68,7 +71,7 @@ class _DetailCommentsScreenState extends State<DetailCommentsScreen> {
               _controller.unfocus();
               PopRouteNotification(result: _controller.text).dispatch(context);
             },
-            title: '备注',
+            title: widget.name,
           ),
           Container(
             margin: const EdgeInsets.only(top: 40.0, left: 15.0, right: 15.0),

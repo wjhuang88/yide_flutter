@@ -42,6 +42,9 @@ class DetailRepeatScreen extends StatefulWidget implements Navigatable {
 
   @override
   bool get withMene => false;
+
+  @override
+  String get name => '设置重复';
 }
 
 const _colorList = const [const Color(0xFFE6A800), const Color(0xFFBD8A00)];
@@ -214,7 +217,7 @@ class _DetailRepeatScreenState extends State<DetailRepeatScreen> {
               PopRouteNotification(result: _repeatState.bitMap)
                   .dispatch(context);
             },
-            title: '设置重复',
+            title: widget.name,
           ),
           Expanded(
             child: ListView(

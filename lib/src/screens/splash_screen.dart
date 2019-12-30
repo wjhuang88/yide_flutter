@@ -19,6 +19,9 @@ class SplashScreen extends StatefulWidget implements Navigatable {
 
   @override
   bool get withMene => false;
+
+  @override
+  String get name => '启动';
 }
 
 class _SplashScreenState extends State<SplashScreen>

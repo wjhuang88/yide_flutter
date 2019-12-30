@@ -31,7 +31,7 @@ class SetupScreen extends StatelessWidget with NavigatableMenuSide {
             ),
             onAction: () =>
                 PopRouteNotification(isSide: true).dispatch(context),
-            title: '设置',
+            title: name,
           ),
           Text('测试'),
           Expanded(
@@ -42,4 +42,7 @@ class SetupScreen extends StatelessWidget with NavigatableMenuSide {
       ),
     );
   }
+
+  @override
+  String get name => '设置';
 }
