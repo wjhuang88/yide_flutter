@@ -23,7 +23,29 @@ final sideNavigatorKey = GlobalKey<NavigatorState>();
 final menuConfig = [
   [
     {
-      'name': '今天',
+      'name': '今日',
+      'route': null,
+      'icon': const Icon(
+        FontAwesomeIcons.solidStar,
+        size: 18.0,
+        color: Color(0x88EDE7FF),
+      ),
+      'level': 0,
+      'side': false,
+    },
+    {
+      'name': '计划',
+      'route': null,
+      'icon': const Icon(
+        FontAwesomeIcons.solidStar,
+        size: 18.0,
+        color: Color(0x88EDE7FF),
+      ),
+      'level': 0,
+      'side': false,
+    },
+    {
+      'name': '日志',
       'route': null,
       'icon': const Icon(
         FontAwesomeIcons.solidStar,

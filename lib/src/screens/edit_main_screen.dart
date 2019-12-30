@@ -173,17 +173,16 @@ class _EditMainScreenState extends State<EditMainScreen>
             child: Column(
               children: <Widget>[
                 _buildInputPanel(),
-                const SizedBox(
-                  height: 25.5,
-                ),
                 Expanded(
-                  child: Transform.translate(
-                    offset: Offset(0.0, 200 * (1 - _factorAnimation.value)),
-                    child: _DateInfo(
-                      controller: _controller,
-                    ),
+                  child: const SizedBox(),
+                ),
+                Transform.translate(
+                  offset: Offset(0.0, 200 * (1 - _factorAnimation.value)),
+                  child: _DateInfo(
+                    controller: _controller,
                   ),
                 ),
+                const SizedBox(height: 15.0,),
                 _BottomPanel(
                   factorAnimation: _factorAnimation,
                   controller: _controller,
@@ -329,7 +328,8 @@ class _DateInfoState extends State<_DateInfo>
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
-        Expanded(
+        Container(
+          height: 80.0,
           child: GestureDetector(
             onTap: () {
               widget._controller
@@ -341,54 +341,50 @@ class _DateInfoState extends State<_DateInfo>
             ),
           ),
         ),
-        Container(
-          height: 100.0,
-          alignment: Alignment.topCenter,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              CupertinoButton(
-                child: Row(
-                  children: <Widget>[
-                    Icon(
-                      buildCupertinoIconData(0xf4b7),
-                      color: !_isNight ? Colors.white : const Color(0xFFBBADE7),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: <Widget>[
+            CupertinoButton(
+              child: Row(
+                children: <Widget>[
+                  Icon(
+                    buildCupertinoIconData(0xf4b7),
+                    color: !_isNight ? Colors.white : const Color(0xFFBBADE7),
+                  ),
+                  Text(
+                    '白天',
+                    style: TextStyle(
+                      color:
+                          !_isNight ? Colors.white : const Color(0xFFBBADE7),
+                      fontSize: 16.0,
+                      fontWeight: FontWeight.w300,
                     ),
-                    Text(
-                      '白天',
-                      style: TextStyle(
-                        color:
-                            !_isNight ? Colors.white : const Color(0xFFBBADE7),
-                        fontSize: 20.0,
-                        fontWeight: FontWeight.w300,
-                      ),
-                    ),
-                  ],
-                ),
-                onPressed: () => _switchToType(DateTimeType.daytime),
+                  ),
+                ],
               ),
-              CupertinoButton(
-                child: Row(
-                  children: <Widget>[
-                    Icon(
-                      buildCupertinoIconData(0xf468),
-                      color: _isNight ? Colors.white : const Color(0xFFBBADE7),
+              onPressed: () => _switchToType(DateTimeType.daytime),
+            ),
+            CupertinoButton(
+              child: Row(
+                children: <Widget>[
+                  Icon(
+                    buildCupertinoIconData(0xf468),
+                    color: _isNight ? Colors.white : const Color(0xFFBBADE7),
+                  ),
+                  Text(
+                    '晚间',
+                    style: TextStyle(
+                      color:
+                          _isNight ? Colors.white : const Color(0xFFBBADE7),
+                      fontSize: 16.0,
+                      fontWeight: FontWeight.w300,
                     ),
-                    Text(
-                      '晚间',
-                      style: TextStyle(
-                        color:
-                            _isNight ? Colors.white : const Color(0xFFBBADE7),
-                        fontSize: 20.0,
-                        fontWeight: FontWeight.w300,
-                      ),
-                    ),
-                  ],
-                ),
-                onPressed: () => _switchToType(DateTimeType.night),
+                  ),
+                ],
               ),
-            ],
-          ),
+              onPressed: () => _switchToType(DateTimeType.night),
+            ),
+          ],
         ),
       ],
     );
@@ -467,7 +463,8 @@ class _DatePageState extends State<_DatePage> {
               style: const TextStyle(
                   color: Colors.white,
                   fontSize: 24.0,
-                  fontWeight: FontWeight.w300),
+                  fontWeight: FontWeight.w300,
+                  letterSpacing: 3.0),
             ),
             Text(
               DateFormat('MM月dd日').format(timeToRender),
@@ -603,32 +600,11 @@ class _BottomPanelState extends State<_BottomPanel>
             ),
           ),
           const VerticalDivider(
-            indent: 11.0,
-            endIndent: 11.0,
+            // indent: 11.0,
+            // endIndent: 11.0,
             width: 0.0,
-            color: const Color(0xFFE8E8E8),
-          ),
-          Expanded(
-            child: TapAnimator(
-              behavior: HitTestBehavior.opaque,
-              onTap: () {},
-              builder: (factor) => Center(
-                child: Text(
-                  '',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      color:
-                          const Color(0xFFBBADE7).withOpacity(1 - factor * 0.5),
-                      fontSize: 14.0),
-                ),
-              ),
-            ),
-          ),
-          const VerticalDivider(
-            indent: 11.0,
-            endIndent: 11.0,
-            width: 0.0,
-            color: const Color(0xFFE8E8E8),
+            thickness: 0.2,
+            color: const Color(0x88E8E8E8),
           ),
           Expanded(
             child: TapAnimator(

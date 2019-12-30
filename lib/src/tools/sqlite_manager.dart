@@ -112,7 +112,7 @@ class SqliteManager {
   Future<Database> _database;
 
   Future<int> batchUpdate(String sqlPath, List<List<dynamic>> arguments) async {
-    assert(arguments.length > 1,
+    assert(arguments.length >= 1,
         'This method is used for more than 1 update in one batch, but found ${arguments.length}.');
     final sql = await rootBundle.loadString(sqlPath).catchError((e) {
       print('Read update sql error, update sql path: $sqlPath\n$e');
@@ -553,7 +553,8 @@ class TaskDBAction {
   static TaskRecurring _makeRecurringNextTime(
       TaskRecurring recurring, DateTime today) {
     recurring.nextTime ??= recurring.taskTime ?? DateTime.now();
-    if (recurring.nextTime.isAfter(today) || recurring.nextTime.isAtSameMomentAs(today)) {
+    if (recurring.nextTime.isAfter(today) ||
+        recurring.nextTime.isAtSameMomentAs(today)) {
       return recurring;
     }
     switch (recurring.repeatMode) {
@@ -650,11 +651,14 @@ class TaskDBAction {
   }
 
   static Future<int> updateTaskRecurringBatch(
-      Iterable<TaskRecurring> recurrings) {
+      Iterable<TaskRecurring> recurrings) async {
     const updateSqlPath = 'assets/sql/update_task_recurring_by_task_id.sql';
     final args = recurrings
         .map((recurring) => _makeRecurringQueryArgs(recurring, true))
         .toList();
-    return _dbManager.batchUpdate(updateSqlPath, args);
+    if (args.length > 0) {
+      return _dbManager.batchUpdate(updateSqlPath, args);
+    }
+    return 0;
   }
 }

@@ -419,9 +419,9 @@ class _ListBodyState extends State<_ListBody> {
     final finishedList =
         await TaskDBAction.getTaskFinishedListByDate(_dateTime);
     final dayTimeSet = SplayTreeSet<TaskPack>(
-        (a, b) => a.data.taskTime.compareTo(b.data.taskTime));
+        (a, b) => -a.data.createTime.compareTo(b.data.createTime));
     final nightSet = SplayTreeSet<TaskPack>(
-        (a, b) => a.data.taskTime.compareTo(b.data.taskTime));
+        (a, b) => -a.data.createTime.compareTo(b.data.createTime));
     baseList.forEach((item) {
       if (item.data.timeType == DateTimeType.night) {
         nightSet.add(item);

@@ -16,4 +16,4 @@ FROM `task_data`
 LEFT OUTER JOIN `task_tag`
 ON `task_data`.`tag_id` = `task_tag`.`id`
 WHERE `task_data`.`task_time` <= ? AND `task_data`.`is_finished` != 1
-ORDER BY `task_data`.`time_type_code` ASC, `task_data`.`task_time` ASC;
+ORDER BY `task_data`.`time_type_code` ASC, `task_data`.`create_time` DESC;
