@@ -115,10 +115,6 @@ class MapPlatformView(private val viewId: Int, private val context: Context, sav
         aMap.setOnMapClickListener(this)
         aMap.setOnMyLocationChangeListener(this)
 
-        val styleData = context.resources.openRawResource(R.raw.style).readBytes()
-        val styleExtra = context.resources.openRawResource(R.raw.style_extra).readBytes()
-        aMap.setCustomMapStyle(CustomMapStyleOptions().setEnable(true).setStyleData(styleData).setStyleExtraData(styleExtra))
-
         val ui = aMap.uiSettings
         ui.isCompassEnabled = false
         ui.isScaleControlsEnabled = false

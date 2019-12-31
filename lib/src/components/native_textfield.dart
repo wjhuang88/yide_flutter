@@ -112,12 +112,18 @@ class _NativeTextFieldState extends State<NativeTextField> {
     super.dispose();
   }
 
-  Future<void> _focus() {
-    return platform.invokeMethod('focus');
+  Future<void> _focus() async {
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      return platform.invokeMethod('focus');
+    }
+    return;
   }
 
-  Future<void> _unfocus() {
-    return platform.invokeMethod('unfocus');
+  Future<void> _unfocus() async {
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      return platform.invokeMethod('unfocus');
+    }
+    return;
   }
 
   int _getAlignCode() {

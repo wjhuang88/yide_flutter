@@ -181,10 +181,16 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
   }
 
   void _stop() {
+    if (!this.mounted) {
+      return;
+    }
     _animationController.stop();
   }
 
   Future<void> _forward() async {
+    if (!this.mounted) {
+      return;
+    }
     _startFraction = _fraction;
     _endFraction = widget.rightBarrier;
     _flip = true;
@@ -197,6 +203,9 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
   }
 
   Future<void> _reverse() async {
+    if (!this.mounted) {
+      return;
+    }
     _startFraction = widget.leftBarrier;
     _endFraction = _fraction;
     _flip = false;
@@ -209,6 +218,9 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
   }
 
   Future<void> _leftOutBoundForward() async {
+    if (!this.mounted) {
+      return;
+    }
     _startFraction = _fraction;
     _endFraction = widget.leftBarrier;
     _leftOutBoundFlip = false;
@@ -221,6 +233,9 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
   }
 
   Future<void> _leftOutBoundReverse() async {
+    if (!this.mounted) {
+      return;
+    }
     _startFraction = widget.leftSecondBarrier;
     _endFraction = _fraction;
     _leftOutBoundFlip = true;
@@ -233,6 +248,9 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
   }
 
   void _reset() {
+    if (!this.mounted) {
+      return;
+    }
     setState(() {
       _fraction = widget.leftBarrier;
       _normalRunning = false;

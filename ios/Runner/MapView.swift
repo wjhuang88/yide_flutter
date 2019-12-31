@@ -159,17 +159,6 @@ public class MapView : NSObject, FlutterPlatformView, AMapSearchDelegate, MAMapV
         self._view.setCameraDegree(cameraDegree, animated: true, duration: 300)
         self._view.setZoomLevel(zoomLevel, animated: true)
         
-        let path = Bundle.main.bundlePath
-        let stylePath = path + "/style.data"
-        let extraPath = path + "/style_extra.data"
-        let styleData = NSData.init(contentsOfFile: stylePath)
-        let extraData = NSData.init(contentsOfFile: extraPath)
-        let options = MAMapCustomStyleOptions.init()
-        options.styleData = styleData! as Data
-        options.styleExtraData = extraData! as Data
-        self._view.setCustomMapStyleOptions(options)
-        self._view.customMapStyleEnabled = true
-        
         let srcLogoCenter = self._view.logoCenter
         self._view.logoCenter = CGPoint(x: srcLogoCenter.x + logoOffset.x, y: srcLogoCenter.y + logoOffset.y)
         

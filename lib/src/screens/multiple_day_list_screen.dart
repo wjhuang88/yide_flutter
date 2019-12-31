@@ -67,11 +67,17 @@ class MultipleDayController {
   _MultipleDayListScreenState _state;
 
   void updateTransition(double value) {
-    _transStates.forEach((state) => state.offset = value);
+    _transStates.forEach((state) {
+      if (state.mounted) {
+        state.offset = value;
+      }
+    });
   }
 
   void updateData() {
-    _state?._update();
+    if (_state != null && _state.mounted) {
+      _state._update();
+    }
   }
 }
 
@@ -717,7 +723,8 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
                         width: 5.0,
                       ),
                       Expanded(
-                        child: _makeContentWidget(pack.data.content, isFinished),
+                        child:
+                            _makeContentWidget(pack.data.content, isFinished),
                       ),
                     ],
                   ),

@@ -44,10 +44,6 @@ public class NativeTextField : NSObject, FlutterPlatformView, UITextViewDelegate
                     _textField.becomeFirstResponder()
                 }
             }
-            if let placeholder = map["placeholder"] as? String {
-                _textField.placeholder = placeholder
-                _textField.placeholderColor = UIColor(red: 0.61, green: 0.498, blue: 0.9137, alpha: 1.0)
-            }
             if let text = map["text"] as? String {
                 if !text.isEmpty {
                     _textField.text = text
@@ -61,6 +57,10 @@ public class NativeTextField : NSObject, FlutterPlatformView, UITextViewDelegate
                 } else {
                     _textField.textAlignment = NSTextAlignment.left
                 }
+            }
+            if let placeholder = map["placeholder"] as? String {
+                _textField.placeholder = placeholder
+                _textField.placeholderColor = UIColor(red: 0.61, green: 0.498, blue: 0.9137, alpha: 1.0)
             }
         }
         _textField.delegate = self

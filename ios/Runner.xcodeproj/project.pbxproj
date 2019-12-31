@@ -13,8 +13,6 @@
 		3B80C3951E831B6300D905FE /* App.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 3B80C3931E831B6300D905FE /* App.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		6A06468C2394E0BD0024A6D4 /* LocationMethod.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A06468B2394E0BD0024A6D4 /* LocationMethod.swift */; };
 		6A5717E5238D031D00C2DE1E /* MapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A5717E4238D031D00C2DE1E /* MapView.swift */; };
-		6A5717E8238D75D400C2DE1E /* style_extra.data in Resources */ = {isa = PBXBuildFile; fileRef = 6A5717E6238D75D400C2DE1E /* style_extra.data */; };
-		6A5717E9238D75D400C2DE1E /* style.data in Resources */ = {isa = PBXBuildFile; fileRef = 6A5717E7238D75D400C2DE1E /* style.data */; };
 		6AE50E1C23B877450083587E /* NativeTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AE50E1B23B877450083587E /* NativeTextField.swift */; };
 		6AE55F8423823B4D00180258 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
@@ -49,8 +47,6 @@
 		3B80C3931E831B6300D905FE /* App.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = App.framework; path = Flutter/App.framework; sourceTree = "<group>"; };
 		6A06468B2394E0BD0024A6D4 /* LocationMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationMethod.swift; sourceTree = "<group>"; };
 		6A5717E4238D031D00C2DE1E /* MapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapView.swift; sourceTree = "<group>"; };
-		6A5717E6238D75D400C2DE1E /* style_extra.data */ = {isa = PBXFileReference; lastKnownFileType = file; path = style_extra.data; sourceTree = "<group>"; };
-		6A5717E7238D75D400C2DE1E /* style.data */ = {isa = PBXFileReference; lastKnownFileType = file; path = style.data; sourceTree = "<group>"; };
 		6AAD42C723B99A2E00DDC317 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Main.strings"; sourceTree = "<group>"; };
 		6AAD42C823B99A2E00DDC317 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/LaunchScreen.strings"; sourceTree = "<group>"; };
 		6AE50E1B23B877450083587E /* NativeTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeTextField.swift; sourceTree = "<group>"; };
@@ -126,8 +122,6 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
-				6A5717E6238D75D400C2DE1E /* style_extra.data */,
-				6A5717E7238D75D400C2DE1E /* style.data */,
 				97C146FA1CF9000F007C117D /* Main.storyboard */,
 				97C146FD1CF9000F007C117D /* Assets.xcassets */,
 				97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */,
@@ -227,10 +221,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6A5717E8238D75D400C2DE1E /* style_extra.data in Resources */,
 				3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */,
 				6AE55F8423823B4D00180258 /* LaunchScreen.storyboard in Resources */,
-				6A5717E9238D75D400C2DE1E /* style.data in Resources */,
 				97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */,
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
 			);
