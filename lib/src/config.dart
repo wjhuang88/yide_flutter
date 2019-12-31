@@ -3,7 +3,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:yide/src/components/svg_icon.dart';
 import 'package:yide/src/screens/history_list_screen.dart';
 import 'package:yide/src/screens/multiple_day_list_screen.dart';
-import 'package:yide/src/screens/single_day_list_screen.dart';
 
 import 'setup_screen.dart';
 

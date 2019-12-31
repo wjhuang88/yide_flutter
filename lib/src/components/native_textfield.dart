@@ -116,14 +116,14 @@ class _NativeTextFieldState extends State<NativeTextField> {
     if (defaultTargetPlatform == TargetPlatform.iOS) {
       return platform.invokeMethod('focus');
     }
-    return;
+    return FocusScope.of(context).requestFocus(_focusNode);
   }
 
   Future<void> _unfocus() async {
     if (defaultTargetPlatform == TargetPlatform.iOS) {
       return platform.invokeMethod('unfocus');
     }
-    return;
+    return _focusNode.unfocus();
   }
 
   int _getAlignCode() {

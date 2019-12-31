@@ -488,14 +488,13 @@ class _HeaderPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var dateTimeString;
+    String dateTimeString;
     switch (timeType) {
       case DateTimeType.daytime:
         dateTimeString = DateFormat('MM月dd日 白天').format(dateTime);
         break;
       case DateTimeType.night:
         dateTimeString = DateFormat('MM月dd日 晚间').format(dateTime);
-        ;
         break;
       case DateTimeType.datetime:
         dateTimeString = DateFormat('MM月dd日 HH:mm').format(dateTime);
