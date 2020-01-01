@@ -4,9 +4,11 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:yide/src/components/location_map_view.dart';
+import 'package:yide/src/components/native_oneline_textfield.dart';
 import 'package:yide/src/interfaces/navigatable.dart';
 import 'package:yide/src/models/geo_data.dart';
 import 'package:yide/src/notification.dart';
+import 'package:yide/src/tools/common_tools.dart';
 import 'package:yide/src/tools/icon_tools.dart';
 
 class DetailMapScreen extends StatefulWidget implements Navigatable {
@@ -93,9 +95,10 @@ class _DetailMapScreenState extends State<DetailMapScreen>
   ScrollController _listController = ScrollController();
   double _panelHeight = 0.0;
   bool _isLockHeight = false;
+  bool _backProcessing = false;
 
-  FocusNode _focusNode = FocusNode();
-  TextEditingController _textEditingController = TextEditingController();
+  NativeOnelineTextFieldController _textEditingController =
+      NativeOnelineTextFieldController();
 
   Timer _inputTime;
 
@@ -138,19 +141,12 @@ class _DetailMapScreenState extends State<DetailMapScreen>
     );
     _bottomBoxAnim.addListener(() => setState(() {}));
 
-    _focusNode.addListener(() {
-      if (_focusNode.hasFocus) {
-        _isLockHeight = true;
-        _bottomBoxController.forward();
-      }
-    });
-
     _listController.addListener(() {
       final offset = _listController.offset;
       final min = _listController.position.minScrollExtent;
       final max = _listController.position.maxScrollExtent;
 
-      _focusNode.unfocus();
+      _textEditingController.unfocus();
       if (offset <= min) {
         _isLockHeight = false;
       } else if (min != max) {
@@ -161,6 +157,15 @@ class _DetailMapScreenState extends State<DetailMapScreen>
         _bottomBoxController.forward();
       } else {
         _bottomBoxController.reverse();
+      }
+
+      if (offset <= min - 70) {
+        if (_backProcessing) {
+          return;
+        }
+        _backProcessing = true;
+        haptic();
+        PopRouteNotification().dispatch(context);
       }
     });
   }
@@ -207,7 +212,7 @@ class _DetailMapScreenState extends State<DetailMapScreen>
                 centerOffset: const FractionalOffset(0.5, 0.3),
                 onRegionStartChanging: () async {
                   _isLoading = true;
-                  _focusNode.unfocus();
+                  _textEditingController.unfocus();
                   _textEditingController.clear();
                   await _pinJumpController.forward();
                   await _pinJumpController.reverse();
@@ -222,7 +227,7 @@ class _DetailMapScreenState extends State<DetailMapScreen>
                   //print("get tips: $tips");
                 },
                 onMapTap: (coord) {
-                  _focusNode.unfocus();
+                  _textEditingController.unfocus();
                 },
               ),
             ),
@@ -299,52 +304,41 @@ class _DetailMapScreenState extends State<DetailMapScreen>
             height: 50.0,
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
             decoration: _gradientDecoration,
-            child: CupertinoTextField(
-              maxLines: 1,
-              autofocus: false,
-              focusNode: _focusNode,
-              keyboardAppearance: Brightness.dark,
-              keyboardType: TextInputType.text,
-              textInputAction: TextInputAction.search,
-              controller: _textEditingController,
-              placeholder: '搜索关键字',
-              style: const TextStyle(fontSize: 16.0, color: Color(0xFFFFFFFF)),
-              placeholderStyle:
-                  const TextStyle(fontSize: 16.0, color: Color(0x66FFFFFF)),
-              suffixMode: OverlayVisibilityMode.editing,
-              suffix: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () {
-                  final bool textChanged =
-                      _textEditingController.text.isNotEmpty;
-                  _textEditingController.clear();
-                  if (textChanged)
-                    _onKeywordChange(_textEditingController.text);
-                },
-                child: Center(
-                  child: const Icon(
-                    CupertinoIcons.clear,
-                    color: Color(0xFFFFFFFF),
+            child: Row(
+              children: <Widget>[
+                const Icon(
+                  CupertinoIcons.search,
+                  color: Color(0xFFFFFFFF),
+                ),
+                const SizedBox(
+                  width: 8.0,
+                ),
+                Expanded(
+                  child: NativeOnelineTextField(
+                    autofocus: false,
+                    height: 50.0,
+                    alignment: Alignment.centerLeft,
+                    controller: _textEditingController,
+                    placeholder: '搜索关键字',
+                    onChanged: _onKeywordChange,
+                    onSubmitted: (keyword) async {
+                      if (keyword?.isEmpty ?? false) {
+                        _locationMapController.forceTriggerRegionChange();
+                        return;
+                      }
+                      final list =
+                          await _locationMapController.searchAround(keyword);
+                      setState(() {
+                        _arounds = list;
+                      });
+                    },
+                    onFocus: () {
+                      _isLockHeight = true;
+                      _bottomBoxController.forward();
+                    },
                   ),
                 ),
-              ),
-              prefix: const Icon(
-                CupertinoIcons.search,
-                color: Color(0xFFFFFFFF),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 10.0),
-              decoration: BoxDecoration(color: Colors.transparent),
-              onChanged: _onKeywordChange,
-              onSubmitted: (keyword) async {
-                if (keyword?.isEmpty ?? false) {
-                  _locationMapController.forceTriggerRegionChange();
-                  return;
-                }
-                final list = await _locationMapController.searchAround(keyword);
-                setState(() {
-                  _arounds = list;
-                });
-              },
+              ],
             ),
           ),
         ),
@@ -377,7 +371,7 @@ class _DetailMapScreenState extends State<DetailMapScreen>
                   ),
                   onPressed: () {
                     _isLockHeight = false;
-                    _focusNode.unfocus();
+                    _textEditingController.unfocus();
                     _bottomBoxController.reverse();
                   },
                 ),

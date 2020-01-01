@@ -20,6 +20,10 @@ import Flutter
     let textFieldRigister = registrar(forPlugin: textFieldFactory.flutterId)
     textFieldRigister.register(textFieldFactory, withId: textFieldFactory.flutterId)
     
+    let textFieldOneline = NativeOnelineTextFieldFactory(messager: messenger)
+    let textFieldOnelineRigister = registrar(forPlugin: textFieldOneline.flutterId)
+    textFieldOnelineRigister.register(textFieldOneline, withId: textFieldOneline.flutterId)
+    
     let locationChannel = FlutterMethodChannel(name: "amap_location_method", binaryMessenger: messenger)
     let _ = LocationMethod(channel: locationChannel, locationManager: locationManager)
     
