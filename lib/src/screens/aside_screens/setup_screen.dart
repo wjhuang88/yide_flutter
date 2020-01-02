@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:yide/src/components/header_bar.dart';
+import 'package:yide/src/interfaces/mixins/navigatable_menu_side.dart';
+import 'package:yide/src/notification.dart';
 
-import 'interfaces/mixins/navigatable_menu_side.dart';
-import 'notification.dart';
 
 class SetupScreen extends StatelessWidget with NavigatableMenuSide {
   @override

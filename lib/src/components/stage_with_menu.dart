@@ -1,6 +1,7 @@
 import 'dart:math' as Math;
 
 import 'package:flutter/widgets.dart';
+import 'package:yide/src/config.dart';
 import 'package:yide/src/globle_variable.dart';
 import 'package:yide/src/config.dart' as Config;
 
@@ -59,7 +60,7 @@ class _StageWithMenuState extends State<StageWithMenu> {
         child: Stack(
           children: <Widget>[
             _buildPageContainer(context),
-            _pageCover,
+            _pageCover(),
           ],
         ),
       ),
@@ -88,7 +89,7 @@ class _StageWithMenuState extends State<StageWithMenu> {
           offstage: menuTransformValue == 0.0,
           child: DecoratedBox(
             decoration: BoxDecoration(
-              color: const Color(0xFF483667),
+              color: menuBackgroundColor,
             ),
             child: _menuPart,
           ),
@@ -123,20 +124,23 @@ class _StageWithMenuState extends State<StageWithMenu> {
     );
   }
 
-  Widget _pageCoverInnerStorage;
-  Widget get _pageCover {
-    if (_pageCoverInnerStorage == null) {
-      _pageCoverInnerStorage = GestureDetector(
-        child: Container(
-          alignment: Alignment.centerLeft,
-          color: const Color(0x00000000),
-        ),
-        onTap: widget.onSideTap,
-      );
-    }
+  Widget _pageCover() {
     return Offstage(
       offstage: !(_animValue > 0.0),
-      child: _pageCoverInnerStorage,
+      child: GestureDetector(
+        child: AnimatedOpacity(
+          duration: Duration.zero,
+          opacity: (_animValue / 0.7).clamp(0.0, 1.0),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(25 * _animValue),
+              color: menuPageCoverColor,
+            ),
+            alignment: Alignment.centerLeft,
+          ),
+        ),
+        onTap: widget.onSideTap,
+      ),
     );
   }
 }

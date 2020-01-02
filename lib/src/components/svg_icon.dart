@@ -68,7 +68,7 @@ class SvgIcon extends StatelessWidget {
 
   static SvgIcon menu = SvgIcon(
     asset: 'assets/icons/caidan.svg',
-    size: 22,
-    color: Color(0xFFD7CAFF),
+    size: 20,
+    color: Color(0xFFFFFFFF),
   );
 }
