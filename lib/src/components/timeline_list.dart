@@ -2,13 +2,14 @@ import 'dart:math' as Math;
 
 import 'package:flutter/widgets.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:yide/src/components/svg_icon.dart';
+import 'package:yide/src/config.dart';
 
 import 'tap_animator.dart';
 
-class TimelineListView extends StatelessWidget {
+class TimelineListView extends StatefulWidget {
   const TimelineListView._()
-      : showTime = true,
-        tileBuilder = null,
+      : tileBuilder = null,
         onGenerateLabel = null,
         onGenerateLabelColor = null,
         onGenerateDotColor = null,
@@ -18,7 +19,6 @@ class TimelineListView extends StatelessWidget {
 
   TimelineListView.build({
     Key key,
-    this.showTime = true,
     @required this.tileBuilder,
     this.onGenerateLabel,
     this.onGenerateDotColor,
@@ -26,10 +26,9 @@ class TimelineListView extends StatelessWidget {
     @required this.itemCount,
     this.placeholder = const SizedBox(),
     this.onGenerateLabelColor,
-  })  : assert(!showTime || onGenerateLabel != null),
+  })  : assert(onGenerateLabel != null),
         super(key: key);
 
-  final bool showTime;
   final IndexedWidgetBuilder tileBuilder;
   final String Function(int index) onGenerateLabel;
   final Color Function(int index) onGenerateLabelColor;
@@ -39,47 +38,94 @@ class TimelineListView extends StatelessWidget {
   final Widget placeholder;
 
   @override
+  _TimelineListViewState createState() => _TimelineListViewState();
+}
+
+class _TimelineListViewState extends State<TimelineListView> {
+  @override
   Widget build(BuildContext context) {
-    return itemCount > 0
-        ? ListView.builder(
-            padding: const EdgeInsets.only(
-                left: 17.0, right: 50.0, top: 20.0, bottom: 40.0),
-            itemCount: itemCount,
-            itemBuilder: (context, index) {
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  showTime
-                      ? Container(
-                          width: 60.0,
-                          alignment: Alignment.topRight,
-                          padding: const EdgeInsets.only(right: 23.5),
-                          child: Text(
-                            onGenerateLabel(index),
-                            maxLines: 1,
-                            style: TextStyle(
-                              color: onGenerateLabelColor != null
-                                  ? onGenerateLabelColor(index)
-                                  : const Color(0xFFC9A2F5),
-                              fontSize: 12.0,
-                            ),
-                          ),
-                        )
-                      : SizedBox(),
-                  Expanded(
-                    child: TimelineDecorated(
-                      decorationIcon: onGenerateDotIcon != null ? onGenerateDotIcon(index) : null,
-                      decorationColor: (onGenerateDotColor ??
-                          (i) => const Color(0xFFFFFFFF))(index),
-                      isBorderShow: index + 1 != itemCount,
-                      child:
-                          (tileBuilder ?? (c, i) => SizedBox())(context, index),
-                    ),
-                  ),
+    final sideWidth = 80.0;
+    if (widget.itemCount > 0) {
+      return Stack(
+        children: <Widget>[
+          Positioned(
+            left: sideWidth + 16,
+            top: 0,
+            bottom: 15.0,
+            child: Container(
+              width: 2.0,
+              decoration: BoxDecoration(gradient: timelineGradient),
+            ),
+          ),
+          Positioned(
+            left: sideWidth + 13,
+            bottom: 15.0,
+            child: const Icon(
+              FontAwesomeIcons.solidCircle,
+              color: Color(0xFFFFFFFF),
+              size: 8.0,
+            ),
+          ),
+          ShaderMask(
+            shaderCallback: (Rect bounds) {
+              return LinearGradient(
+                begin: Alignment(0.0, -1.0),
+                end: Alignment(0.0, 1.0),
+                stops: [0.0, 0.1, 0.5, 0.75, 1.0],
+                colors: <Color>[
+                  Color(0x00FFFFFF),
+                  Color(0xFFFFFFFF),
+                  Color(0xFFFFFFFF),
+                  Color(0xFFFFFFFF),
+                  Color(0x00FFFFFF)
                 ],
-              );
-            })
-        : placeholder;
+              ).createShader(Rect.fromLTRB(0, 0, bounds.width, bounds.height));
+            },
+            child: ListView.builder(
+              padding: const EdgeInsets.only(
+                  left: 17.0, right: 50.0, top: 40.0, bottom: 40.0),
+              itemCount: widget.itemCount,
+              itemBuilder: (context, index) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Container(
+                      width: sideWidth,
+                      alignment: Alignment.topRight,
+                      padding: const EdgeInsets.only(right: 23.5),
+                      child: Text(
+                        widget.onGenerateLabel(index),
+                        maxLines: 1,
+                        style: TextStyle(
+                          color: widget.onGenerateLabelColor != null
+                              ? widget.onGenerateLabelColor(index)
+                              : const Color(0xFFC9A2F5),
+                          fontSize: 12.0,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: TimelineDecorated(
+                        decorationIcon: widget.onGenerateDotIcon != null
+                            ? widget.onGenerateDotIcon(index)
+                            : null,
+                        decorationColor: (widget.onGenerateDotColor ??
+                            (i) => const Color(0xFFFFFFFF))(index),
+                        isBorderShow: index + 1 != widget.itemCount,
+                        child: (widget.tileBuilder ?? (c, i) => SizedBox())(
+                            context, index),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
+      );
+    } else {
+      return widget.placeholder;
+    }
   }
 }
 
@@ -99,28 +145,32 @@ class TimelineDecorated extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    double size;
+    if (decorationIcon is Icon) {
+      size = (decorationIcon as Icon).size;
+    } else if (decorationIcon is SvgIcon) {
+      size = (decorationIcon as SvgIcon).size;
+    } else {
+      size = 10.0;
+    }
     return Stack(
       children: <Widget>[
         Container(
           transform: Matrix4.translationValues(0.0, 3.0, 0.0),
-          decoration: BoxDecoration(
-              border: Border(
-            left: isBorderShow
-                ? BorderSide(color: Color(0xFF6F54BC))
-                : BorderSide(color: Color(0x00000000)),
-          )),
           child: Transform.translate(
             offset: const Offset(0.0, -3.0),
             child: child,
           ),
         ),
         Transform.translate(
-          offset: const Offset(-10.5, -2.0),
-          child: decorationIcon == null ? Icon(
-            FontAwesomeIcons.solidCircle,
-            color: decorationColor,
-            size: 10.0,
-          ) : decorationIcon,
+          offset: Offset(-size / 2, -2.0),
+          child: decorationIcon == null
+              ? Icon(
+                  FontAwesomeIcons.solidCircle,
+                  color: decorationColor,
+                  size: 10.0,
+                )
+              : decorationIcon,
         ),
       ],
     );

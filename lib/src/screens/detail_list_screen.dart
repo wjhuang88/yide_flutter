@@ -166,242 +166,237 @@ class _DetailListScreenState extends State<DetailListScreen>
     final nocontentStyle =
         const TextStyle(color: Color(0x88EDE7FF), fontSize: 14.0);
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: backgroundGradient,
-      ),
-      child: CupertinoPageScaffold(
-        resizeToAvoidBottomInset: false,
-        backgroundColor: Colors.transparent,
-        child: Column(
-          children: <Widget>[
-            HeaderBar(
-              leadingIcon: const Icon(
-                CupertinoIcons.clear,
-                color: Color(0xFFD7CAFF),
-                size: 40.0,
-              ),
-              onLeadingAction: () => PopRouteNotification().dispatch(context),
-              actionIcon: _isLoading
-                  ? CupertinoActivityIndicator()
-                  : const Icon(
-                      CupertinoIcons.minus_circled,
-                      color: Color(0xFFD7CAFF),
-                      size: 25.0,
-                    ),
-              onAction: _isLoading
-                  ? null
-                  : () async {
-                      final isDelete = await showCupertinoModalPopup<bool>(
-                        context: context,
-                        builder: (context) => CupertinoActionSheet(
-                          message: Text('删除此任务？'),
-                          actions: <Widget>[
-                            CupertinoActionSheetAction(
-                              child: Text(
-                                '是，我要删除！',
-                                style: const TextStyle(
-                                    color: Color(0xDDFF0000), fontSize: 16.0),
-                              ),
-                              isDestructiveAction: true,
-                              onPressed: () =>
-                                  Navigator.of(context).maybePop(true),
-                            ),
-                          ],
-                          cancelButton: CupertinoActionSheetAction(
-                            child: Text(
-                              '取消',
-                              style: const TextStyle(
-                                  color: Color(0xFF000000), fontSize: 16.0),
-                            ),
-                            isDefaultAction: true,
-                            onPressed: () =>
-                                Navigator.of(context).maybePop(false),
-                          ),
-                        ),
-                      );
-                      if (isDelete != null && isDelete) {
-                        await _deleteTask();
-                        PopRouteNotification().dispatch(context);
-                      }
-                    },
+    return CupertinoPageScaffold(
+      resizeToAvoidBottomInset: false,
+      backgroundColor: Colors.transparent,
+      child: Column(
+        children: <Widget>[
+          HeaderBar(
+            leadingIcon: const Icon(
+              CupertinoIcons.clear,
+              color: Color(0xFFD7CAFF),
+              size: 40.0,
             ),
-            Expanded(
-              child: ListView(
-                controller: _scrollController,
-                physics: AlwaysScrollableScrollPhysics(
-                    parent: BouncingScrollPhysics()),
-                padding: EdgeInsets.zero,
-                children: <Widget>[
-                  _HeaderPanel(
-                    content: _data.content,
-                    dateTime: _data.taskTime,
-                    timeType: _data.timeType,
-                    tagName: _tag.name,
-                    tagColor: _tag.iconColor,
-                    onTap: () async {
-                      final packAsync = Completer<TaskPack>();
-                      PushRouteNotification(
-                        EditMainScreen(taskPack: TaskPack(_data, _tag)),
-                        callback: (ret) => packAsync.complete(ret as TaskPack),
-                      ).dispatch(context);
-                      final pack = await packAsync.future;
-                      if (pack != null) {
+            onLeadingAction: () => PopRouteNotification().dispatch(context),
+            actionIcon: _isLoading
+                ? CupertinoActivityIndicator()
+                : const Icon(
+                    CupertinoIcons.minus_circled,
+                    color: Color(0xFFD7CAFF),
+                    size: 25.0,
+                  ),
+            onAction: _isLoading
+                ? null
+                : () async {
+                    final isDelete = await showCupertinoModalPopup<bool>(
+                      context: context,
+                      builder: (context) => CupertinoActionSheet(
+                        message: Text('删除此任务？'),
+                        actions: <Widget>[
+                          CupertinoActionSheetAction(
+                            child: Text(
+                              '是，我要删除！',
+                              style: const TextStyle(
+                                  color: Color(0xDDFF0000), fontSize: 16.0),
+                            ),
+                            isDestructiveAction: true,
+                            onPressed: () =>
+                                Navigator.of(context).maybePop(true),
+                          ),
+                        ],
+                        cancelButton: CupertinoActionSheetAction(
+                          child: Text(
+                            '取消',
+                            style: const TextStyle(
+                                color: Color(0xFF000000), fontSize: 16.0),
+                          ),
+                          isDefaultAction: true,
+                          onPressed: () =>
+                              Navigator.of(context).maybePop(false),
+                        ),
+                      ),
+                    );
+                    if (isDelete != null && isDelete) {
+                      await _deleteTask();
+                      PopRouteNotification().dispatch(context);
+                    }
+                  },
+          ),
+          Expanded(
+            child: ListView(
+              controller: _scrollController,
+              physics: AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics()),
+              padding: EdgeInsets.zero,
+              children: <Widget>[
+                _HeaderPanel(
+                  content: _data.content,
+                  dateTime: _data.taskTime,
+                  timeType: _data.timeType,
+                  tagName: _tag.name,
+                  tagColor: _tag.iconColor,
+                  onTap: () async {
+                    final packAsync = Completer<TaskPack>();
+                    PushRouteNotification(
+                      EditMainScreen(taskPack: TaskPack(_data, _tag)),
+                      callback: (ret) => packAsync.complete(ret as TaskPack),
+                    ).dispatch(context);
+                    final pack = await packAsync.future;
+                    if (pack != null) {
+                      setState(() {
+                        _data = pack.data;
+                        _tag = pack.tag;
+                        _data.tagId = _tag.id;
+                      });
+                      _saveTask();
+                    }
+                  },
+                ),
+                const SizedBox(
+                  height: 40.0,
+                ),
+                _ListItem(
+                  icon: SvgIcon.reminder,
+                  child: _savedDetail.reminderBitMap != null &&
+                          _savedDetail.reminderBitMap.bitMap != 0
+                      ? Text(
+                          _savedDetail.reminderBitMap.makeLabel(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: contentStyle,
+                        )
+                      : Text(
+                          '点击设置提醒',
+                          style: nocontentStyle,
+                        ),
+                  onTap: _reminderForward,
+                  onLongPress: () {
+                    editPopup(
+                      context,
+                      onEdit: _reminderForward,
+                      onClear: () {
                         setState(() {
-                          _data = pack.data;
-                          _tag = pack.tag;
-                          _data.tagId = _tag.id;
+                          _savedDetail.reminderBitMap.bitMap = 0;
+                        });
+                        _saveDetail();
+                      },
+                    );
+                  },
+                ),
+                const SizedBox(
+                  height: 10.0,
+                ),
+                _ListItem(
+                  icon: SvgIcon.recurring,
+                  child: _savedDetail.repeatBitMap != null &&
+                          !(_savedDetail.repeatBitMap.isNoneRepeat)
+                      ? Text(
+                          _savedDetail.repeatBitMap.makeRepeatTimeLabel() +
+                              ' / ' +
+                              _savedDetail.repeatBitMap.makeRepeatModeLabel(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: contentStyle,
+                        )
+                      : Text(
+                          '点击设置重复',
+                          style: nocontentStyle,
+                        ),
+                  onTap: _repeatForward,
+                  onLongPress: () {
+                    editPopup(
+                      context,
+                      onEdit: _repeatForward,
+                      onClear: () {
+                        setState(() {
+                          _savedDetail.repeatBitMap.bitMap =
+                              RepeatBitMap.noneBitmap;
+                        });
+                        _saveDetail();
+                      },
+                    );
+                  },
+                ),
+                const SizedBox(
+                  height: 10.0,
+                ),
+                _ListItem(
+                  icon: SvgIcon.address,
+                  child: _savedDetail.address != null &&
+                          _savedDetail.address.name?.isNotEmpty == true
+                      ? Text(
+                          _savedDetail.address.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: contentStyle,
+                        )
+                      : Text(
+                          '点击添加地址',
+                          style: nocontentStyle,
+                        ),
+                  onTap: _addressForward,
+                  onLongPress: () {
+                    editPopup(
+                      context,
+                      onEdit: _addressForward,
+                      onClear: () {
+                        setState(() {
+                          _savedDetail.address = null;
+                        });
+                        _saveDetail();
+                      },
+                    );
+                  },
+                ),
+                const SizedBox(
+                  height: 10.0,
+                ),
+                _ListItem(
+                  icon: SvgIcon.project,
+                  child: _data.catalog != null && _data.catalog.isNotEmpty
+                      ? Text(
+                          _data.catalog,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: contentStyle,
+                        )
+                      : Text(
+                          '没有所属项目',
+                          style: nocontentStyle,
+                        ),
+                  onTap: () {},
+                ),
+                const SizedBox(
+                  height: 10.0,
+                ),
+                _ListItem(
+                  icon: SvgIcon.remark,
+                  child: _data.remark != null && _data.remark.isNotEmpty
+                      ? Text(
+                          _data.remark,
+                          // maxLines: 1,
+                          // overflow: TextOverflow.ellipsis,
+                          style: contentStyle,
+                        )
+                      : Text('点击添加备注', style: nocontentStyle),
+                  onTap: _remarkForward,
+                  onLongPress: () {
+                    editPopup(
+                      context,
+                      onEdit: _remarkForward,
+                      onClear: () {
+                        setState(() {
+                          _data.remark = null;
                         });
                         _saveTask();
-                      }
-                    },
-                  ),
-                  const SizedBox(
-                    height: 40.0,
-                  ),
-                  _ListItem(
-                    icon: SvgIcon.reminder,
-                    child: _savedDetail.reminderBitMap != null &&
-                            _savedDetail.reminderBitMap.bitMap != 0
-                        ? Text(
-                            _savedDetail.reminderBitMap.makeLabel(),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: contentStyle,
-                          )
-                        : Text(
-                            '点击设置提醒',
-                            style: nocontentStyle,
-                          ),
-                    onTap: _reminderForward,
-                    onLongPress: () {
-                      editPopup(
-                        context,
-                        onEdit: _reminderForward,
-                        onClear: () {
-                          setState(() {
-                            _savedDetail.reminderBitMap.bitMap = 0;
-                          });
-                          _saveDetail();
-                        },
-                      );
-                    },
-                  ),
-                  const SizedBox(
-                    height: 10.0,
-                  ),
-                  _ListItem(
-                    icon: SvgIcon.recurring,
-                    child: _savedDetail.repeatBitMap != null &&
-                            !(_savedDetail.repeatBitMap.isNoneRepeat)
-                        ? Text(
-                            _savedDetail.repeatBitMap.makeRepeatTimeLabel() +
-                                ' / ' +
-                                _savedDetail.repeatBitMap.makeRepeatModeLabel(),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: contentStyle,
-                          )
-                        : Text(
-                            '点击设置重复',
-                            style: nocontentStyle,
-                          ),
-                    onTap: _repeatForward,
-                    onLongPress: () {
-                      editPopup(
-                        context,
-                        onEdit: _repeatForward,
-                        onClear: () {
-                          setState(() {
-                            _savedDetail.repeatBitMap.bitMap =
-                                RepeatBitMap.noneBitmap;
-                          });
-                          _saveDetail();
-                        },
-                      );
-                    },
-                  ),
-                  const SizedBox(
-                    height: 10.0,
-                  ),
-                  _ListItem(
-                    icon: SvgIcon.address,
-                    child: _savedDetail.address != null &&
-                            _savedDetail.address.name?.isNotEmpty == true
-                        ? Text(
-                            _savedDetail.address.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: contentStyle,
-                          )
-                        : Text(
-                            '点击添加地址',
-                            style: nocontentStyle,
-                          ),
-                    onTap: _addressForward,
-                    onLongPress: () {
-                      editPopup(
-                        context,
-                        onEdit: _addressForward,
-                        onClear: () {
-                          setState(() {
-                            _savedDetail.address = null;
-                          });
-                          _saveDetail();
-                        },
-                      );
-                    },
-                  ),
-                  const SizedBox(
-                    height: 10.0,
-                  ),
-                  _ListItem(
-                    icon: SvgIcon.project,
-                    child: _data.catalog != null && _data.catalog.isNotEmpty
-                        ? Text(
-                            _data.catalog,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: contentStyle,
-                          )
-                        : Text(
-                            '没有所属项目',
-                            style: nocontentStyle,
-                          ),
-                    onTap: () {},
-                  ),
-                  const SizedBox(
-                    height: 10.0,
-                  ),
-                  _ListItem(
-                    icon: SvgIcon.remark,
-                    child: _data.remark != null && _data.remark.isNotEmpty
-                        ? Text(
-                            _data.remark,
-                            // maxLines: 1,
-                            // overflow: TextOverflow.ellipsis,
-                            style: contentStyle,
-                          )
-                        : Text('点击添加备注', style: nocontentStyle),
-                    onTap: _remarkForward,
-                    onLongPress: () {
-                      editPopup(
-                        context,
-                        onEdit: _remarkForward,
-                        onClear: () {
-                          setState(() {
-                            _data.remark = null;
-                          });
-                          _saveTask();
-                        },
-                      );
-                    },
-                  ),
-                ],
-              ),
+                      },
+                    );
+                  },
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

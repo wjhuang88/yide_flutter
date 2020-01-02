@@ -46,6 +46,8 @@ class DetailCommentsScreen extends StatefulWidget implements Navigatable {
 class _DetailCommentsScreenState extends State<DetailCommentsScreen> {
   NativeTextFieldController _controller = NativeTextFieldController();
 
+  String _text;
+
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
@@ -69,7 +71,7 @@ class _DetailCommentsScreenState extends State<DetailCommentsScreen> {
             ),
             onAction: () {
               _controller.unfocus();
-              PopRouteNotification(result: _controller.text).dispatch(context);
+              PopRouteNotification(result: _text).dispatch(context);
             },
             title: widget.name,
           ),
@@ -80,6 +82,7 @@ class _DetailCommentsScreenState extends State<DetailCommentsScreen> {
               text: widget.value,
               height: 200.0,
               controller: _controller,
+              onChanged: (text) => _text = text,
               onSubmitted: (text) =>
                   PopRouteNotification(result: text).dispatch(context),
               placeholder: '请输入内容',

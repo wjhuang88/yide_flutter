@@ -72,7 +72,7 @@ class _MainMenuState extends State<MainMenu> {
                 ),
                 const Text(
                   '点击登录',
-                  style: TextStyle(color: Color(0xFFC19EFD)),
+                  style: TextStyle(color: Color(0xFFFFFFFF)),
                 ),
               ],
             ),

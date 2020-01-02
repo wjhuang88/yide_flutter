@@ -114,36 +114,28 @@ class _SingleDayListScreenState extends State<SingleDayListScreen>
                     margin: const EdgeInsets.symmetric(horizontal: 17.0),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 20.0, vertical: 15.0),
-                    height: 182.0,
-                    decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [Color(0xFF975ED8), Color(0xFF7352D0)]),
-                        borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                        boxShadow: [
-                          BoxShadow(
-                            offset: Offset(0.0, 6.0),
-                            blurRadius: 23.0,
-                            color: Color(0x8A4F3A8C),
-                          )
-                        ]),
                     child: _HeaderPanel(
                       dateTime: _dateTime,
                       controller: _controller,
                     ),
                   ),
                 ),
-                const SizedBox(
-                  height: 20.0,
-                ),
                 Expanded(
                   child: _TranslateContainer(
-                      controller: _controller,
-                      child: _ListBody(
-                        controller: _controller,
-                        date: _dateTime,
-                      )),
+                    controller: _controller,
+                    child: Stack(
+                      children: <Widget>[
+                        _ListBody(
+                          controller: _controller,
+                          date: _dateTime,
+                        ),
+                        Transform.translate(
+                          offset: Offset(47.5, -98.0),
+                          child: _makeLight(100.0),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -174,16 +166,20 @@ class _SingleDayListScreenState extends State<SingleDayListScreen>
   }
 }
 
+Widget _makeLight(double size) {
+  return Icon(
+    FontAwesomeIcons.solidCircle,
+    color: Color(0xFFFFFFFF),
+    size: size,
+  );
+}
+
 class _HeaderPanel extends StatefulWidget {
-  final int taskCount;
-  final int doingTaskCount;
   final DateTime dateTime;
   final SingleDayScreenController controller;
 
   const _HeaderPanel({
     Key key,
-    this.taskCount,
-    this.doingTaskCount,
     this.dateTime,
     this.controller,
   }) : super(key: key);
@@ -195,19 +191,13 @@ class _HeaderPanel extends StatefulWidget {
 class _HeaderPanelState extends State<_HeaderPanel> {
   String _cityName = ' - ';
   String _temp = ' - ';
-  String _weather = ' - ';
 
-  int _taskCount;
-  int _doingTaskCount;
   DateTime _dateTime;
-
-  SingleDayScreenController _controller;
 
   Future<void> _updateLocAndTemp() async {
     setState(() {
       _cityName = ' - ';
       _temp = ' - ';
-      _weather = ' - ';
     });
     final location = await LocationMethods.getLocation();
     if (location.adcode?.isEmpty ?? false) {
@@ -216,158 +206,78 @@ class _HeaderPanelState extends State<_HeaderPanel> {
       final weather = await LocationMethods.getWeather(location.adcode);
       _cityName = weather.city ?? ' - ';
       _temp = weather.temperature ?? ' - ';
-      _weather = weather.weather ?? ' - ';
     }
     setState(() {});
   }
 
-  void _updateCountInfo(int count, int doingCount) {
-    if (_taskCount == count && _doingTaskCount == doingCount) {
-      return;
-    }
-    setState(() {
-      _taskCount = count;
-      _doingTaskCount = doingCount;
-    });
-  }
-
   @override
   void initState() {
-    _taskCount = widget.taskCount ?? 0;
-    _doingTaskCount = widget.doingTaskCount ?? 0;
     _dateTime = widget.dateTime;
-    _controller = widget.controller ?? SingleDayScreenController();
-    _controller._headerState = this;
     _updateLocAndTemp();
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: <Widget>[
-        _buildContentPanel(),
-        _buildWeatherIcon(),
-      ],
-    );
-  }
-
-  Widget _buildContentPanel() {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: <Widget>[
         Text(
-          '今日共计 $_taskCount 项事务，剩余',
+          DateFormat('MM月dd日').format(_dateTime),
           style: const TextStyle(
-              fontSize: 14.0,
-              color: Color(0xFFDEC0FF),
+              fontSize: 12.0,
+              color: Color(0xFFFFFFFF),
               fontWeight: FontWeight.w200),
         ),
-        Expanded(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.ideographic,
-            children: <Widget>[
-              const SizedBox(
-                width: 50.0,
-              ),
-              Text(
-                '$_doingTaskCount',
-                style: const TextStyle(
-                  fontSize: 75.0,
-                  color: Color(0xFFFFFFFF),
-                  fontWeight: FontWeight.w200,
-                ),
-              ),
-              SizedBox(
-                width: 50.0,
-                child: Text(
-                  '未完成',
-                  style: const TextStyle(
-                      fontSize: 12.0,
-                      color: Color(0xFFFFFFFF),
-                      fontWeight: FontWeight.w200),
-                ),
-              ),
-            ],
+        const SizedBox(
+          height: 5.0,
+        ),
+        Text(
+          getWeekNameLong(_dateTime.weekday),
+          style: const TextStyle(
+            fontSize: 26.0,
+            color: Color(0xFFFFFFFF),
+            fontWeight: FontWeight.w200,
           ),
         ),
+        const SizedBox(
+          height: 5.0,
+        ),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  DateFormat('yyyy.MM.dd').format(_dateTime),
-                  style: const TextStyle(
-                      fontSize: 16.0,
-                      color: Color(0xFFDEC0FF),
-                      fontWeight: FontWeight.w200),
-                ),
-                const SizedBox(
-                  height: 5.0,
-                ),
-                Text(
-                  getWeekNameLong(_dateTime.weekday),
-                  style: const TextStyle(
-                      fontSize: 12.0,
-                      color: Color(0xFFDEC0FF),
-                      fontWeight: FontWeight.w200),
-                ),
-              ],
+            Icon(
+              FontAwesomeIcons.locationArrow,
+              color: Color(0xFFFFFFFF),
+              size: 10.0,
             ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: <Widget>[
-                Text(
-                  _cityName,
-                  style: const TextStyle(
-                      fontSize: 14.0,
-                      color: Color(0xFFDEC0FF),
-                      fontWeight: FontWeight.w200),
-                ),
-                const SizedBox(
-                  height: 5.0,
-                ),
-                Text(
-                  '气温：$_temp ℃',
-                  style: const TextStyle(
-                      fontSize: 12.0,
-                      color: Color(0xFFDEC0FF),
-                      fontWeight: FontWeight.w200),
-                ),
-              ],
+            const SizedBox(
+              width: 5.0,
+            ),
+            Text(
+              _cityName,
+              style: const TextStyle(
+                fontSize: 12.0,
+                color: Color(0xFFFFFFFF),
+                fontWeight: FontWeight.w200,
+              ),
+            ),
+            const SizedBox(
+              width: 5.0,
+            ),
+            Text(
+              '$_temp ℃',
+              style: const TextStyle(
+                fontSize: 12.0,
+                color: Color(0xFFFFFFFF),
+                fontWeight: FontWeight.w200,
+              ),
             ),
           ],
         )
       ],
-    );
-  }
-
-  Widget _buildWeatherIcon() {
-    return Positioned(
-      right: 5.0,
-      top: 0.0,
-      child: weatherImageMap[_weather] != null
-          ? GestureDetector(
-              onTap: _updateLocAndTemp,
-              child: Container(
-                  height: 32.0,
-                  width: 32,
-                  child: Image.asset(weatherImageMap[_weather])),
-            )
-          //? Container(height: 32.0, width: 32, child: Image.asset('assets/images/weather/test1.png'))
-          : CupertinoTheme(
-              data: CupertinoThemeData(
-                brightness: Brightness.dark,
-              ),
-              child: CupertinoActivityIndicator(
-                radius: 12.0,
-              ),
-            ),
     );
   }
 }
@@ -450,7 +360,6 @@ class _ListBodyState extends State<_ListBody> {
     });
     _taskList = dayTimeSet.toList()..addAll(nightSet);
     final taskCount = _taskList.length;
-    final doingCount = _taskList.where((pack) => !pack.data.isFinished).length;
     _daytimeIndex = null;
     _nightIndex = null;
     if (taskCount > 0) {
@@ -467,7 +376,6 @@ class _ListBodyState extends State<_ListBody> {
       }
     }
     setState(() {});
-    _controller.updateCountInfo(taskCount, doingCount);
   }
 
   @override
@@ -600,24 +508,10 @@ class _ListBodyState extends State<_ListBody> {
             color: const Color(0xFFD7CAFF),
           );
         }
-        final type = _taskList[index].data.timeType;
-        switch (type) {
-          case DateTimeType.night:
-            return Icon(
-              buildCupertinoIconData(0xf468),
-              size: 22.0,
-              color: const Color(0xFFD7CAFF),
-            );
-          default:
-            return Icon(
-              buildCupertinoIconData(0xf4b7),
-              size: 22.0,
-              color: const Color(0xFFD7CAFF),
-            );
-        }
+        return _makeLight(10.0);
       },
-      onGenerateDotColor: (index) => const Color(0xFFD7CAFF),
-      onGenerateLabelColor: (index) => const Color(0xFFC9A2F5),
+      onGenerateDotColor: (index) => const Color(0xFFFFFFFF),
+      onGenerateLabelColor: (index) => const Color(0xFFFFFFFF),
     );
   }
 
@@ -765,7 +659,6 @@ class _TranslateContainerState extends State<_TranslateContainer> {
 
 class SingleDayScreenController {
   _ListBodyState _listState;
-  _HeaderPanelState _headerState;
   _ButtonAndLoadingIconState _loadingState;
   List<_TranslateContainerState> _transStates = List();
 
@@ -789,9 +682,5 @@ class SingleDayScreenController {
     _transitionExt = value;
     _transStates.forEach(
         (state) => state.offset = _transitionFactor + _transitionExt - 1);
-  }
-
-  void updateCountInfo(int count, int doingCount) {
-    _headerState?._updateCountInfo(count, doingCount);
   }
 }

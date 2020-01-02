@@ -22,6 +22,13 @@ const backgroundGradient = const LinearGradient(
   colors: [Color(0xFF384185), Color(0xFF9D6AA4), Color(0xFFCD86AD)],
 );
 
+const timelineGradient = const LinearGradient(
+  begin: Alignment.bottomCenter,
+  end: Alignment.topCenter,
+  stops: [0.0, 0.50, 1.0],
+  colors: [Color(0xFF7E92AA), Color(0xFFEB9FF6), Color(0xFFCD86AD)],
+);
+
 const menuPageCoverColor = Color(0xFF9D6AA4);
 //const menuBackgroundColor = const Color(0xFF483667);
 const menuBackgroundColor = const Color(0xFF000000);
@@ -102,7 +109,7 @@ final menuConfig = [
     {
       'name': '建议反馈',
       'route': () {
-        LaunchReview.launch(iOSAppId: "585027354");
+        LaunchReview.launch(iOSAppId: "1493369506");
         return null;
       },
       'icon': defaultTargetPlatform == TargetPlatform.iOS

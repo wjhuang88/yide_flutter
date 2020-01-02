@@ -62,7 +62,7 @@ class _MyAppState extends State<MyApp> {
     return NotificationContainer(
       child: CupertinoApp(
         navigatorKey: sideNavigatorKey,
-        color: const Color(0xFF472478),
+        color: const Color(0xFFCD86AD),
         initialRoute: 'page',
         onGenerateRoute: (RouteSettings settings) {
           final String name = settings.name;
@@ -85,9 +85,9 @@ class _MyAppState extends State<MyApp> {
           const Locale.fromSubtags(languageCode: 'zh'),
         ],
         theme: const CupertinoThemeData(
-            primaryColor: Color(0xFF523F88),
-            primaryContrastingColor: Color(0xFF483667),
-            scaffoldBackgroundColor: Color(0xFF8346C8),
+            primaryColor: Color(0xFFCD86AD),
+            primaryContrastingColor: Color(0xFFCD86AD),
+            scaffoldBackgroundColor: Color(0xFFCD86AD),
             brightness: Brightness.light,
             textTheme: CupertinoTextThemeData(
               primaryColor: Color(0xFFFFFFFF),
