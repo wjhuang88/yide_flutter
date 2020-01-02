@@ -165,7 +165,7 @@ class TimelineDecorated extends StatelessWidget {
           ),
         ),
         Transform.translate(
-          offset: Offset(-size / 2, -2.0),
+          offset: Offset(- size / 2, 3.0),
           child: decorationIcon == null
               ? Icon(
                   FontAwesomeIcons.solidCircle,
