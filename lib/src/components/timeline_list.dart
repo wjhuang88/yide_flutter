@@ -150,6 +150,8 @@ class TimelineDecorated extends StatelessWidget {
       size = (decorationIcon as Icon).size;
     } else if (decorationIcon is SvgIcon) {
       size = (decorationIcon as SvgIcon).size;
+    } else if (decorationIcon is Image) {
+      size = (decorationIcon as Image).width;
     } else {
       size = 10.0;
     }
