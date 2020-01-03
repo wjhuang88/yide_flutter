@@ -167,10 +167,34 @@ class _SingleDayListScreenState extends State<SingleDayListScreen>
 }
 
 Widget _makeLight(double size) {
-  return Icon(
-    FontAwesomeIcons.solidCircle,
-    color: Color(0xFFFFFFFF),
-    size: size,
+  return Container(
+    height: size,
+    width: size,
+    child: Stack(
+      children: <Widget>[
+        Center(
+          child: Icon(
+            FontAwesomeIcons.solidCircle,
+            color: Color(0x22FFFFFF),
+            size: size,
+          ),
+        ),
+        Center(
+          child: Icon(
+            FontAwesomeIcons.solidCircle,
+            color: Color(0x44FFFFFF),
+            size: size * 0.85,
+          ),
+        ),
+        Center(
+          child: Icon(
+            FontAwesomeIcons.solidCircle,
+            color: Color(0xFFFFFFFF),
+            size: size * 0.7,
+          ),
+        ),
+      ],
+    ),
   );
 }
 
@@ -508,7 +532,7 @@ class _ListBodyState extends State<_ListBody> {
             color: const Color(0xFFD7CAFF),
           );
         }
-        return _makeLight(10.0);
+        return _makeLight(15.0);
       },
       onGenerateDotColor: (index) => const Color(0xFFFFFFFF),
       onGenerateLabelColor: (index) => const Color(0xFFFFFFFF),

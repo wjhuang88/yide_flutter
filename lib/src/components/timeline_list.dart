@@ -33,7 +33,7 @@ class TimelineListView extends StatefulWidget {
   final String Function(int index) onGenerateLabel;
   final Color Function(int index) onGenerateLabelColor;
   final Color Function(int index) onGenerateDotColor;
-  final Icon Function(int index) onGenerateDotIcon;
+  final Widget Function(int index) onGenerateDotIcon;
   final int itemCount;
   final Widget placeholder;
 
@@ -51,10 +51,13 @@ class _TimelineListViewState extends State<TimelineListView> {
           Positioned(
             left: sideWidth + 16,
             top: 0,
-            bottom: 15.0,
-            child: Container(
-              width: 2.0,
-              decoration: BoxDecoration(gradient: timelineGradient),
+            bottom: 0.0,
+            child: Transform.translate(
+              offset: const Offset(0.0, -15.0),
+              child: Container(
+                width: 2.0,
+                decoration: BoxDecoration(gradient: timelineGradient),
+              ),
             ),
           ),
           Positioned(
@@ -152,6 +155,8 @@ class TimelineDecorated extends StatelessWidget {
       size = (decorationIcon as SvgIcon).size;
     } else if (decorationIcon is Image) {
       size = (decorationIcon as Image).width;
+    } else if (decorationIcon is Container) {
+      size = (decorationIcon as Container).constraints.maxWidth;
     } else {
       size = 10.0;
     }
@@ -165,7 +170,7 @@ class TimelineDecorated extends StatelessWidget {
           ),
         ),
         Transform.translate(
-          offset: Offset(- size / 2, 3.0),
+          offset: Offset(-size / 2, 3.0),
           child: decorationIcon == null
               ? Icon(
                   FontAwesomeIcons.solidCircle,

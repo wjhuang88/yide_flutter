@@ -23,10 +23,10 @@ const backgroundGradient = const LinearGradient(
 );
 
 const timelineGradient = const LinearGradient(
-  begin: Alignment.bottomCenter,
-  end: Alignment.topCenter,
+  begin: Alignment.topCenter,
+  end: Alignment.bottomCenter,
   stops: [0.0, 0.50, 1.0],
-  colors: [Color(0xFF7E92AA), Color(0xFFEB9FF6), Color(0xFFCD86AD)],
+  colors: [Color(0xFFE6B3CF), Color(0xFFA65FAF), Color(0xFF4853A7)],
 );
 
 const menuPageCoverColor = Color(0xFF9D6AA4);
