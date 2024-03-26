@@ -1,35 +1,35 @@
 import 'package:flutter/widgets.dart';
 
 class SlideDragDetector extends StatefulWidget {
-  final Widget child;
-  final VoidCallback onStartDrag;
-  final ValueChanged<double> onUpdate;
-  final ValueChanged<double> onLeftOutBoundUpdate;
-  final ValueChanged<double> onRightDragEnd;
-  final ValueChanged<double> onLeftDragEnd;
-  final ValueChanged<double> onLeftSecondDragEnd;
-  final ValueChanged<double> onLeftSecondDragBackEnd;
-  final ValueChanged<double> onRightMoveComplete;
-  final ValueChanged<double> onLeftMoveComplete;
-  final ValueChanged<double> onLeftSecondMoveComplete;
-  final ValueChanged<double> onLeftSecondMoveBackComplete;
-  final ValueChanged<double> onRightMoveHalf;
-  final ValueChanged<double> onLeftMoveHalf;
-  final ValueChanged<double> onLeftSecondMoveHalf;
-  final ValueChanged<double> onLeftSecondMoveBackHalf;
+  final Widget? child;
+  final VoidCallback? onStartDrag;
+  final ValueChanged<double>? onUpdate;
+  final ValueChanged<double>? onLeftOutBoundUpdate;
+  final ValueChanged<double>? onRightDragEnd;
+  final ValueChanged<double>? onLeftDragEnd;
+  final ValueChanged<double>? onLeftSecondDragEnd;
+  final ValueChanged<double>? onLeftSecondDragBackEnd;
+  final ValueChanged<double>? onRightMoveComplete;
+  final ValueChanged<double>? onLeftMoveComplete;
+  final ValueChanged<double>? onLeftSecondMoveComplete;
+  final ValueChanged<double>? onLeftSecondMoveBackComplete;
+  final ValueChanged<double>? onRightMoveHalf;
+  final ValueChanged<double>? onLeftMoveHalf;
+  final ValueChanged<double>? onLeftSecondMoveHalf;
+  final ValueChanged<double>? onLeftSecondMoveBackHalf;
   final Duration transitionDuration;
   final Curve rightMoveCurve;
   final Curve leftMoveCurve;
   final double leftBarrier;
   final double rightBarrier;
   final double leftSecondBarrier;
-  final SlideDragController controller;
-  final bool isActive;
-  final double initValue;
+  final SlideDragController? controller;
+  final bool? isActive;
+  final double? initValue;
 
   const SlideDragDetector({
-    Key key,
-    @required this.child,
+    super.key,
+    this.child,
     this.onStartDrag,
     this.onUpdate,
     this.onLeftOutBoundUpdate,
@@ -54,50 +54,50 @@ class SlideDragDetector extends StatefulWidget {
     this.onLeftSecondMoveBackHalf,
     this.isActive,
     this.initValue,
-  }) : super(key: key);
+  });
 
   @override
   _SlideDragDetectorState createState() => _SlideDragDetectorState();
 }
 
 class SlideDragController {
-  _SlideDragDetectorState _state;
+  late _SlideDragDetectorState _state;
 
-  double get value => _state?._fraction;
+  double? get value => _state._fraction;
 
   Future<void> moveRight() async {
-    return _state?._forward();
+    return _state._forward();
   }
 
   Future<void> moveLeft() async {
-    return _state?._reverse();
+    return _state._reverse();
   }
 
   Future<void> moveLeftOutbound() async {
-    return _state?._leftOutBoundForward();
+    return _state._leftOutBoundForward();
   }
 
   Future<void> moveLeftOutboundBack() async {
-    return _state?._leftOutBoundReverse();
+    return _state._leftOutBoundReverse();
   }
 
   void moveStop() {
-    return _state?._stop();
+    return _state._stop();
   }
 
   void reset() {
-    _state?._reset();
+    _state._reset();
   }
 
   void setOn() {
-    _state?._active = true;
+    _state._active = true;
   }
 
   void setOff() {
-    _state?._active = false;
+    _state._active = false;
   }
 
-  bool get isActive => _state?._active ?? false;
+  bool? get isActive => _state._active;
 }
 
 class _SlideDragDetectorState extends State<SlideDragDetector>
@@ -106,24 +106,24 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
   double _animDragDelta = 0.0;
   bool _isDragging = false;
 
-  double _fraction;
+  double? _fraction;
   bool _flip = false;
   bool _leftOutBoundFlip = false;
 
-  AnimationController _animationController;
-  Animation _animation;
+  late AnimationController _animationController;
+  late Animation _animation;
 
-  double _startFraction = 0.0;
-  double _endFraction = 1.0;
+  double? _startFraction = 0.0;
+  double? _endFraction = 1.0;
 
   double get _centerPoint => (widget.leftBarrier + widget.rightBarrier) / 2;
   double get _leftSecondCenter =>
       (widget.leftBarrier + widget.leftSecondBarrier) / 2;
 
-  SlideDragController _controller;
+  late SlideDragController _controller;
 
-  bool _activeValue;
-  bool get _active => _activeValue;
+  bool? _activeValue;
+  bool? get _active => _activeValue;
   set _active(value) {
     setState(() {
       _activeValue = value;
@@ -141,13 +141,13 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
   bool _isLeftOutBoundForwardOverHalf = false;
   bool _isLeftOutBoundReverseOverHalf = false;
 
-  double _lastUpdateValue;
-  double _lastLeftOutBoundUpdateValue;
+  late double? _lastUpdateValue;
+  late double? _lastLeftOutBoundUpdateValue;
 
   @override
   void initState() {
-    _fraction = widget.initValue ?? 0.0;
-    _activeValue = widget.isActive ?? true;
+    _fraction = widget.initValue;
+    _activeValue = widget.isActive;
     _animationController = AnimationController(
         value: 0.0, duration: widget.transitionDuration, vsync: this);
     _animation = Tween(begin: 0.0, end: 1.0).animate(CurvedAnimation(
@@ -156,8 +156,8 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
       parent: _animationController,
     ));
     _animation.addListener(() {
-      _fraction =
-          _startFraction + (_endFraction - _startFraction) * _animation.value;
+      _fraction = _startFraction! +
+          (_endFraction! - _startFraction!) * _animation.value;
       if (_outBoundRunning) {
         _handleLeftOutBoundAnimation(_fraction);
         _handleUpdateAnimation(widget.leftBarrier);
@@ -168,7 +168,7 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
       }
     });
 
-    _controller = widget.controller ?? SlideDragController();
+    _controller = widget.controller!;
     _controller._state = this;
 
     super.initState();
@@ -265,10 +265,8 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
     });
   }
 
-  void _invokeMethod(ValueChanged<double> method, double argument) {
-    if (method != null) {
-      method(argument);
-    }
+  void _invokeMethod(ValueChanged<double>? method, double argument) {
+    method!(argument);
   }
 
   Future<void> _dragEndAction(double velocity, double offet) async {
@@ -354,7 +352,7 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
   void _handleUpdateAnimation(value) {
     if (widget.onUpdate != null && _lastUpdateValue != value) {
       _lastUpdateValue = value;
-      widget.onUpdate(value);
+      widget.onUpdate!(value);
     }
   }
 
@@ -374,13 +372,13 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
     if (widget.onLeftOutBoundUpdate != null &&
         _lastLeftOutBoundUpdateValue != value) {
       _lastLeftOutBoundUpdateValue = value;
-      widget.onLeftOutBoundUpdate(value);
+      widget.onLeftOutBoundUpdate!(value);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return _active
+    return _active != null && _active!
         ? GestureDetector(
             behavior: HitTestBehavior.opaque,
             child: widget.child,
@@ -396,7 +394,7 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
                 _isLeftOutBoundReverseOverHalf = false;
                 _animationController.stop(canceled: false);
                 if (widget.onStartDrag != null) {
-                  widget.onStartDrag();
+                  widget.onStartDrag!();
                 }
               }
             },
@@ -407,9 +405,9 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
               _isDragging = false;
               if (_isLeftOutBound) {
                 await _dragEndLeftOutBoundAction(
-                    detail.primaryVelocity, _fraction);
+                    detail.primaryVelocity!, _fraction!);
               } else {
-                await _dragEndAction(detail.primaryVelocity, _fraction);
+                await _dragEndAction(detail.primaryVelocity!, _fraction!);
               }
             },
             onHorizontalDragCancel: () async {
@@ -418,9 +416,9 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
               }
               _isDragging = false;
               if (_isLeftOutBound) {
-                await _dragCancelLeftOutBoundAction(_fraction);
+                await _dragCancelLeftOutBoundAction(_fraction!);
               } else {
-                await _dragCancelAction(_fraction);
+                await _dragCancelAction(_fraction!);
               }
             },
             onHorizontalDragUpdate: (detail) {
@@ -430,34 +428,34 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
                 final secondLeft = widget.leftSecondBarrier;
                 var frac =
                     (detail.globalPosition.dx - _animDragDelta) / _screenWidth;
-                if (left == secondLeft && _fraction <= left && frac < 0.0) {
+                if (left == secondLeft && _fraction! <= left && frac < 0.0) {
                   _fraction = left;
                   _isLeftOutBound = false;
                   _handleUpdate(_fraction);
                   return;
                 }
-                if (_fraction >= right && frac > 0.0) {
+                if (_fraction! >= right && frac > 0.0) {
                   _fraction = right;
                   _isLeftOutBound = false;
                   _handleUpdate(_fraction);
                   return;
                 }
-                if (_fraction <= secondLeft && frac < 0.0) {
+                if (_fraction! <= secondLeft && frac < 0.0) {
                   _fraction = secondLeft;
                   _isLeftOutBound = true;
                   _handleLeftOutBoundUpdate(_fraction);
                   return;
                 }
-                if (_fraction <= left) {
+                if (_fraction! <= left) {
                   _isLeftOutBound = true;
                 } else {
                   _isLeftOutBound = false;
                 }
                 if (_isLeftOutBound) {
                   _handleUpdate(left);
-                  if (_fraction <= secondLeft) {
+                  if (_fraction! <= secondLeft) {
                     _leftOutBoundFlip = true;
-                  } else if (_fraction >= left) {
+                  } else if (_fraction! >= left) {
                     _leftOutBoundFlip = false;
                   }
                   if (_leftOutBoundFlip) {
@@ -467,20 +465,20 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
                   _handleLeftOutBoundUpdate(_fraction);
                   if (!_leftOutBoundFlip &&
                       !_isLeftOutBoundForwardOverHalf &&
-                      _fraction <= _leftSecondCenter) {
-                    _invokeMethod(widget.onLeftSecondMoveHalf, _fraction);
+                      _fraction! <= _leftSecondCenter) {
+                    _invokeMethod(widget.onLeftSecondMoveHalf, _fraction!);
                     _isLeftOutBoundForwardOverHalf = true;
                   }
                   if (_leftOutBoundFlip &&
                       !_isLeftOutBoundReverseOverHalf &&
-                      _fraction >= _leftSecondCenter) {
-                    _invokeMethod(widget.onLeftSecondMoveBackHalf, _fraction);
+                      _fraction! >= _leftSecondCenter) {
+                    _invokeMethod(widget.onLeftSecondMoveBackHalf, _fraction!);
                     _isLeftOutBoundReverseOverHalf = true;
                   }
                 } else {
-                  if (_fraction >= right) {
+                  if (_fraction! >= right) {
                     _flip = true;
-                  } else if (_fraction <= left) {
+                  } else if (_fraction! <= left) {
                     _flip = false;
                   }
                   if (_flip) {
@@ -490,20 +488,20 @@ class _SlideDragDetectorState extends State<SlideDragDetector>
                   _handleUpdate(_fraction);
                   if (!_flip &&
                       !_isForwardOverHalf &&
-                      _fraction >= _centerPoint) {
-                    _invokeMethod(widget.onRightMoveHalf, _fraction);
+                      _fraction! >= _centerPoint) {
+                    _invokeMethod(widget.onRightMoveHalf, _fraction!);
                     _isForwardOverHalf = true;
                   }
                   if (_flip &&
                       !_isReverseOverHalf &&
-                      _fraction <= _centerPoint) {
-                    _invokeMethod(widget.onLeftMoveHalf, _fraction);
+                      _fraction! <= _centerPoint) {
+                    _invokeMethod(widget.onLeftMoveHalf, _fraction!);
                     _isReverseOverHalf = true;
                   }
                 }
               }
             },
           )
-        : widget.child;
+        : widget.child!;
   }
 }

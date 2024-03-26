@@ -61,42 +61,43 @@ const weekMapShort = {
 String getMonthName(int month) {
   var value = mouthMap[month];
   assert(value != null);
-  return value;
+  return value!;
 }
 
 String getMonthNameShort(int month) {
   var value = mouthMapShort[month];
   assert(value != null);
-  return value;
+  return value!;
 }
 
 String getWeekName(int week) {
   var value = weekMap[week];
   assert(value != null);
-  return value;
+  return value!;
 }
 
 String getWeekNameLong(int week) {
   var value = weekMapLong[week];
   assert(value != null);
-  return value;
+  return value!;
 }
 
 String getWeekNameShort(int week) {
   var value = weekMapShort[week];
   assert(value != null);
-  return value;
+  return value!;
 }
 
 class DayInfo {
-  DayInfo(this.weekday, this.day, {this.isSelected = false, this.dateTime});
+  DayInfo(this.weekday, this.day,
+      {this.isSelected = false, required this.dateTime});
 
   DayInfo.fromDateTime(DateTime dateTime, {bool isSelected = false})
-    : weekday = dateTime.weekday, 
-      day = dateTime.day, 
-      isSelected = isSelected,
-      dateTime = dateTime;
-    
+      : weekday = dateTime.weekday,
+        day = dateTime.day,
+        isSelected = isSelected,
+        dateTime = dateTime;
+
   final int weekday;
   final int day;
   final DateTime dateTime;

@@ -12,8 +12,8 @@ import 'tools/sqlite_manager.dart';
 
 class ScreenContainer extends StatefulWidget implements Navigatable {
   const ScreenContainer({
-    Key key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   _ScreenContainerState createState() => _ScreenContainerState();
@@ -60,9 +60,9 @@ class ScreenContainer extends StatefulWidget implements Navigatable {
 class _ScreenContainerState extends State<ScreenContainer> {
   _ScreenContainerState();
 
-  DateTime _backPressedAt;
+  DateTime? _backPressedAt;
 
-  NavigatorObserver _navigatorObserver;
+  NavigatorObserver? _navigatorObserver;
 
   @override
   void initState() {
@@ -72,7 +72,7 @@ class _ScreenContainerState extends State<ScreenContainer> {
 
   @override
   void dispose() {
-    _navigatorObserver.navigator?.dispose();
+    _navigatorObserver?.navigator?.dispose();
     _navigatorObserver = null;
     SqliteManager.instance.dispose();
     super.dispose();
@@ -87,7 +87,7 @@ class _ScreenContainerState extends State<ScreenContainer> {
         lastPageType = null;
         // 拦截返回按钮
         // 可以后退则后退
-        if (nav.canPop()) {
+        if (nav?.canPop() ?? false) {
           PopRouteNotification(callback: (r) => lastPageType = null)
               .dispatch(Config.mainNavigatorKey.currentContext);
           return false;
@@ -95,7 +95,7 @@ class _ScreenContainerState extends State<ScreenContainer> {
 
         // 无法后退则检测是否连续按返回键，连续则推出app
         if (_backPressedAt == null ||
-            DateTime.now().difference(_backPressedAt) > Duration(seconds: 1)) {
+            DateTime.now().difference(_backPressedAt!) > Duration(seconds: 1)) {
           _backPressedAt = DateTime.now();
           showToast('再次点击退出应用', context, Duration(seconds: 1));
           return false;
@@ -108,7 +108,7 @@ class _ScreenContainerState extends State<ScreenContainer> {
           key: Config.mainNavigatorKey,
           initialRoute: '/',
           onGenerateRoute: (RouteSettings settings) {
-            final String name = settings.name;
+            final String? name = settings.name;
             if ('/' == name) {
               return initialPage(context).route;
             } else {

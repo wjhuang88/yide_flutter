@@ -2,9 +2,9 @@ import 'package:flutter/cupertino.dart';
 
 class AddButtonPositioned extends StatelessWidget {
   const AddButtonPositioned({
-    Key key,
-    @required this.onPressed,
-  }) : super(key: key);
+    super.key,
+    required this.onPressed,
+  });
 
   final VoidCallback onPressed;
 

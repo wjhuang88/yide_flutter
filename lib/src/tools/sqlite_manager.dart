@@ -55,7 +55,7 @@ class SqliteManager {
     }
   }
 
-  Future<void> _execute(Database db, String path,
+  Future<dynamic> _execute(Database db, String path,
       [List<dynamic> arguments = const []]) async {
     final sqlBatch = await rootBundle.loadString(path).catchError((e) {
       print('Read sql error, sql path: $path\n$e');
@@ -109,22 +109,23 @@ class SqliteManager {
 
   static SqliteManager instance = SqliteManager._();
 
-  Future<Database> _database;
+  Future<Database>? _database;
 
-  Future<int> batchUpdate(String sqlPath, List<List<dynamic>> arguments) async {
+  Future<int?> batchUpdate(
+      String sqlPath, List<List<dynamic>> arguments) async {
     assert(arguments.length >= 1,
         'This method is used for more than 1 update in one batch, but found ${arguments.length}.');
     final sql = await rootBundle.loadString(sqlPath).catchError((e) {
       print('Read update sql error, update sql path: $sqlPath\n$e');
     });
-    final batch = (await _database).batch();
+    final batch = (await _database)?.batch();
     arguments.forEach((arg) {
-      batch.rawUpdate(sql, arg);
+      batch?.rawUpdate(sql, arg);
     });
-    final results = await batch.commit().catchError((e) {
+    final results = await batch?.commit().catchError((e) {
       print('DB update error, update sql: $sql, arguments: $arguments\n$e');
     });
-    return results.map((value) => value as int).reduce((lt, rt) => lt + rt);
+    return results?.map((value) => value as int).reduce((lt, rt) => lt + rt);
   }
 
   Future<int> update(String sqlPath,
@@ -132,66 +133,68 @@ class SqliteManager {
     final sql = await rootBundle.loadString(sqlPath).catchError((e) {
       print('Read update sql error, update sql path: $sqlPath\n$e');
     });
-    return (await _database).rawUpdate(sql, arguments).catchError((e) {
+    return (await _database)!.rawUpdate(sql, arguments).catchError((e) {
       print('DB update error, update sql: $sql, arguments: $arguments\n$e');
     });
   }
 
-  Future<int> batchInsert(String sqlPath, List<List<dynamic>> arguments) async {
+  Future<int?> batchInsert(
+      String sqlPath, List<List<dynamic>> arguments) async {
     assert(arguments.length > 1,
         'This method is used for more than 1 update in one batch, but found ${arguments.length}.');
     final sql = await rootBundle.loadString(sqlPath).catchError((e) {
       print('Read insert sql error, insert sql path: $sqlPath\n$e');
     });
-    final batch = (await _database).batch();
+    final batch = (await _database)?.batch();
     arguments.forEach((arg) {
-      batch.rawInsert(sql, arg);
+      batch?.rawInsert(sql, arg);
     });
-    final results = await batch.commit().catchError((e) {
+    final results = await batch?.commit().catchError((e) {
       print('DB insert error, insert sql: $sql, arguments: $arguments\n$e');
     });
-    return results.map((value) => value as int).reduce((lt, rt) => lt + rt);
+    return results?.map((value) => value as int).reduce((lt, rt) => lt + rt);
   }
 
-  Future<int> insert(String sqlPath,
+  Future<int?> insert(String sqlPath,
       [List<dynamic> arguments = const []]) async {
     final sql = await rootBundle.loadString(sqlPath).catchError((e) {
       print('Read insert sql error, insert sql path: $sqlPath\n$e');
     });
-    return (await _database).rawInsert(sql, arguments).catchError((e) {
+    return (await _database)?.rawInsert(sql, arguments).catchError((e) {
       print('DB insert error, insert sql: $sql, arguments: $arguments\n$e');
     });
   }
 
-  Future<List<Map<String, dynamic>>> query(String sqlPath,
+  Future<List<Map<String, dynamic>>?> query(String sqlPath,
       [List<dynamic> arguments = const []]) async {
     final sql = await rootBundle.loadString(sqlPath).catchError((e) {
       print('Read sql file error, query sql path: $sqlPath\n$e');
     });
-    return (await _database).rawQuery(sql, arguments).catchError((e) {
+    return (await _database)?.rawQuery(sql, arguments).catchError((e) {
       print('DB query error, query sql: $sql, arguments: $arguments\n$e');
     });
   }
 
   Future<void> execute(String sqlPath,
       [List<dynamic> arguments = const []]) async {
-    return _execute(await _database, sqlPath, arguments);
+    final db = await _database;
+    return _execute(db!, sqlPath, arguments);
   }
 
   Future<int> deleteInTransaction(String sqlPath,
       [List<dynamic> arguments = const []]) async {
-    return _deleteInTransaction(await _database, sqlPath, arguments);
+    return _deleteInTransaction(await _database!, sqlPath, arguments);
   }
 
   void dispose() async {
     if (_database != null) {
-      (await _database).close();
+      (await _database)?.close();
     }
   }
 }
 
 class TaskDBAction {
-  factory TaskDBAction._() => null;
+  TaskDBAction._internal();
 
   static SqliteManager _dbManager = SqliteManager.instance;
 
@@ -246,35 +249,35 @@ class TaskDBAction {
     );
   }
 
-  static Future<List<TaskTag>> getAllTaskTag() async {
+  static Future<List<TaskTag>?> getAllTaskTag() async {
     final result = await _dbManager.query('assets/sql/query_tag.sql');
-    return result.map(_makeTagFromQueryResult).toList();
+    return result?.map(_makeTagFromQueryResult).toList();
   }
 
-  static Future<TaskTag> getFirstTag() async {
+  static Future<TaskTag?> getFirstTag() async {
     final result = await _dbManager.query('assets/sql/query_first_tag.sql');
-    if (result.length == 0) {
+    if (result?.length == 0) {
       return null;
     }
-    assert(result.length == 1,
-        'Querying first tag should return 1 and only 1 result, but ${result.length} found.');
-    final tagRaw = result.first;
-    return _makeTagFromQueryResult(tagRaw);
+    assert(result?.length == 1,
+        'Querying first tag should return 1 and only 1 result, but ${result?.length} found.');
+    final tagRaw = result?.first;
+    return _makeTagFromQueryResult(tagRaw!);
   }
 
-  static Future<TaskTag> getTaskTagById(int id) async {
+  static Future<TaskTag?> getTaskTagById(int? id) async {
     if (id == null) {
       return null;
     }
     final result =
         await _dbManager.query('assets/sql/query_tag_by_id.sql', [id]);
-    assert(result.length == 1,
-        'Querying tag data by id should return 1 and only 1 result, but ${result.length} found.');
-    final tagRaw = result.first;
-    return _makeTagFromQueryResult(tagRaw);
+    assert(result?.length == 1,
+        'Querying tag data by id should return 1 and only 1 result, but ${result?.length} found.');
+    final tagRaw = result?.first;
+    return _makeTagFromQueryResult(tagRaw!);
   }
 
-  static Future<bool> isTaskExists(int id) async {
+  static Future<bool> isTaskExists(int? id) async {
     if (id == null) {
       return false;
     }
@@ -289,21 +292,21 @@ class TaskDBAction {
     return count > 0;
   }
 
-  static Future<TaskPack> getTaskById(int id) async {
+  static Future<TaskPack?> getTaskById(int? id) async {
     if (id == null) {
       return null;
     }
     final result =
         await _dbManager.query('assets/sql/query_task_by_id.sql', [id]);
-    assert(result.length == 1,
-        'Querying task data by id should return 1 and only 1 result, but ${result.length} found.');
+    assert(result?.length == 1,
+        'Querying task data by id should return 1 and only 1 result, but ${result?.length} found.');
 
-    final dataRaw = result.first;
-    return _makePackFromQueryResult(dataRaw);
+    final dataRaw = result?.first;
+    return _makePackFromQueryResult(dataRaw!);
   }
 
-  static Future<Iterable<TaskPack>> getTaskFinishedListByDate(
-      DateTime date) async {
+  static Future<Iterable<TaskPack>?> getTaskFinishedListByDate(
+      DateTime? date) async {
     if (date == null) {
       return null;
     }
@@ -315,10 +318,10 @@ class TaskDBAction {
         'assets/sql/query_task_finished_by_date.sql',
         [dateBegin.millisecondsSinceEpoch, dateEnd.millisecondsSinceEpoch]);
 
-    return result.map(_makePackFromQueryResult);
+    return result?.map(_makePackFromQueryResult);
   }
 
-  static Future<Iterable<TaskPack>> getTaskListTodo(DateTime date) async {
+  static Future<Iterable<TaskPack>?> getTaskListTodo(DateTime? date) async {
     if (date == null) {
       return null;
     }
@@ -329,33 +332,32 @@ class TaskDBAction {
     final result = await _dbManager.query(
         'assets/sql/query_task_todo.sql', [queryDate.millisecondsSinceEpoch]);
 
-    return result.map(_makePackFromQueryResult);
+    return result?.map(_makePackFromQueryResult);
   }
 
-  static List<dynamic> _makeTaskQueryArgs(TaskData taskData,
+  static List<dynamic> _makeTaskQueryArgs(TaskData? taskData,
       [bool isUpdate = false]) {
     final body = [
       DateTime.now().millisecondsSinceEpoch,
-      taskData.tagId,
-      taskData.taskTime?.millisecondsSinceEpoch,
-      taskData.content,
-      taskData.isFinished ? 1 : 0,
-      taskData.remark,
-      taskData.alarmTime?.millisecondsSinceEpoch,
-      taskData.timeTypeCode,
-      taskData.finishTime?.millisecondsSinceEpoch,
+      taskData?.tagId,
+      taskData?.taskTime?.millisecondsSinceEpoch,
+      taskData?.content,
+      taskData?.isFinished ?? false ? 1 : 0,
+      taskData?.remark,
+      taskData?.alarmTime?.millisecondsSinceEpoch,
+      taskData?.timeTypeCode,
+      taskData?.finishTime?.millisecondsSinceEpoch,
     ];
     if (isUpdate) {
-      body.add(taskData.id);
+      body.add(taskData?.id);
     }
     return body;
   }
 
-  static Future<int> saveTask(TaskData task) async {
-    assert(task != null);
+  static Future<int?> saveTask(TaskData? task) async {
     const insertSqlPath = 'assets/sql/insert_task.sql';
     const updateSqlPath = 'assets/sql/update_task_by_id.sql';
-    final isExist = await isTaskExists(task.id);
+    final isExist = await isTaskExists(task?.id);
     if (isExist) {
       return _dbManager.update(updateSqlPath, _makeTaskQueryArgs(task, true));
     } else {
@@ -363,30 +365,29 @@ class TaskDBAction {
     }
   }
 
-  static Future<int> deleteTask(TaskData task) async {
-    assert(task != null);
-    final isExist = await isTaskExists(task.id);
+  static Future<int> deleteTask(TaskData? task) async {
+    final isExist = await isTaskExists(task?.id);
     if (!isExist) {
       return 0;
     } else {
       return _dbManager
-          .deleteInTransaction('assets/sql/delete_task.sql', [task.id]);
+          .deleteInTransaction('assets/sql/delete_task.sql', [task?.id]);
     }
   }
 
   static Future<int> toggleTaskFinish(
-      int id, bool isFinished, DateTime finishTime) async {
+      int? id, bool isFinished, DateTime finishTime) async {
     const sql = 'assets/sql/toggle_task_finish.sql';
     final isExist = await isTaskExists(id);
     if (isExist) {
       return _dbManager.update(
-          sql, [isFinished ? 1 : 0, finishTime?.millisecondsSinceEpoch, id]);
+          sql, [isFinished ? 1 : 0, finishTime.millisecondsSinceEpoch, id]);
     } else {
       return 0;
     }
   }
 
-  static Future<List<TaskPack>> getTaskListReady(DateTime date) async {
+  static Future<List<TaskPack>?> getTaskListReady(DateTime? date) async {
     if (date == null) {
       return null;
     }
@@ -396,22 +397,22 @@ class TaskDBAction {
     final result = await _dbManager.query(
         'assets/sql/query_task_ready.sql', [queryDate.millisecondsSinceEpoch]);
 
-    return result.map(_makePackFromQueryResult).toList();
+    return result?.map(_makePackFromQueryResult).toList();
   }
 
-  static Future<List<TaskPack>> getTaskListFinished() async {
+  static Future<List<TaskPack>?> getTaskListFinished() async {
     final result = await _dbManager.query('assets/sql/query_task_finished.sql');
-    return result.map(_makePackFromQueryResult).toList();
+    return result?.map(_makePackFromQueryResult).toList();
   }
 
-  static Future<List<TaskPack>> getTaskListByPage(
+  static Future<List<TaskPack>?> getTaskListByPage(
       int pagination, int perPage) async {
     final result = await _dbManager.query(
         'assets/sql/query_task_by_page.sql', [perPage, perPage * pagination]);
-    return result.map(_makePackFromQueryResult).toList();
+    return result?.map(_makePackFromQueryResult).toList();
   }
 
-  static Future<bool> isTaskDetailExists(int id) async {
+  static Future<bool> isTaskDetailExists(int? id) async {
     if (id == null) {
       return false;
     }
@@ -426,56 +427,55 @@ class TaskDBAction {
     return count > 0;
   }
 
-  static Future<TaskDetail> getTaskDetailById(int id) async {
+  static Future<TaskDetail?> getTaskDetailById(int? id) async {
     if (id == null) {
       return null;
     }
     final result =
         await _dbManager.query('assets/sql/query_task_detail_by_id.sql', [id]);
-    if (result.length == 0) {
+    if (result?.length == 0) {
       return null;
     } else {
-      final raw = result.first;
+      final raw = result?.first;
       return TaskDetail(
-        id: raw['id'] as int,
+        id: raw?['id'] as int,
         reminderBitMap:
-            ReminderBitMap(bitMap: raw['reminder_bitmap'] as int ?? 0),
-        repeatBitMap: raw['repeat_bitmap'] != null
-            ? RepeatBitMap(bitMap: raw['repeat_bitmap'] as int)
+            ReminderBitMap(bitMap: raw?['reminder_bitmap'] as int ?? 0),
+        repeatBitMap: raw?['repeat_bitmap'] != null
+            ? RepeatBitMap(bitMap: raw?['repeat_bitmap'] as int)
             : RepeatBitMap.selectNone(),
         address: AroundData(
-          name: raw['address'] as String,
+          name: raw?['address'] as String,
           coordinate: Coordinate(
-              latitude: raw['latitude'] as double,
-              longitude: raw['longitude'] as double),
+              latitude: raw?['latitude'] as double,
+              longitude: raw?['longitude'] as double),
         ),
       );
     }
   }
 
-  static List<dynamic> _makeDetailQueryArgs(TaskDetail detail,
+  static List<dynamic> _makeDetailQueryArgs(TaskDetail? detail,
       [bool isUpdate = false]) {
     final body = [
       DateTime.now().millisecondsSinceEpoch,
-      detail.reminderBitMap?.bitMap,
-      detail.repeatBitMap?.bitMap,
-      detail.address?.name,
-      detail.address?.coordinate?.latitude,
-      detail.address?.coordinate?.longitude,
+      detail?.reminderBitMap?.bitMap,
+      detail?.repeatBitMap?.bitMap,
+      detail?.address?.name,
+      detail?.address?.coordinate?.latitude,
+      detail?.address?.coordinate?.longitude,
     ];
     if (isUpdate) {
-      return body..add(detail.id);
+      return body..add(detail?.id);
     } else {
-      return body..insert(0, detail.id);
+      return body..insert(0, detail?.id);
     }
   }
 
-  static Future<int> saveTaskDetail(TaskDetail detail) async {
-    assert(detail != null);
+  static Future<int?> saveTaskDetail(TaskDetail? detail) async {
     const insertSqlPath = 'assets/sql/insert_task_detail.sql';
     const updateSqlPath = 'assets/sql/update_task_detail_by_id.sql';
 
-    final isExists = await isTaskDetailExists(detail.id);
+    final isExists = await isTaskDetailExists(detail?.id);
     if (isExists) {
       return _dbManager.update(
           updateSqlPath, _makeDetailQueryArgs(detail, true));
@@ -484,7 +484,7 @@ class TaskDBAction {
     }
   }
 
-  static Future<bool> isTaskRecurringExists(int taskId) async {
+  static Future<bool> isTaskRecurringExists(int? taskId) async {
     if (taskId == null) {
       return false;
     }
@@ -517,8 +517,8 @@ class TaskDBAction {
     );
   }
 
-  static Future<Iterable<TaskRecurring>> getTaskRecurringByDate(
-      DateTime date) async {
+  static Future<Iterable<TaskRecurring>?> getTaskRecurringByDate(
+      DateTime? date) async {
     if (date == null) {
       return null;
     }
@@ -528,11 +528,11 @@ class TaskDBAction {
     final result = await _dbManager.query(
         'assets/sql/query_task_recurring_by_date.sql',
         [dateBegin.millisecondsSinceEpoch, dateEnd.millisecondsSinceEpoch]);
-    return result.map(_makeRecurringFromQueryMap);
+    return result?.map(_makeRecurringFromQueryMap);
   }
 
-  static Future<Iterable<TaskRecurring>> getTaskRecurringReady(
-      DateTime date) async {
+  static Future<Iterable<TaskRecurring>?> getTaskRecurringReady(
+      DateTime? date) async {
     if (date == null) {
       return null;
     }
@@ -541,20 +541,20 @@ class TaskDBAction {
     final result = await _dbManager.query(
         'assets/sql/query_task_recurring_ready.sql',
         [dateQuery.millisecondsSinceEpoch]);
-    return result.map(_makeRecurringFromQueryMap);
+    return result?.map(_makeRecurringFromQueryMap);
   }
 
-  static Future<Iterable<TaskRecurring>> getAllTaskRecurring() async {
+  static Future<Iterable<TaskRecurring>?> getAllTaskRecurring() async {
     final result =
         await _dbManager.query('assets/sql/query_task_recurring_all.sql');
-    return result.map(_makeRecurringFromQueryMap);
+    return result?.map(_makeRecurringFromQueryMap);
   }
 
   static TaskRecurring _makeRecurringNextTime(
       TaskRecurring recurring, DateTime today) {
     recurring.nextTime ??= recurring.taskTime ?? DateTime.now();
-    if (recurring.nextTime.isAfter(today) ||
-        recurring.nextTime.isAtSameMomentAs(today)) {
+    if (recurring.nextTime!.isAfter(today) ||
+        recurring.nextTime!.isAtSameMomentAs(today)) {
       return recurring;
     }
     switch (recurring.repeatMode) {
@@ -567,21 +567,21 @@ class TaskDBAction {
           return recurring;
         }
         var date = recurring.nextTime;
-        while (!weekList.contains(date.weekday) || date.isBefore(today)) {
+        while (!weekList.contains(date!.weekday) || date.isBefore(today)) {
           date = date.add(Duration(days: 1));
         }
         recurring.nextTime = date;
         return recurring;
       case RepeatMode.monthly:
         var date = recurring.nextTime;
-        while (date.isBefore(today)) {
+        while (date!.isBefore(today)) {
           date = DateTime(date.year, date.month + 1, date.day);
         }
         recurring.nextTime = date;
         return recurring;
       case RepeatMode.annual:
         var date = recurring.nextTime;
-        while (date.isBefore(today)) {
+        while (date!.isBefore(today)) {
           date = DateTime(date.year + 1, date.month, date.day);
         }
         recurring.nextTime = date;
@@ -589,26 +589,25 @@ class TaskDBAction {
       case RepeatMode.none:
         return recurring;
     }
-    return recurring;
   }
 
-  static Future<int> updateRecurring(TaskRecurring recurring) async {
+  static Future<int?> updateRecurring(TaskRecurring recurring) async {
     final now = DateTime.now();
-    final today =
-        DateTime(now.year, now.month, now.day + 1).subtract(Duration(seconds: 1));
+    final today = DateTime(now.year, now.month, now.day + 1)
+        .subtract(Duration(seconds: 1));
     final recurringForSave = _makeRecurringNextTime(recurring, today);
     return saveTaskRecurring(recurringForSave);
   }
 
-  static Future<int> updateRecurringNextTime() async {
+  static Future<int?> updateRecurringNextTime() async {
     final now = DateTime.now();
-    final today =
-        DateTime(now.year, now.month, now.day + 1).subtract(Duration(seconds: 1));
+    final today = DateTime(now.year, now.month, now.day + 1)
+        .subtract(Duration(seconds: 1));
     final srcList = await getAllTaskRecurring();
-    final updatedList = srcList.map((recurring) {
+    final updatedList = srcList?.map((recurring) {
       return _makeRecurringNextTime(recurring, today);
     });
-    return updateTaskRecurringBatch(updatedList);
+    return updateTaskRecurringBatch(updatedList!);
   }
 
   static List<dynamic> _makeRecurringQueryArgs(TaskRecurring recurring,
@@ -630,8 +629,7 @@ class TaskDBAction {
     return body;
   }
 
-  static Future<int> saveTaskRecurring(TaskRecurring recurring) async {
-    assert(recurring != null);
+  static Future<int?> saveTaskRecurring(TaskRecurring recurring) async {
     const insertSqlPath = 'assets/sql/insert_task_recurring.sql';
     const updateSqlPath = 'assets/sql/update_task_recurring_by_task_id.sql';
     const deleteSqlPath = 'assets/sql/delete_task_recurring.sql';
@@ -650,7 +648,7 @@ class TaskDBAction {
     }
   }
 
-  static Future<int> updateTaskRecurringBatch(
+  static Future<int?> updateTaskRecurringBatch(
       Iterable<TaskRecurring> recurrings) async {
     const updateSqlPath = 'assets/sql/update_task_recurring_by_task_id.sql';
     final args = recurrings

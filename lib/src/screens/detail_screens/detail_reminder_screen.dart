@@ -52,7 +52,7 @@ class _DetailReminderScreenState extends State<DetailReminderScreen> {
       : _reminderState = ReminderBitMap(bitMap: _bitMap);
   ReminderBitMap _reminderState;
 
-  ScrollController _scrollController;
+  late ScrollController _scrollController;
   bool _backProcessing = false;
 
   @override
@@ -349,7 +349,7 @@ class _DetailReminderScreenState extends State<DetailReminderScreen> {
     );
   }
 
-  Widget _buildMiniteTile(int minites, {BorderRadius borderRadius}) {
+  Widget _buildMiniteTile(int minites, {BorderRadius? borderRadius}) {
     var selected;
     var callback;
     switch (minites) {

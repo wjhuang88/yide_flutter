@@ -26,8 +26,8 @@ class SplashScreen extends StatefulWidget implements Navigatable {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-  AnimationController _moveController;
-  Animation _moveAnimation;
+  late AnimationController _moveController;
+  late Animation<double> _moveAnimation;
 
   @override
   void initState() {

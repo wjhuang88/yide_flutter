@@ -1,10 +1,9 @@
-
-Type lastPageType;
+Type? lastPageType;
 
 double menuAnimationOffset = 0.0;
 bool isScreenTransitionVertical = false;
 
-List<String> routeNames = List();
+List<String> routeNames = [];
 String get lastRouteName {
   if (routeNames.length > 1) {
     return routeNames[routeNames.length - 2];

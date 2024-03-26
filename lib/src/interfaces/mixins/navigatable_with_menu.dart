@@ -69,24 +69,24 @@ mixin NavigatableWithMenu on Widget implements Navigatable {
 
 class _WithMenuDragBuilder extends StatefulWidget {
   final SlidePageBuilder builder;
-  final FutureOr<void> Function(double value) onDragNext;
+  final FutureOr<void> Function(double value)? onDragNext;
 
-  const _WithMenuDragBuilder({Key key, @required this.builder, this.onDragNext})
-      : super(key: key);
+  const _WithMenuDragBuilder(
+      {super.key, required this.builder, this.onDragNext});
 
   @override
   _WithMenuDragBuilderState createState() => _WithMenuDragBuilderState();
 }
 
 class _WithMenuDragController {
-  _WithMenuDragBuilderState _state;
+  late _WithMenuDragBuilderState _state;
 
   Future<void> openMenu() {
-    return _state?._openMenu();
+    return _state._openMenu();
   }
 
   Future<void> closeMenu() {
-    return _state?._closeMenu();
+    return _state._closeMenu();
   }
 }
 
@@ -188,7 +188,7 @@ class _WithMenuDragBuilderState extends State<_WithMenuDragBuilder> {
         if (_pageMoving) return;
         _pageMoving = true;
         if (widget.onDragNext != null) {
-          await widget.onDragNext(frac);
+          await widget.onDragNext!(frac);
         }
         _menuDragController.moveLeftOutbound();
       },
@@ -196,7 +196,7 @@ class _WithMenuDragBuilderState extends State<_WithMenuDragBuilder> {
         if (_pageMoving) return;
         _pageMoving = true;
         if (widget.onDragNext != null) {
-          await widget.onDragNext(frac);
+          await widget.onDragNext!(frac);
         }
         _menuDragController.moveLeftOutbound();
       },

@@ -46,7 +46,7 @@ class MultipleDayListScreen extends StatefulWidget with NavigatableWithOutMenu {
   FutureOr<void> onDragNext(BuildContext context, double offset) {
     final future = Completer();
     PushRouteNotification(HistoryListScreen(), callback: (d) {
-      controller?.updateData();
+      controller.updateData();
       future.complete();
     }).dispatch(context);
     //haptic();
@@ -63,8 +63,8 @@ class MultipleDayListScreen extends StatefulWidget with NavigatableWithOutMenu {
 }
 
 class MultipleDayController {
-  List<_TranslateContainerState> _transStates = List();
-  _MultipleDayListScreenState _state;
+  List<_TranslateContainerState> _transStates = [];
+  late _MultipleDayListScreenState _state;
 
   void updateTransition(double value) {
     _transStates.forEach((state) {
@@ -75,7 +75,7 @@ class MultipleDayController {
   }
 
   void updateData() {
-    if (_state != null && _state.mounted) {
+    if (_state.mounted) {
       _state._update();
     }
   }
@@ -85,7 +85,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
     with AppLifecycleResumeProvider {
   _MultipleDayListScreenState(this._controller);
 
-  MultipleDayController _controller;
+  MultipleDayController? _controller;
 
   bool _isLoadingValue = false;
   bool get _isLoading => _isLoadingValue;
@@ -95,13 +95,13 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
     });
   }
 
-  ScrollController _scrollController;
+  late ScrollController _scrollController;
 
   static const _cellHeight = 65.0;
   static const _headerHeight = 45.0;
   static const _headerGap = 8.0;
 
-  Map<DateTime, List<TaskPack>> _listData =
+  Map<DateTime, List<TaskPack?>> _listData =
       SplayTreeMap((a, b) => a.compareTo(b));
 
   @override
@@ -110,37 +110,39 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
     _scrollController = ScrollController(keepScrollOffset: false);
     _update();
     _controller ??= MultipleDayController();
-    _controller._state = this;
+    _controller?._state = this;
   }
 
   @override
   void dispose() {
-    _scrollController?.dispose();
-    _controller._transStates.clear();
+    _scrollController.dispose();
+    _controller?._transStates.clear();
     super.dispose();
   }
 
   Future<void> _update() async {
     _isLoading = true;
     final now = DateTime.now();
-    final list = await TaskDBAction.getTaskListReady(now);
+    final list = await TaskDBAction.getTaskListReady(now) ?? [];
     final recurringList = await getRecurringTaskReady(now);
     _listData.clear();
     for (var item in list) {
-      final taskTime = item.data.taskTime;
-      final sectionTime = DateTime(taskTime.year, taskTime.month, taskTime.day);
+      final taskTime = item.data?.taskTime;
+      final sectionTime = DateTime(taskTime?.year ?? now.year,
+          taskTime?.month ?? now.month, taskTime?.day ?? now.day);
       if (!_listData.containsKey(sectionTime)) {
-        _listData[sectionTime] = List();
+        _listData[sectionTime] = [];
       }
-      _listData[sectionTime].add(item);
+      _listData[sectionTime]?.add(item);
     }
     recurringList.forEach((item) {
-      final nextTime = item.nextTime;
-      final sectionTime = DateTime(nextTime.year, nextTime.month, nextTime.day);
+      final nextTime = item?.nextTime;
+      final sectionTime = DateTime(nextTime?.year ?? now.year,
+          nextTime?.month ?? now.month, nextTime?.day ?? now.day);
       if (!_listData.containsKey(sectionTime)) {
-        _listData[sectionTime] = List();
+        _listData[sectionTime] = [];
       }
-      _listData[sectionTime].add(item);
+      _listData[sectionTime]?.add(item);
     });
     _isLoading = false;
   }
@@ -183,7 +185,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
                       PopRouteNotification().dispatch(context),
                   onAction: () {
                     PushRouteNotification(HistoryListScreen(), callback: (d) {
-                      _controller.updateData();
+                      _controller?.updateData();
                     }).dispatch(context);
                   },
                   actionIcon: _isLoading
@@ -219,7 +221,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
                 Expanded(
                   child: _TranslateContainer(
                     initOffset: 0.0,
-                    controller: _controller,
+                    controller: _controller ?? MultipleDayController(),
                     child: _buildSectionList(),
                   ),
                 )
@@ -231,7 +233,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
                 PushRouteNotification(
                   EditMainScreen(),
                   callback: (pack) async {
-                    final newTask = pack as TaskPack;
+                    final newTask = pack as TaskPack?;
                     if (newTask != null) {
                       await TaskDBAction.saveTask(newTask.data);
                       _update();
@@ -311,7 +313,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
       ),
     );
     date = date.add(Duration(days: 1));
-    DateTime monthDate;
+    late DateTime monthDate;
     final leftEntries = _listData.entries.where(
         (entry) => entry.key.isAfter(date) || entry.key.isAtSameMomentAs(date));
     for (var i = 0; i < 3; i++) {
@@ -345,7 +347,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
           .map((entry) => entry.value)
           .expand((list) => list)
           .toList();
-      if (monthListData != null && monthListData.isNotEmpty) {
+      if (monthListData.isNotEmpty) {
         final cellCount = monthListData.length;
         final innerList = SliverFixedExtentList(
           itemExtent: _cellHeight,
@@ -380,13 +382,13 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
     var lastDate = DateTime(monthDate.year, monthDate.month + 1);
     final lastEntries = _listData.entries.where((entry) =>
         entry.key.isAfter(lastDate) || entry.key.isAtSameMomentAs(lastDate));
-    final yearMap = Map<int, List<TaskPack>>();
+    final yearMap = Map<int, List<TaskPack?>>();
     lastEntries.forEach((entry) {
       final year = entry.key.year;
       if (yearMap.containsKey(year)) {
-        yearMap[year].addAll(entry.value);
+        yearMap[year]?.addAll(entry.value);
       } else {
-        yearMap[year] = List<TaskPack>()..addAll(entry.value);
+        yearMap[year] = List.from(entry.value);
       }
     });
     final fromLabel = lastDate.month != DateTime.january
@@ -403,7 +405,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
     );
     if (yearMap.containsKey(lastDate.year)) {
       final yearListData = yearMap[lastDate.year];
-      final cellCount = yearListData.length;
+      final cellCount = yearListData?.length;
       final innerList = SliverFixedExtentList(
         itemExtent: _cellHeight,
         delegate: SliverChildBuilderDelegate(
@@ -429,7 +431,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
     final leftYearEntries = yearMap.entries
         .where((entry) => entry.key > lastDate.year)
         .toList()
-          ..sort((a, b) => a.key - b.key);
+      ..sort((a, b) => a.key - b.key);
     leftYearEntries.forEach((entry) {
       final currentYearHeader =
           _buildYearHeader(yearFormatter.format(DateTime(entry.key)), '');
@@ -638,24 +640,25 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
     );
   }
 
-  IndexedWidgetBuilder _taskItemBuilder(List<TaskPack> list,
+  IndexedWidgetBuilder _taskItemBuilder(List<TaskPack?>? list,
       {bool isDateShow = false}) {
     return (context, index) {
-      final pack = list[index];
-      final isFinished = pack.data.isFinished && !pack.isRecurring;
+      final pack = list?[index];
+      final isFinished =
+          (pack?.data?.isFinished ?? false) && !(pack?.isRecurring ?? false);
       final infoRow = <Widget>[
         Icon(
           FontAwesomeIcons.solidCircle,
-          color: isFinished ? Config.finishedColor : pack.tag.iconColor,
+          color: isFinished ? Config.finishedColor : pack?.tag?.iconColor,
           size: 8.0,
         ),
         const SizedBox(
           width: 8.0,
         ),
         Text(
-          pack.tag.name ?? '默认',
+          pack?.tag?.name ?? '默认',
           style: TextStyle(
-              color: isFinished ? Config.finishedColor : pack.tag.iconColor,
+              color: isFinished ? Config.finishedColor : pack?.tag?.iconColor,
               fontSize: 12.0),
         ),
         const SizedBox(
@@ -666,7 +669,8 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
         infoRow
           ..add(
             Text(
-              DateFormat('yyyy/MM/dd', 'zh').format(pack.data.taskTime),
+              DateFormat('yyyy/MM/dd', 'zh')
+                  .format(pack?.data?.taskTime ?? DateTime.now()),
               style: TextStyle(
                 color: isFinished ? Config.finishedColor : Color(0xFFC9A2F5),
                 fontSize: 12.0,
@@ -680,9 +684,9 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
           );
       }
       infoRow.addAll([
-        _makeTimeIcon(pack.data),
+        _makeTimeIcon(pack?.data),
         Text(
-          _makeTimeLabel(pack.data),
+          _makeTimeLabel(pack?.data),
           style: TextStyle(
             color: isFinished ? Config.finishedColor : Color(0xFFC9A2F5),
             fontSize: 12.0,
@@ -698,18 +702,18 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
             onDetail: () => _enterDetail(pack),
             onDone: () async {
               await TaskDBAction.toggleTaskFinish(
-                  pack.data.id, true, DateTime.now());
+                  pack?.data?.id, true, DateTime.now());
               _update();
             },
             onDelete: () async {
-              await TaskDBAction.deleteTask(pack.data);
+              await TaskDBAction.deleteTask(pack?.data);
               _update();
             },
             isDone: isFinished,
           );
         },
         rows: <Widget>[
-          pack.isRecurring
+          pack?.isRecurring ?? false
               ? Transform.translate(
                   offset: const Offset(-23.0, 0.0),
                   child: Row(
@@ -724,12 +728,12 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
                       ),
                       Expanded(
                         child:
-                            _makeContentWidget(pack.data.content, isFinished),
+                            _makeContentWidget(pack?.data?.content, isFinished),
                       ),
                     ],
                   ),
                 )
-              : _makeContentWidget(pack.data.content, isFinished),
+              : _makeContentWidget(pack?.data?.content, isFinished),
           const SizedBox(
             height: 5.0,
           ),
@@ -742,9 +746,9 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
     };
   }
 
-  Widget _makeContentWidget(String content, bool isFinished) {
+  Widget _makeContentWidget(String? content, bool isFinished) {
     return Text(
-      content,
+      content ?? '',
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       style: TextStyle(
@@ -754,7 +758,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
     );
   }
 
-  String _makeTimeLabel(TaskData data) {
+  String _makeTimeLabel(TaskData? data) {
     switch (data?.timeType) {
       case DateTimeType.daytime:
         return '白天';
@@ -770,8 +774,8 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
     }
   }
 
-  Icon _makeTimeIcon(TaskData data) {
-    final isFinished = data.isFinished;
+  Icon _makeTimeIcon(TaskData? data) {
+    final isFinished = data?.isFinished ?? false;
     switch (data?.timeType) {
       case DateTimeType.daytime:
         return Icon(
@@ -794,7 +798,7 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
     }
   }
 
-  Future<TaskPack> _enterDetail(TaskPack item) {
+  Future<TaskPack> _enterDetail(TaskPack? item) {
     isScreenTransitionVertical = true;
     final future = Completer<TaskPack>();
     PushRouteNotification(
@@ -814,45 +818,46 @@ class _MultipleDayListScreenState extends State<MultipleDayListScreen>
 }
 
 class _TranslateContainer extends StatefulWidget {
-  final double initOffset;
+  final double? initOffset;
   final Widget child;
   final MultipleDayController controller;
 
   const _TranslateContainer({
-    Key key,
+    super.key,
     this.initOffset,
-    @required this.child,
-    this.controller,
-  }) : super(key: key);
+    required this.child,
+    required this.controller,
+  });
   @override
   _TranslateContainerState createState() => _TranslateContainerState();
 }
 
 class _TranslateContainerState extends State<_TranslateContainer> {
-  double _offsetValue;
-  double get offset => _offsetValue;
-  set offset(double value) => setState(() => _offsetValue = value);
+  double? _offsetValue;
+  double? get offset => _offsetValue;
+  set offset(double? value) => setState(() => _offsetValue = value);
 
-  MultipleDayController _controller;
+  MultipleDayController? _controller;
 
   @override
   void initState() {
     super.initState();
     _offsetValue = widget.initOffset ?? 0.0;
     _controller = widget.controller ?? MultipleDayController();
-    _controller._transStates.add(this);
+    _controller?._transStates.add(this);
   }
 
   @override
   void dispose() {
-    _controller._transStates.remove(this);
+    _controller?._transStates.remove(this);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final offsetObject =
-        isScreenTransitionVertical ? Offset(0.0, offset) : Offset(offset, 0.0);
+    final offsetObject = isScreenTransitionVertical
+        ? Offset(0.0, offset ?? 0)
+        : Offset(offset ?? 0, 0.0);
     return FractionalTranslation(
       translation: offsetObject,
       child: widget.child,

@@ -22,11 +22,11 @@ import 'package:yide/src/screens/detail_screens/panels/detail_tag_panel.dart';
 import 'package:yide/src/screens/detail_screens/panels/detail_time_panel.dart';
 
 class EditMainScreen extends StatefulWidget implements Navigatable {
-  const EditMainScreen({Key key, this.taskPack}) : super(key: key);
+  const EditMainScreen({super.key, this.taskPack});
 
   static EditScreenController controller = EditScreenController();
 
-  final TaskPack taskPack;
+  final TaskPack? taskPack;
 
   @override
   _EditMainScreenState createState() => _EditMainScreenState(controller);
@@ -57,8 +57,8 @@ class _EditMainScreenState extends State<EditMainScreen>
     with SingleTickerProviderStateMixin, AppLifecycleResumeProvider {
   _EditMainScreenState(this._controller);
 
-  AnimationController _defaultAnimController;
-  Animation<double> _factorAnimationStorage;
+  late AnimationController _defaultAnimController;
+  Animation<double>? _factorAnimationStorage;
   Animation<double> get _factorAnimation =>
       _factorAnimationStorage ??
       Tween(begin: 0.0, end: 0.0).animate(_defaultAnimController);
@@ -69,18 +69,18 @@ class _EditMainScreenState extends State<EditMainScreen>
 
   NativeTextFieldController _fieldController = NativeTextFieldController();
 
-  TaskData _taskData;
-  TaskTag _tagData;
+  TaskData? _taskData;
+  TaskTag? _tagData;
 
-  String _inputText;
+  String? _inputText;
 
-  void _updateTaskData(TaskData taskData) {
+  void _updateTaskData(TaskData? taskData) {
     setState(() {
       _taskData = taskData;
     });
   }
 
-  void _updateTag(TaskTag tag) {
+  void _updateTag(TaskTag? tag) {
     setState(() {
       _tagData = tag;
     });
@@ -96,41 +96,40 @@ class _EditMainScreenState extends State<EditMainScreen>
       TaskDBAction.getFirstTag().then((tag) {
         setState(() {
           _tagData = tag;
-          _taskData.tagId = tag.id;
+          _taskData?.tagId = tag?.id;
         });
       });
     } else {
-      _taskData.tagId = _tagData.id;
+      _taskData?.tagId = _tagData?.id;
     }
 
-    _controller ??= EditScreenController();
     _controller._mainState = this;
-    _inputText = _taskData.content;
+    _inputText = _taskData?.content;
   }
 
   @override
   void didUpdateWidget(EditMainScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.taskPack.data.content != oldWidget.taskPack.data.content) {
-      _taskData.content = widget.taskPack.data.content;
+    if (widget.taskPack?.data?.content != oldWidget.taskPack?.data?.content) {
+      _taskData?.content = widget.taskPack?.data?.content;
     }
-    if (widget.taskPack.tag != oldWidget.taskPack.tag) {
-      _tagData = widget.taskPack.tag;
+    if (widget.taskPack?.tag != oldWidget.taskPack?.tag) {
+      _tagData = widget.taskPack?.tag;
     }
-    if (widget.taskPack.data.taskTime != oldWidget.taskPack.data.taskTime) {
-      _taskData.taskTime = widget.taskPack.data.taskTime;
+    if (widget.taskPack?.data?.taskTime != oldWidget.taskPack?.data?.taskTime) {
+      _taskData?.taskTime = widget.taskPack?.data?.taskTime;
     }
     _focus();
   }
 
   Future<bool> _saveAndBack(
-      BuildContext context, TaskData data, TaskTag tag) async {
-    data.content = _inputText;
-    if (data.content.isEmpty) {
+      BuildContext context, TaskData? data, TaskTag? tag) async {
+    data?.content = _inputText;
+    if (data?.content?.isEmpty ?? true) {
       _focus();
       return false;
     }
-    data.tagId = tag.id;
+    data?.tagId = tag?.id;
     final pack = TaskPack(data, tag);
     final callback = Completer<bool>();
     _unfocus();
@@ -226,7 +225,7 @@ class _EditMainScreenState extends State<EditMainScreen>
             constraints: BoxConstraints(minHeight: 70.0),
             child: NativeTextField(
               placeholder: '记录你的任务',
-              text: _inputText,
+              text: _inputText ?? '',
               autofocus: true,
               controller: _fieldController,
               onSubmitted: (value) {
@@ -288,10 +287,9 @@ class _EditMainScreenState extends State<EditMainScreen>
 
 class _DateInfo extends StatefulWidget {
   const _DateInfo({
-    Key key,
-    @required EditScreenController controller,
-  })  : _controller = controller,
-        super(key: key);
+    super.key,
+    required EditScreenController controller,
+  }) : _controller = controller;
 
   final EditScreenController _controller;
 
@@ -301,16 +299,16 @@ class _DateInfo extends StatefulWidget {
 
 class _DateInfoState extends State<_DateInfo>
     with SingleTickerProviderStateMixin {
-  EditScreenController _controller;
+  EditScreenController? _controller;
 
   bool _isNight = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = widget._controller ?? EditScreenController();
-    _controller._dateInfoState = this;
-    _isNight = _controller.taskData.timeType == DateTimeType.night;
+    _controller = widget._controller;
+    _controller?._dateInfoState = this;
+    _isNight = _controller?.taskData?.timeType == DateTimeType.night;
   }
 
   @override
@@ -319,9 +317,9 @@ class _DateInfoState extends State<_DateInfo>
   }
 
   void _switchToType(DateTimeType type) {
-    final taskData = _controller.taskData;
-    taskData.timeType = type;
-    _controller.taskData = taskData;
+    final taskData = _controller?.taskData;
+    taskData?.timeType = type;
+    _controller?.taskData = taskData;
     if (type == DateTimeType.night) {
       _isNight = true;
     } else {
@@ -342,7 +340,7 @@ class _DateInfoState extends State<_DateInfo>
                   .changeSetupPanel(DetailDateTimePanel.panelName, '日期');
             },
             child: _DatePage(
-              baseTime: _controller.taskData.taskTime,
+              baseTime: _controller?.taskData?.taskTime,
               controller: widget._controller,
             ),
           ),
@@ -397,13 +395,13 @@ class _DateInfoState extends State<_DateInfo>
 
 class _DatePage extends StatefulWidget {
   const _DatePage({
-    Key key,
-    @required this.baseTime,
+    super.key,
+    this.baseTime,
     this.controller,
-  }) : super(key: key);
+  });
 
-  final DateTime baseTime;
-  final EditScreenController controller;
+  final DateTime? baseTime;
+  final EditScreenController? controller;
 
   @override
   _DatePageState createState() => _DatePageState();
@@ -411,11 +409,11 @@ class _DatePage extends StatefulWidget {
 
 class _DatePageState extends State<_DatePage> {
   InfinityPageController _datePageController = InfinityPageController();
-  EditScreenController _controller;
+  late EditScreenController _controller;
 
-  DateTime _baseTime;
+  DateTime? _baseTime;
 
-  void _updateBaseTime(DateTime dateTime) {
+  void _updateBaseTime(DateTime? dateTime) {
     setState(() {
       _baseTime = dateTime;
     });
@@ -424,7 +422,7 @@ class _DatePageState extends State<_DatePage> {
   @override
   void initState() {
     super.initState();
-    _controller = widget.controller ?? EditMainScreen();
+    _controller = widget.controller ?? EditScreenController();
     _controller._datePageState = this;
     _baseTime = widget.baseTime ?? DateTime.now();
   }
@@ -435,7 +433,7 @@ class _DatePageState extends State<_DatePage> {
     super.dispose();
   }
 
-  String _getWeekDayName(DateTime dateTime) {
+  String? _getWeekDayName(DateTime? dateTime) {
     final now = DateTime.now();
     final nextDay = now.add(Duration(days: 1));
     final previousDay = now.subtract(Duration(days: 1));
@@ -458,12 +456,12 @@ class _DatePageState extends State<_DatePage> {
     return InfinityPageView(
       controller: _datePageController,
       itemBuilder: (context, i) {
-        final timeToRender = _baseTime.add(Duration(days: i));
+        final timeToRender = _baseTime?.add(Duration(days: i));
         return Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Text(
-              _getWeekDayName(timeToRender),
+              _getWeekDayName(timeToRender) ?? '',
               style: const TextStyle(
                   color: Colors.white,
                   fontSize: 24.0,
@@ -471,7 +469,7 @@ class _DatePageState extends State<_DatePage> {
                   letterSpacing: 3.0),
             ),
             Text(
-              DateFormat('MM月dd日').format(timeToRender),
+              DateFormat('MM月dd日').format(timeToRender ?? DateTime.now()),
               style: const TextStyle(color: Color(0xFFBBADE7), fontSize: 12.0),
             ),
           ],
@@ -480,7 +478,7 @@ class _DatePageState extends State<_DatePage> {
       onPageChanged: (page) {
         setState(() {
           final data = _controller.taskData;
-          data.taskTime = _baseTime.add(Duration(days: page));
+          data?.taskTime = _baseTime?.add(Duration(days: page));
           _controller.taskData = data;
         });
       },
@@ -490,14 +488,14 @@ class _DatePageState extends State<_DatePage> {
 
 class _BottomPanel extends StatefulWidget {
   const _BottomPanel({
-    Key key,
-    @required this.factorAnimation,
+    super.key,
+    required this.factorAnimation,
     this.setupTitle,
-    this.controller,
-  }) : super(key: key);
+    required this.controller,
+  });
 
   final Animation<double> factorAnimation;
-  final String setupTitle;
+  final String? setupTitle;
 
   final EditScreenController controller;
 
@@ -507,12 +505,12 @@ class _BottomPanel extends StatefulWidget {
 
 class _BottomPanelState extends State<_BottomPanel>
     with SingleTickerProviderStateMixin {
-  AnimationController _bottomBarController;
-  Animation _bottomBarAnimation;
+  late AnimationController _bottomBarController;
+  late Animation<double> _bottomBarAnimation;
 
-  String _setupTitle;
+  String? _setupTitle;
 
-  EditScreenController _controller;
+  late EditScreenController _controller;
 
   void _updateTitle(String title) {
     setState(() {
@@ -530,7 +528,7 @@ class _BottomPanelState extends State<_BottomPanel>
       curve: Curves.easeOutCubic,
       reverseCurve: Curves.easeInCubic,
     )..addListener(() => setState(() {}));
-    _controller = widget.controller ?? EditScreenController();
+    _controller = widget.controller;
     _controller._bottomState = this;
     _setupTitle = widget.setupTitle ?? '';
   }
@@ -551,7 +549,7 @@ class _BottomPanelState extends State<_BottomPanel>
         children: <Widget>[
           _buildSetupPanel(
               context, _setupOffset, ReverseAnimation(_bottomOpacity),
-              title: _setupTitle),
+              title: _setupTitle ?? ''),
           Offstage(
             offstage: _bottomOpacity.value < 0.01,
             child: FadeTransition(
@@ -698,22 +696,22 @@ class _BottomPanelState extends State<_BottomPanel>
 class _SetupPanelBody extends StatefulWidget {
   final EditScreenController controller;
 
-  const _SetupPanelBody({Key key, this.controller}) : super(key: key);
+  const _SetupPanelBody({super.key, required this.controller});
   @override
   _SetupPanelBodyState createState() => _SetupPanelBodyState();
 }
 
 class _SetupPanelBodyState extends State<_SetupPanelBody> {
-  double _keyboardRealHeight;
-  PanelSwitcherController _setupPanelController;
+  double? _keyboardRealHeight;
+  late PanelSwitcherController _setupPanelController;
 
-  EditScreenController _controller;
+  late EditScreenController _controller;
 
   @override
   void initState() {
     super.initState();
     _setupPanelController = PanelSwitcherController();
-    _controller = widget.controller ?? EditScreenController();
+    _controller = widget.controller;
     _controller._panelBodyState = this;
   }
 
@@ -761,20 +759,20 @@ class _SetupPanelBodyState extends State<_SetupPanelBody> {
               height: _keyboardRealHeight ?? 0.0,
               alignment: Alignment.center,
               child: DetailDateTimePanel(
-                selectedDate: taskData.taskTime,
+                selectedDate: taskData?.taskTime,
                 onChange: (date) {
-                  if (taskData.taskTime.year == date.year &&
-                      taskData.taskTime.month == date.month &&
-                      taskData.taskTime.day == date.day) {
+                  if (taskData?.taskTime?.year == date.year &&
+                      taskData?.taskTime?.month == date.month &&
+                      taskData?.taskTime?.day == date.day) {
                     return;
                   }
-                  final time = taskData.taskTime = DateTime(
+                  final time = taskData?.taskTime = DateTime(
                     date.year,
                     date.month,
                     date.day,
-                    taskData.taskTime.hour,
-                    taskData.taskTime.minute,
-                    taskData.taskTime.second,
+                    taskData.taskTime?.hour ?? 0,
+                    taskData.taskTime?.minute ?? 0,
+                    taskData.taskTime?.second ?? 0,
                   );
                   _controller.updateDatePageBaseTime(time);
                   _controller.taskData = taskData;
@@ -792,17 +790,17 @@ class _SetupPanelBodyState extends State<_SetupPanelBody> {
               height: _keyboardRealHeight ?? 0.0,
               alignment: Alignment.center,
               child: DetailTimePanel(
-                selectedDate: taskData.taskTime,
+                selectedDate: taskData?.taskTime,
                 onChange: (date) {
-                  if (taskData.taskTime.hour == date.hour &&
-                      taskData.taskTime.minute == date.minute &&
-                      taskData.taskTime.second == date.second) {
+                  if (taskData?.taskTime?.hour == date.hour &&
+                      taskData?.taskTime?.minute == date.minute &&
+                      taskData?.taskTime?.second == date.second) {
                     return;
                   }
-                  taskData.taskTime = DateTime(
-                    taskData.taskTime.year,
-                    taskData.taskTime.month,
-                    taskData.taskTime.day,
+                  taskData?.taskTime = DateTime(
+                    taskData.taskTime?.year ?? DateTime.now().year,
+                    taskData.taskTime?.month ?? DateTime.now().month,
+                    taskData.taskTime?.day ?? DateTime.now().day,
                     date.hour,
                     date.minute,
                     date.second,
@@ -820,17 +818,17 @@ class _SetupPanelBodyState extends State<_SetupPanelBody> {
 }
 
 class EditScreenController {
-  _EditMainScreenState _mainState;
-  _SetupPanelBodyState _panelBodyState;
-  _DatePageState _datePageState;
-  _BottomPanelState _bottomState;
-  _DateInfoState _dateInfoState;
+  _EditMainScreenState? _mainState;
+  _SetupPanelBodyState? _panelBodyState;
+  _DatePageState? _datePageState;
+  _BottomPanelState? _bottomState;
+  _DateInfoState? _dateInfoState;
 
-  TaskData get taskData => _mainState?._taskData;
-  set taskData(TaskData value) => _mainState?._updateTaskData(value);
+  TaskData? get taskData => _mainState?._taskData;
+  set taskData(TaskData? value) => _mainState?._updateTaskData(value);
 
-  TaskTag get tagData => _mainState?._tagData;
-  set tagData(TaskTag value) => _mainState?._updateTag(value);
+  TaskTag? get tagData => _mainState?._tagData;
+  set tagData(TaskTag? value) => _mainState?._updateTag(value);
 
   void focusInput() {
     _mainState?._focus();
@@ -844,28 +842,28 @@ class EditScreenController {
     _mainState?._setTransitionAnim(value);
   }
 
-  void updateDatePageBaseTime(DateTime dateTime) {
+  void updateDatePageBaseTime(DateTime? dateTime) {
     _datePageState?._updateBaseTime(dateTime);
   }
 
   void saveAndBack(BuildContext context) {
     _mainState?._saveAndBack(
-        context, _mainState._taskData, _mainState._tagData);
+        context, _mainState?._taskData, _mainState?._tagData);
   }
 
   void setBottomPanelTitle(String title) {
     _bottomState?._updateTitle(title);
   }
 
-  void showBottomBar({VoidCallback callback}) async {
-    await _bottomState?._bottomBarController?.reverse();
+  void showBottomBar({VoidCallback? callback}) async {
+    await _bottomState?._bottomBarController.reverse();
     if (callback != null) {
       callback();
     }
   }
 
-  void hideBottomBar({VoidCallback callback}) async {
-    _bottomState?._bottomBarController?.forward();
+  void hideBottomBar({VoidCallback? callback}) async {
+    _bottomState?._bottomBarController.forward();
     if (callback != null) {
       callback();
     }

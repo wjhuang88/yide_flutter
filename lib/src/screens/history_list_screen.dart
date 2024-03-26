@@ -39,7 +39,7 @@ class HistoryListScreen extends StatefulWidget with NavigatableWithOutMenu {
 }
 
 class _HistoryListScreenController {
-  List<_TranslateContainerState> _transStates = List();
+  List<_TranslateContainerState> _transStates = [];
 
   void updateTransitionValue(double value) {
     _transStates.forEach((state) => state.offset = value);
@@ -60,10 +60,10 @@ class _HistoryListScreenState extends State<HistoryListScreen>
   );
   Widget _blank = const SizedBox();
 
-  List<TaskPack> _todayList;
-  List<TaskPack> _yestodyList;
-  Map<DateTime, List<TaskPack>> _monthList;
-  Map<int, List<TaskPack>> _yearsList;
+  List<TaskPack>? _todayList;
+  List<TaskPack>? _yestodyList;
+  Map<DateTime, List<TaskPack>>? _monthList;
+  Map<int, List<TaskPack>>? _yearsList;
 
   bool _isLoadingValue = false;
   bool get _isLoading => _isLoadingValue;
@@ -77,47 +77,47 @@ class _HistoryListScreenState extends State<HistoryListScreen>
     _isLoading = true;
     final now = DateTime.now();
     final yestoday = now.subtract(Duration(days: 1));
-    final list = await TaskDBAction.getTaskListFinished();
+    final list = await TaskDBAction.getTaskListFinished() ?? [];
     _todayList?.clear();
     _yestodyList?.clear();
     _monthList?.clear();
     _yearsList?.clear();
     for (var item in list) {
-      final finishTime = item.data.finishTime;
+      final finishTime = item.data?.finishTime;
       if (_isSameDay(finishTime, now)) {
-        _todayList ??= List();
-        _todayList.add(item);
+        _todayList ??= [];
+        _todayList?.add(item);
       } else if (_isSameDay(finishTime, yestoday)) {
-        _yestodyList ??= List();
-        _yestodyList.add(item);
-      } else if (finishTime.year == now.year) {
+        _yestodyList ??= [];
+        _yestodyList?.add(item);
+      } else if (finishTime?.year == now.year) {
         _monthList ??= LinkedHashMap();
-        final sectionTime = DateTime(finishTime.year, finishTime.month);
-        if (!_monthList.containsKey(sectionTime)) {
-          _monthList[sectionTime] = List();
+        final sectionTime = DateTime(
+            finishTime?.year ?? now.year, finishTime?.month ?? now.month);
+        if (!(_monthList?.containsKey(sectionTime) ?? false)) {
+          _monthList?[sectionTime] = [];
         }
-        _monthList[sectionTime].add(item);
+        _monthList?[sectionTime]?.add(item);
       } else {
         _yearsList ??= LinkedHashMap();
-        final sectionYear = finishTime.year;
-        if (!_yearsList.containsKey(sectionYear)) {
-          _yearsList[sectionYear] = List();
+        final sectionYear = finishTime?.year;
+        if (!(_yearsList?.containsKey(sectionYear) ?? false)) {
+          _yearsList?[sectionYear ?? now.year] = [];
         }
-        _yearsList[sectionYear].add(item);
+        _yearsList?[sectionYear]?.add(item);
       }
     }
 
     _isLoading = false;
   }
 
-  bool _isSameDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
+  bool _isSameDay(DateTime? a, DateTime? b) {
+    return a?.year == b?.year && a?.month == b?.month && a?.day == b?.day;
   }
 
   @override
   void initState() {
     super.initState();
-    _controller ??= _HistoryListScreenController();
     _update();
   }
 
@@ -182,26 +182,26 @@ class _HistoryListScreenState extends State<HistoryListScreen>
 
   Widget _buildSectionList() {
     final slivers = <Widget>[];
-    if (_todayList != null && _todayList.isNotEmpty) {
+    if (_todayList != null && (_todayList?.isNotEmpty ?? false)) {
       slivers.add(_buildHeader('今天'));
       final subList = SliverFixedExtentList(
         itemExtent: 65.0,
         delegate: SliverChildBuilderDelegate(_taskItemBuilder(_todayList),
-            childCount: _todayList.length),
+            childCount: _todayList?.length),
       );
       slivers.add(subList);
     }
-    if (_yestodyList != null && _yestodyList.isNotEmpty) {
+    if (_yestodyList != null && (_yestodyList?.isNotEmpty ?? false)) {
       slivers.add(_buildHeader('昨天'));
       final subList = SliverFixedExtentList(
         itemExtent: 65.0,
         delegate: SliverChildBuilderDelegate(_taskItemBuilder(_yestodyList),
-            childCount: _yestodyList.length),
+            childCount: _yestodyList?.length),
       );
       slivers.add(subList);
     }
-    if (_monthList != null && _monthList.isNotEmpty) {
-      _monthList.forEach((section, list) {
+    if (_monthList != null && (_monthList?.isNotEmpty ?? false)) {
+      _monthList?.forEach((section, list) {
         slivers.add(_buildHeader(DateFormat.MMMM('zh').format(section)));
         final subList = SliverFixedExtentList(
           itemExtent: 65.0,
@@ -211,8 +211,8 @@ class _HistoryListScreenState extends State<HistoryListScreen>
         slivers.add(subList);
       });
     }
-    if (_yearsList != null && _yearsList.isNotEmpty) {
-      _yearsList.forEach((section, list) {
+    if (_yearsList != null && (_yearsList?.isNotEmpty ?? false)) {
+      _yearsList?.forEach((section, list) {
         slivers.add(_buildHeader('$section年'));
         final subList = SliverFixedExtentList(
           itemExtent: 65.0,
@@ -255,27 +255,27 @@ class _HistoryListScreenState extends State<HistoryListScreen>
     );
   }
 
-  IndexedWidgetBuilder _taskItemBuilder(List<TaskPack> list) {
+  IndexedWidgetBuilder _taskItemBuilder(List<TaskPack>? list) {
     return (context, index) {
-      final pack = list[index];
+      final pack = list?[index];
       final infoRow = <Widget>[
         Icon(
           FontAwesomeIcons.solidCircle,
-          color: pack.tag.iconColor,
+          color: pack?.tag?.iconColor,
           size: 8.0,
         ),
         const SizedBox(
           width: 8.0,
         ),
         Text(
-          pack.tag.name ?? '默认',
-          style: TextStyle(color: pack.tag.iconColor, fontSize: 12.0),
+          pack?.tag?.name ?? '默认',
+          style: TextStyle(color: pack?.tag?.iconColor, fontSize: 12.0),
         ),
         const SizedBox(
           width: 15.0,
         ),
         Text(
-          '于 ${DateFormat("yyyy/MM/dd HH:mm").format(pack.data.finishTime)} 完成',
+          '于 ${DateFormat("yyyy/MM/dd HH:mm").format(pack?.data?.finishTime ?? DateTime.now())} 完成',
           style: const TextStyle(
             color: Color(0xFFC9A2F5),
             fontSize: 12.0,
@@ -290,7 +290,8 @@ class _HistoryListScreenState extends State<HistoryListScreen>
             width: 15.0,
           ),
           Text(
-            DateFormat('MM/dd', 'zh').format(pack.data.finishTime),
+            DateFormat('MM/dd', 'zh')
+                .format(pack?.data?.finishTime ?? DateTime.now()),
             style: const TextStyle(
               color: Color(0x88C9A2F5),
               fontSize: 12.0,
@@ -307,16 +308,16 @@ class _HistoryListScreenState extends State<HistoryListScreen>
                   onDetail: () => _enterDetail(pack),
                   onDone: () async {
                     await TaskDBAction.toggleTaskFinish(
-                        pack.data.id, true, DateTime.now());
+                        pack?.data?.id, true, DateTime.now());
                     _update();
                   },
                   onReactive: () async {
                     await TaskDBAction.toggleTaskFinish(
-                        pack.data.id, false, DateTime.now());
+                        pack?.data?.id, false, DateTime.now());
                     _update();
                   },
                   onDelete: () async {
-                    await TaskDBAction.deleteTask(pack.data);
+                    await TaskDBAction.deleteTask(pack?.data);
                     _update();
                   },
                   isDone: true,
@@ -324,7 +325,7 @@ class _HistoryListScreenState extends State<HistoryListScreen>
               },
               rows: <Widget>[
                 Text(
-                  pack.data.content,
+                  pack?.data?.content ?? '',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -347,7 +348,7 @@ class _HistoryListScreenState extends State<HistoryListScreen>
     };
   }
 
-  Future<TaskPack> _enterDetail(TaskPack item) {
+  Future<TaskPack> _enterDetail(TaskPack? item) {
     isScreenTransitionVertical = true;
     final future = Completer<TaskPack>();
     PushRouteNotification(
@@ -372,34 +373,35 @@ class _TranslateContainer extends StatefulWidget {
   final _HistoryListScreenController controller;
 
   const _TranslateContainer({
-    Key key,
-    this.initOffset,
-    @required this.child,
-    this.controller,
-  }) : super(key: key);
+    super.key,
+    required this.initOffset,
+    required this.child,
+    required this.controller,
+  });
   @override
   _TranslateContainerState createState() => _TranslateContainerState();
 }
 
 class _TranslateContainerState extends State<_TranslateContainer> {
-  double _offsetValue;
-  double get offset => _offsetValue;
-  set offset(double value) => setState(() => _offsetValue = value);
+  double? _offsetValue;
+  double? get offset => _offsetValue;
+  set offset(double? value) => setState(() => _offsetValue = value);
 
-  _HistoryListScreenController _controller;
+  late _HistoryListScreenController _controller;
 
   @override
   void initState() {
     super.initState();
-    _offsetValue = widget.initOffset ?? 0.0;
-    _controller = widget.controller ?? _HistoryListScreenController();
+    _offsetValue = widget.initOffset;
+    _controller = widget.controller;
     _controller._transStates.add(this);
   }
 
   @override
   Widget build(BuildContext context) {
-    final offsetObject =
-        isScreenTransitionVertical ? Offset(0.0, offset) : Offset(offset, 0.0);
+    final offsetObject = isScreenTransitionVertical
+        ? Offset(0.0, offset ?? 0)
+        : Offset(offset ?? 0, 0.0);
     return FractionalTranslation(
       translation: offsetObject,
       child: widget.child,

@@ -12,9 +12,9 @@ import 'package:yide/src/tools/common_tools.dart';
 import 'package:yide/src/tools/icon_tools.dart';
 
 class DetailMapScreen extends StatefulWidget implements Navigatable {
-  final AroundData address;
+  final AroundData? address;
 
-  const DetailMapScreen({Key key, this.address}) : super(key: key);
+  const DetailMapScreen({super.key, this.address});
   @override
   _DetailMapScreenState createState() => _DetailMapScreenState(address);
 
@@ -81,16 +81,16 @@ const _iconDecoration = BoxDecoration(
 class _DetailMapScreenState extends State<DetailMapScreen>
     with TickerProviderStateMixin {
   _DetailMapScreenState(this._selectedAddress);
-  LocationMapController _locationMapController;
+  LocationMapController? _locationMapController;
 
-  AroundData _selectedAddress;
-  List<AroundData> _arounds = List<AroundData>();
+  AroundData? _selectedAddress;
+  List<AroundData> _arounds = [];
 
-  AnimationController _pinJumpController;
-  Animation _pinJumpAnim;
+  AnimationController? _pinJumpController;
+  Animation? _pinJumpAnim;
 
-  AnimationController _bottomBoxController;
-  Animation _bottomBoxAnim;
+  AnimationController? _bottomBoxController;
+  Animation? _bottomBoxAnim;
 
   ScrollController _listController = ScrollController();
   double _panelHeight = 0.0;
@@ -100,7 +100,7 @@ class _DetailMapScreenState extends State<DetailMapScreen>
   NativeOnelineTextFieldController _textEditingController =
       NativeOnelineTextFieldController();
 
-  Timer _inputTime;
+  Timer? _inputTime;
 
   bool _isLoadingValue = true;
   bool get _isLoading => _isLoadingValue;
@@ -121,12 +121,12 @@ class _DetailMapScreenState extends State<DetailMapScreen>
     );
     _pinJumpAnim = Tween(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
-        parent: _pinJumpController,
+        parent: _pinJumpController!,
         curve: Curves.decelerate,
         reverseCurve: Curves.elasticIn,
       ),
     );
-    _pinJumpAnim.addListener(() => setState(() {}));
+    _pinJumpAnim?.addListener(() => setState(() {}));
 
     _bottomBoxController = AnimationController(
       vsync: this,
@@ -135,11 +135,11 @@ class _DetailMapScreenState extends State<DetailMapScreen>
     );
     _bottomBoxAnim = Tween(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
-          parent: _bottomBoxController,
+          parent: _bottomBoxController!,
           curve: Curves.decelerate,
           reverseCurve: Curves.decelerate.flipped),
     );
-    _bottomBoxAnim.addListener(() => setState(() {}));
+    _bottomBoxAnim?.addListener(() => setState(() {}));
 
     _listController.addListener(() {
       final offset = _listController.offset;
@@ -154,9 +154,9 @@ class _DetailMapScreenState extends State<DetailMapScreen>
       }
 
       if (_isLockHeight) {
-        _bottomBoxController.forward();
+        _bottomBoxController?.forward();
       } else {
-        _bottomBoxController.reverse();
+        _bottomBoxController?.reverse();
       }
 
       if (offset <= min - 70) {
@@ -172,8 +172,8 @@ class _DetailMapScreenState extends State<DetailMapScreen>
 
   @override
   void dispose() {
-    _pinJumpController.dispose();
-    _bottomBoxController.dispose();
+    _pinJumpController?.dispose();
+    _bottomBoxController?.dispose();
     super.dispose();
   }
 
@@ -187,7 +187,7 @@ class _DetailMapScreenState extends State<DetailMapScreen>
     final minPanelHeight = baseHeight;
     final maxPanelHeight = screenHeight * 0.78 - 60.0;
     _panelHeight = minPanelHeight +
-        (maxPanelHeight - minPanelHeight) * _bottomBoxAnim.value;
+        (maxPanelHeight - minPanelHeight) * _bottomBoxAnim?.value;
 
     return CupertinoPageScaffold(
       backgroundColor: const Color(0x00000000),
@@ -214,8 +214,8 @@ class _DetailMapScreenState extends State<DetailMapScreen>
                   _isLoading = true;
                   _textEditingController.unfocus();
                   _textEditingController.clear();
-                  await _pinJumpController.forward();
-                  await _pinJumpController.reverse();
+                  await _pinJumpController?.forward();
+                  await _pinJumpController?.reverse();
                 },
                 onRegionChanged: (around, coord) async {
                   setState(() {
@@ -245,7 +245,7 @@ class _DetailMapScreenState extends State<DetailMapScreen>
               top: screenHeight * 0.3 - 40.0,
               left: screenWidth * 0.5 - 20.0,
               child: Transform.translate(
-                  offset: Offset(0.0, -10.0 * _pinJumpAnim.value),
+                  offset: Offset(0.0, -10.0 * _pinJumpAnim?.value),
                   child: const Icon(
                     CupertinoIcons.location_solid,
                     color: Color(0xFFFAB807),
@@ -322,19 +322,19 @@ class _DetailMapScreenState extends State<DetailMapScreen>
                     placeholder: '搜索关键字',
                     onChanged: _onKeywordChange,
                     onSubmitted: (keyword) async {
-                      if (keyword?.isEmpty ?? false) {
-                        _locationMapController.forceTriggerRegionChange();
+                      if (keyword.isEmpty) {
+                        _locationMapController?.forceTriggerRegionChange();
                         return;
                       }
                       final list =
-                          await _locationMapController.searchAround(keyword);
+                          await _locationMapController?.searchAround(keyword);
                       setState(() {
-                        _arounds = list;
+                        _arounds = list ?? [];
                       });
                     },
                     onFocus: () {
                       _isLockHeight = true;
-                      _bottomBoxController.forward();
+                      _bottomBoxController?.forward();
                     },
                   ),
                 ),
@@ -356,7 +356,7 @@ class _DetailMapScreenState extends State<DetailMapScreen>
                     color: const Color(0x99FFFFFF),
                     size: 30.0,
                   ),
-                  onPressed: _locationMapController.backToUserLocation,
+                  onPressed: _locationMapController?.backToUserLocation,
                 ),
               )
             : DecoratedBox(
@@ -372,7 +372,7 @@ class _DetailMapScreenState extends State<DetailMapScreen>
                   onPressed: () {
                     _isLockHeight = false;
                     _textEditingController.unfocus();
-                    _bottomBoxController.reverse();
+                    _bottomBoxController?.reverse();
                   },
                 ),
               )
@@ -383,13 +383,13 @@ class _DetailMapScreenState extends State<DetailMapScreen>
   Future<void> _onKeywordChange(String keyword) async {
     _inputTime?.cancel();
     _inputTime = Timer(const Duration(milliseconds: 500), () async {
-      if (keyword?.isEmpty ?? false) {
-        _locationMapController.forceTriggerRegionChange();
+      if (keyword.isEmpty) {
+        _locationMapController?.forceTriggerRegionChange();
         return;
       }
-      final list = await _locationMapController.searchAround(keyword);
+      final list = await _locationMapController?.searchAround(keyword);
       setState(() {
-        _arounds = list;
+        _arounds = list ?? [];
       });
     });
   }
@@ -397,19 +397,18 @@ class _DetailMapScreenState extends State<DetailMapScreen>
 
 class _LocationListPanel extends StatelessWidget {
   const _LocationListPanel({
-    Key key,
-    @required this.panelHeight,
-    @required List<AroundData> values,
+    super.key,
+    required this.panelHeight,
+    required List<AroundData> values,
     this.isLoading = false,
     this.controller,
-  })  : _arounds = values,
-        super(key: key);
+  }) : _arounds = values;
 
   final double panelHeight;
   final List<AroundData> _arounds;
   final bool isLoading;
 
-  final ScrollController controller;
+  final ScrollController? controller;
 
   @override
   Widget build(BuildContext context) {
@@ -437,11 +436,11 @@ class _LocationListPanel extends StatelessWidget {
         final data = _arounds[i];
         final dist = data == null
             ? '-'
-            : data.distance < 30
+            : data.distance! < 30
                 ? '30m内'
-                : data.distance < 1000
+                : data.distance! < 1000
                     ? '${data.distance} m'
-                    : '${(data.distance / 1000).toStringAsFixed(1)} km';
+                    : '${(data.distance! / 1000).toStringAsFixed(1)} km';
         final addr = data.address;
         var border;
         if (i == 0) {
@@ -483,7 +482,7 @@ class _LocationListPanel extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        data.name,
+                        data.name ?? '',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(

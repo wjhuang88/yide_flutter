@@ -5,34 +5,38 @@ class FlippingTile extends StatefulWidget {
   final bool selected;
   final bool _extended;
   final bool _custom;
-  final Widget extend;
-  final Widget Function(BuildContext, Color color, Color textColor) builder;
-  final String title;
+  final Widget? extend;
+  final Widget Function(BuildContext, Color color, Color textColor)? builder;
+  final String? title;
   final VoidCallback onTap;
 
-  const FlippingTile({Key key, this.selected = false, this.title, this.onTap})
+  const FlippingTile(
+      {super.key,
+      this.selected = false,
+      required this.title,
+      required this.onTap})
       : _extended = false,
         extend = null,
         _custom = false,
-        builder = null,
-        super(key: key);
+        builder = null;
   const FlippingTile.extended(
-      {Key key,
+      {super.key,
       this.selected = false,
-      @required this.extend,
+      required this.extend,
       this.title,
-      this.onTap})
+      required this.onTap})
       : _extended = true,
         _custom = false,
-        builder = null,
-        super(key: key);
+        builder = null;
   const FlippingTile.custom(
-      {Key key, this.selected = false, @required this.builder, this.onTap})
+      {super.key,
+      this.selected = false,
+      required this.builder,
+      required this.onTap})
       : _extended = true,
         _custom = true,
         title = null,
-        extend = null,
-        super(key: key);
+        extend = null;
 
   @override
   _FlippingTileState createState() => _FlippingTileState();
@@ -40,16 +44,16 @@ class FlippingTile extends StatefulWidget {
 
 class _FlippingTileState extends State<FlippingTile>
     with SingleTickerProviderStateMixin {
-  bool _selected;
-  bool _extended;
-  bool _custom;
+  late bool _selected;
+  late bool _extended;
+  late bool _custom;
 
-  AnimationController _animationController;
-  Animation _fadeAnimation;
-  Animation _transAnimation;
+  late AnimationController _animationController;
+  late Animation _fadeAnimation;
+  late Animation _transAnimation;
 
-  double _fadeValue;
-  double _transValue;
+  late double _fadeValue;
+  late double _transValue;
 
   @override
   void initState() {
@@ -112,11 +116,11 @@ class _FlippingTileState extends State<FlippingTile>
     }
   }
 
-  Color _getComputedColor(double delta) {
+  Color? _getComputedColor(double delta) {
     return Color.lerp(const Color(0x12FFFFFF), const Color(0xFFFAB807), delta);
   }
 
-  Color _getComputedTextColor(double delta) {
+  Color? _getComputedTextColor(double delta) {
     return Color.lerp(const Color(0xFFD7CAFF), const Color(0xFFFFFFFF), delta);
   }
 
@@ -188,8 +192,8 @@ class _FlippingTileState extends State<FlippingTile>
     Widget tile;
 
     if (_custom) {
-      tile = widget.builder(context, _getComputedColor(_fadeValue),
-          _getComputedTextColor(_fadeValue));
+      tile = widget.builder!(context, _getComputedColor(_fadeValue)!,
+          _getComputedTextColor(_fadeValue)!);
     } else {
       if (_selected) {
         if (_extended) {
@@ -201,13 +205,13 @@ class _FlippingTileState extends State<FlippingTile>
         tile = _buildNormalTile();
       }
     }
-    
+
     return GestureDetector(
       child: Transform.scale(
         scale: computedScale,
         child: tile,
       ),
-      onTap: widget.onTap ?? () {},
+      onTap: widget.onTap,
     );
   }
 }

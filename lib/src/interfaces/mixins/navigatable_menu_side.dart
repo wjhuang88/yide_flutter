@@ -75,7 +75,7 @@ mixin NavigatableMenuSide on Widget implements Navigatable {
 class _SideDragBuilder extends StatefulWidget {
   final SlidePageBuilder builder;
 
-  const _SideDragBuilder({Key key, @required this.builder}) : super(key: key);
+  const _SideDragBuilder({super.key, required this.builder});
 
   @override
   _SideDragBuilderState createState() => _SideDragBuilderState();

@@ -42,21 +42,22 @@ Future<void> haptic() async {
     case TargetPlatform.android:
     case TargetPlatform.fuchsia:
     case TargetPlatform.macOS:
+    case TargetPlatform.linux:
+    case TargetPlatform.windows:
       hasSuitableHapticHardware = false;
       break;
   }
-  assert(hasSuitableHapticHardware != null);
   if (hasSuitableHapticHardware) {
     return HapticFeedback.selectionClick();
   }
 }
 
 Future<void> editPopup(BuildContext context,
-    {VoidCallback onCancel,
-    VoidCallback onEdit,
+    {VoidCallback? onCancel,
+    VoidCallback? onEdit,
     String editTitle = '进入编辑',
     String clearTitle = '清除当前设置的内容',
-    VoidCallback onClear}) async {
+    VoidCallback? onClear}) async {
   final act = await showCupertinoModalPopup<bool>(
     context: context,
     builder: (context) => CupertinoActionSheet(
@@ -106,11 +107,11 @@ Future<void> editPopup(BuildContext context,
 
 Future<void> detailPopup(
   BuildContext context, {
-  VoidCallback onCancel,
-  VoidCallback onDetail,
-  VoidCallback onDelete,
-  VoidCallback onDone,
-  VoidCallback onReactive,
+  VoidCallback? onCancel,
+  VoidCallback? onDetail,
+  VoidCallback? onDelete,
+  VoidCallback? onDone,
+  VoidCallback? onReactive,
   String detailTitle = '查看任务详情',
   String deleteTitle = '删除此任务',
   String doneTitle = '完成此任务',
@@ -203,24 +204,30 @@ Future<void> detailPopup(
   }
 }
 
-Future<List<TaskPack>> getRecurringTaskByDate(DateTime date) async {
+Future<List<TaskPack?>> getRecurringTaskByDate(DateTime date) async {
   final repeatList = await TaskDBAction.getTaskRecurringByDate(date);
+  if (repeatList == null) {
+    return Future.value([]);
+  }
   return Future.wait(repeatList.map((recurring) async {
     return TaskDBAction.getTaskById(recurring.taskId)
       ..then((pack) {
-        pack.nextTime = recurring.nextTime;
-        pack.isRecurring = true;
+        pack?.nextTime = recurring.nextTime;
+        pack?.isRecurring = true;
       });
   }));
 }
 
-Future<List<TaskPack>> getRecurringTaskReady(DateTime date) async {
+Future<List<TaskPack?>> getRecurringTaskReady(DateTime date) async {
   final repeatList = await TaskDBAction.getTaskRecurringReady(date);
+  if (repeatList == null) {
+    return Future.value([]);
+  }
   return Future.wait(repeatList.map((recurring) async {
     return TaskDBAction.getTaskById(recurring.taskId)
       ..then((pack) {
-        pack.nextTime = recurring.nextTime;
-        pack.isRecurring = true;
+        pack?.nextTime = recurring.nextTime;
+        pack?.isRecurring = true;
       });
   }));
 }

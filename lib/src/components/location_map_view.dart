@@ -5,20 +5,20 @@ import 'package:flutter/widgets.dart';
 import 'package:yide/src/models/geo_data.dart';
 
 class LocationMapController {
-  _LocationMapViewState _state;
+  late _LocationMapViewState _state;
 
-  Future<void> backToUserLocation() async => _state?._backToUserLocation();
+  Future<void> backToUserLocation() async => _state._backToUserLocation();
 
   Future<AddressData> getUserAddress() async {
-    final map = await _state?._getUserAddress();
-    return AddressData.fromMap(map);
+    final map = await _state._getUserAddress();
+    return AddressData.fromMap(map!);
   }
 
   Future<List<AroundData>> searchAround(String keyword) async =>
-      _state?._searchAround(keyword);
+      _state._searchAround(keyword);
 
   Future<void> forceTriggerRegionChange() async =>
-      _state?._forceTriggerRegionChange();
+      _state._forceTriggerRegionChange();
 }
 
 class LocationMapView extends StatefulWidget {
@@ -31,33 +31,33 @@ class LocationMapView extends StatefulWidget {
   final Offset scaleOffset;
   final bool showsUserLocation;
   final FractionalOffset centerOffset;
-  final Coordinate initCenter;
+  final Coordinate? initCenter;
   final void Function(List<AroundData> around, Coordinate coordinate)
       onRegionChanged;
   final VoidCallback onRegionStartChanging;
   final void Function(List<AroundData> tips) onTips;
   final void Function(Coordinate coord) onMapTap;
 
-  final LocationMapController controller;
+  final LocationMapController? controller;
 
   const LocationMapView({
-    Key key,
-    this.cameraDegree,
-    this.zoomLevel,
-    this.logoOffset,
-    this.showsCompass,
-    this.compassOffset,
-    this.showsScale,
-    this.scaleOffset,
-    this.showsUserLocation,
-    this.centerOffset,
+    super.key,
+    required this.cameraDegree,
+    required this.zoomLevel,
+    this.logoOffset = const Offset(0, 0),
+    required this.showsCompass,
+    required this.compassOffset,
+    required this.showsScale,
+    this.scaleOffset = const Offset(0, 0),
+    required this.showsUserLocation,
+    required this.centerOffset,
     this.controller,
-    this.onRegionChanged,
+    required this.onRegionChanged,
     this.initCenter,
-    this.onRegionStartChanging,
-    this.onTips,
-    this.onMapTap,
-  }) : super(key: key);
+    required this.onRegionStartChanging,
+    required this.onTips,
+    required this.onMapTap,
+  });
 
   @override
   _LocationMapViewState createState() => _LocationMapViewState(controller);
@@ -65,30 +65,28 @@ class LocationMapView extends StatefulWidget {
 
 class _LocationMapViewState extends State<LocationMapView> {
   _LocationMapViewState(this._controller);
-  LocationMapController _controller;
+  late LocationMapController? _controller;
 
-  MethodChannel platform;
+  late MethodChannel platform;
 
   @override
   void initState() {
     super.initState();
-    _controller ??= LocationMapController();
-    _controller._state = this;
+    _controller?._state = this;
     platform = const MethodChannel("yide_map_view_method");
 
     platform.setMethodCallHandler((call) async {
       if (call.method == 'onRegionChanged' && (call.arguments is Map)) {
         final args = call.arguments as Map;
         _makeAroundDataCallback(args);
-      } else if (call.method == 'onRegionStartChanging' &&
-          widget.onRegionStartChanging != null) {
+      } else if (call.method == 'onRegionStartChanging') {
         widget.onRegionStartChanging();
-      } else if (call.method == 'onTips' && widget.onTips != null) {
+      } else if (call.method == 'onTips') {
         final tips = call.arguments as List;
         widget.onTips(
-          _parseAroundData(tips) ?? const [],
+          _parseAroundData(tips),
         );
-      } else if (call.method == 'onMapTap' && widget.onMapTap != null) {
+      } else if (call.method == 'onMapTap') {
         final coordList = call.arguments as List;
         widget.onMapTap(
           Coordinate.fromList(coordList.map((d) => d as double).toList()),
@@ -103,9 +101,7 @@ class _LocationMapViewState extends State<LocationMapView> {
     final aroundList = _parseAroundData(aroundMapList);
     final coordinate =
         Coordinate.fromList(coordinateList.map((d) => d as double).toList());
-    if (widget.onRegionChanged != null) {
-      widget.onRegionChanged(aroundList, coordinate);
-    }
+    widget.onRegionChanged(aroundList, coordinate);
   }
 
   List<AroundData> _parseAroundData(List rawList) => rawList
@@ -117,7 +113,7 @@ class _LocationMapViewState extends State<LocationMapView> {
         ),
       )
       .toList()
-        ..sort((a, b) => a.distance - b.distance);
+    ..sort((a, b) => a.distance! - b.distance!);
 
   Future<void> _backToUserLocation() async {
     return platform.invokeMethod<void>('backToUserLocation');
@@ -127,7 +123,7 @@ class _LocationMapViewState extends State<LocationMapView> {
     return platform.invokeMethod<void>('forceTriggerRegionChange');
   }
 
-  Future<Map<String, String>> _getUserAddress() async {
+  Future<Map<String, String>?> _getUserAddress() async {
     return platform.invokeMapMethod<String, String>('getUserAddress');
   }
 
@@ -140,34 +136,20 @@ class _LocationMapViewState extends State<LocationMapView> {
   @override
   Widget build(BuildContext context) {
     final params = <String, dynamic>{
-      "cameraDegree": widget.cameraDegree ?? 30.0,
-      "zoomLevel": widget.zoomLevel ?? 16.0,
-      "logoOffset": [
-        widget.logoOffset?.dx ?? 0.0,
-        widget.logoOffset?.dy ?? 0.0
-      ],
-      "showsCompass": widget.showsCompass ?? true,
-      "compassOffset": [
-        widget.compassOffset?.dx ?? 0.0,
-        widget.compassOffset?.dy ?? 0.0
-      ],
-      "showsScale": widget.showsScale ?? true,
-      "scaleOffset": [
-        widget.scaleOffset?.dx ?? 0.0,
-        widget.scaleOffset?.dy ?? 0.0
-      ],
-      "showsUserLocation": widget.showsUserLocation ?? true,
-      "centerOffset": [
-        widget.centerOffset?.dx ?? 0.0,
-        widget.centerOffset?.dy ?? 0.0
-      ],
+      "cameraDegree": widget.cameraDegree,
+      "zoomLevel": widget.zoomLevel,
+      "logoOffset": [widget.logoOffset.dx, widget.logoOffset.dy],
+      "showsCompass": widget.showsCompass,
+      "compassOffset": [widget.compassOffset.dx, widget.compassOffset.dy],
+      "showsScale": widget.showsScale,
+      "scaleOffset": [widget.scaleOffset.dx, widget.scaleOffset.dy],
+      "showsUserLocation": widget.showsUserLocation,
+      "centerOffset": [widget.centerOffset.dx, widget.centerOffset.dy],
     };
-    if (widget.initCenter != null) {
-      params['initCenter'] = [
-        widget.initCenter.latitude,
-        widget.initCenter.longitude
-      ];
-    }
+    params['initCenter'] = [
+      widget.initCenter?.latitude,
+      widget.initCenter?.longitude
+    ];
     final codec = const StandardMessageCodec();
 
     if (defaultTargetPlatform == TargetPlatform.android) {

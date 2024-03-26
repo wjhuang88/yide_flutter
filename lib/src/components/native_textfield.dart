@@ -4,23 +4,23 @@ import 'package:flutter/services.dart';
 
 class NativeTextField extends StatefulWidget {
   NativeTextField({
-    Key key,
+    super.key,
     this.onSubmitted,
     this.onChanged,
-    this.placeholder,
-    this.text,
+    required this.placeholder,
+    required this.text,
     this.onFocus,
     this.onUnfocus,
-    this.autofocus,
-    this.controller,
+    required this.autofocus,
+    required this.controller,
     this.alignment = Alignment.center,
     this.height = 70.0,
-  }) : super(key: key);
+  });
 
-  final ValueChanged<String> onSubmitted;
-  final ValueChanged<String> onChanged;
-  final VoidCallback onFocus;
-  final VoidCallback onUnfocus;
+  final ValueChanged<String>? onSubmitted;
+  final ValueChanged<String>? onChanged;
+  final VoidCallback? onFocus;
+  final VoidCallback? onUnfocus;
   final String placeholder;
   final String text;
   final bool autofocus;
@@ -33,73 +33,68 @@ class NativeTextField extends StatefulWidget {
 }
 
 class NativeTextFieldController {
-  _NativeTextFieldState _state;
+  late _NativeTextFieldState _state;
 
   void focus() {
-    _state?._focus();
+    _state._focus();
   }
 
   void unfocus() {
-    _state?._unfocus();
+    _state._unfocus();
   }
 
-  String get text => _state?._text;
+  String get text => _state._text;
 }
 
 class _NativeTextFieldState extends State<NativeTextField> {
   _NativeTextFieldState(this._controller);
 
-  TextEditingController _textEditingController;
-  FocusNode _focusNode = FocusNode();
-  MethodChannel platform;
-  NativeTextFieldController _controller;
+  late TextEditingController _textEditingController;
+  late FocusNode _focusNode = FocusNode();
+  late MethodChannel platform;
+  late NativeTextFieldController _controller;
 
-  String _text;
+  late String _text;
 
   @override
   void initState() {
     super.initState();
-    _controller ??= NativeTextFieldController();
     _controller._state = this;
-    _textEditingController = widget.text != null && widget.text.isNotEmpty
+    _textEditingController = widget.text.isNotEmpty
         ? TextEditingController(text: widget.text)
         : TextEditingController();
     _textEditingController.addListener(() {
       _text = _textEditingController.text;
     });
-    _text = widget.text ?? '';
+    _text = widget.text;
     platform = const MethodChannel("yide_native_textfield_view_method");
     platform.setMethodCallHandler((call) async {
       if (call.method == 'onChanged' && call.arguments is String) {
+        final text = call.arguments as String;
+        _text = text;
         if (widget.onChanged != null) {
-          final text = call.arguments as String;
-          _text = text;
-          widget.onChanged(text);
+          widget.onChanged!(text);
         }
       } else if (call.method == 'onSubmitted' && call.arguments is String) {
+        final text = call.arguments as String;
+        _text = text;
         if (widget.onSubmitted != null) {
-          final text = call.arguments as String;
-          _text = text;
-          widget.onSubmitted(text);
+          widget.onSubmitted!(text);
         }
-      } else if (call.method == 'onFocus') {
-        if (widget.onFocus != null) {
-          widget.onFocus();
-        }
-      } else if (call.method == 'onUnfocus') {
-        if (widget.onUnfocus != null) {
-          widget.onUnfocus();
-        }
+      } else if (call.method == 'onFocus' && widget.onFocus != null) {
+        widget.onFocus!();
+      } else if (call.method == 'onUnfocus' && widget.onUnfocus != null) {
+        widget.onUnfocus!();
       }
     });
     _focusNode.addListener(() {
       if (_focusNode.hasFocus) {
         if (widget.onFocus != null) {
-          widget.onFocus();
+          widget.onFocus!();
         }
       } else {
         if (widget.onUnfocus != null) {
-          widget.onUnfocus();
+          widget.onUnfocus!();
         }
       }
     });

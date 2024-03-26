@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 mixin AppLifecycleResumeProvider<T extends StatefulWidget> on State<T> {
-  _LifecycleListener listener;
+  late _LifecycleListener listener;
   void onResumed();
 
   @override

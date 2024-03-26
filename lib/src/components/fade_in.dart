@@ -1,9 +1,9 @@
 import 'package:flutter/widgets.dart';
 
 class FadeInController {
-  _FadeInState _state;
+  late _FadeInState _state;
   void fadeIn({double from = 0.0}) {
-    _state?.fadeIn(from: from);
+    _state.fadeIn(from: from);
   }
 }
 
@@ -15,11 +15,11 @@ class FadeIn extends StatefulWidget {
   final bool autoFadeIn;
 
   const FadeIn({
-    Key key,
+    required Key key,
     this.curve = Curves.easeOutCubic,
-    @required this.duration,
-    @required this.child,
-    this.controller,
+    required this.duration,
+    required this.child,
+    required this.controller,
     this.autoFadeIn = false,
   }) : super(key: key);
 
@@ -29,8 +29,8 @@ class FadeIn extends StatefulWidget {
 
 class _FadeInState extends State<FadeIn> with SingleTickerProviderStateMixin {
   _FadeInState(this._controller);
-  AnimationController _animationController;
-  Animation _animation;
+  late AnimationController _animationController;
+  late Animation<double> _animation;
 
   FadeInController _controller;
 
@@ -49,7 +49,6 @@ class _FadeInState extends State<FadeIn> with SingleTickerProviderStateMixin {
       _animationController.value = 1.0;
     }
 
-    _controller ??= FadeInController();
     _controller._state = this;
   }
 

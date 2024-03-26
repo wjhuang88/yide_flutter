@@ -6,7 +6,7 @@ import 'globle_variable.dart';
 
 class PushRouteNotification extends Notification {
   final Navigatable page;
-  final ValueChanged callback;
+  final ValueChanged? callback;
   final bool isReplacement;
   final bool isSide;
 
@@ -15,7 +15,7 @@ class PushRouteNotification extends Notification {
 }
 
 class PopRouteNotification extends Notification {
-  final ValueChanged<bool> callback;
+  final ValueChanged<bool>? callback;
   final dynamic result;
   final bool isSide;
 
@@ -26,9 +26,9 @@ class NotificationContainer extends StatefulWidget {
   final Widget child;
 
   const NotificationContainer({
-    Key key,
-    @required this.child,
-  }) : super(key: key);
+    super.key,
+    required this.child,
+  });
 
   @override
   _NotificationContainerState createState() => _NotificationContainerState();
@@ -60,7 +60,7 @@ class _NotificationContainerState extends State<NotificationContainer> {
           (() async {
             final temp = _lastRouteWithMenu;
             _lastRouteWithMenu = n.page.withMene;
-            NavigatorState nav;
+            NavigatorState? nav;
             if (n.isSide) {
               nav = Config.sideNavigatorKey.currentState;
             } else {
@@ -68,15 +68,15 @@ class _NotificationContainerState extends State<NotificationContainer> {
             }
             var result;
             if (n.isReplacement) {
-              result = await nav.pushReplacement(n.page.route);
+              result = await nav?.pushReplacement(n.page.route);
             } else {
-              result = await nav.push(n.page.route);
+              result = await nav?.push(n.page.route);
             }
             _lastRouteWithMenu = temp;
             (n.callback ?? (arg) {})(result);
           })();
         } else if (n is PopRouteNotification) {
-          NavigatorState nav;
+          NavigatorState? nav;
           if (n.isSide) {
             nav = Config.sideNavigatorKey.currentState;
           } else {
@@ -86,7 +86,7 @@ class _NotificationContainerState extends State<NotificationContainer> {
             routeNames.removeLast();
           }
           lastPageType = null;
-          nav.maybePop(n.result).then((ret) {
+          nav?.maybePop(n.result).then((ret) {
             (n.callback ?? (arg) {})(ret);
           });
         }

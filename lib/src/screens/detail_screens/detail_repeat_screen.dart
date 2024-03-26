@@ -13,7 +13,7 @@ import 'package:yide/src/models/task_data.dart';
 class DetailRepeatScreen extends StatefulWidget implements Navigatable {
   final int stateCode;
 
-  const DetailRepeatScreen({Key key, this.stateCode = 0}) : super(key: key);
+  const DetailRepeatScreen({super.key, this.stateCode = 0});
   @override
   _DetailRepeatScreenState createState() => _DetailRepeatScreenState(stateCode);
 
@@ -57,17 +57,17 @@ class _DetailRepeatScreenState extends State<DetailRepeatScreen> {
   RepeatBitMap _repeatState;
   RepeatBitMap _repeatLastState;
 
-  ScrollController _scrollController;
+  ScrollController? _scrollController;
   bool _backProcessing = false;
 
-  DateTime _countUpdateTime;
+  DateTime? _countUpdateTime;
 
   @override
   void initState() {
     _scrollController = ScrollController();
-    _scrollController.addListener(() {
-      if (_scrollController.offset <
-          _scrollController.position.minScrollExtent - 100) {
+    _scrollController?.addListener(() {
+      if (_scrollController!.offset <
+          _scrollController!.position.minScrollExtent - 100) {
         if (_backProcessing) {
           return;
         }
@@ -81,7 +81,7 @@ class _DetailRepeatScreenState extends State<DetailRepeatScreen> {
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _scrollController?.dispose();
     super.dispose();
   }
 
@@ -133,14 +133,14 @@ class _DetailRepeatScreenState extends State<DetailRepeatScreen> {
         extend: GestureDetector(
           onHorizontalDragUpdate: (detail) {
             if (_countUpdateTime != null &&
-                DateTime.now().difference(_countUpdateTime) <
+                DateTime.now().difference(_countUpdateTime!) <
                     const Duration(milliseconds: 100)) {
               return;
             }
             _countUpdateTime = DateTime.now();
-            if (detail.primaryDelta < -0.0) {
+            if (detail.primaryDelta! < -0.0) {
               _repeatState.decreaseCount();
-            } else if (detail.primaryDelta > 0.0) {
+            } else if (detail.primaryDelta! > 0.0) {
               _repeatState.increaseCount();
             }
             setState(() {});

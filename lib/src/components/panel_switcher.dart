@@ -6,30 +6,30 @@ typedef PanelItemBuilder = Widget Function(
 );
 
 class PanelSwitcherController {
-  _PanelSwitcherState _state;
+  late _PanelSwitcherState _state;
 
   Future<void> switchTo(String pageName) async {
-    return _state?._to(pageName);
+    return _state._to(pageName);
   }
 
   Future<void> switchBack() async {
-    return _state?._reset();
+    return _state._reset();
   }
 
-  String get currentPage => _state?._pageInStage;
+  String get currentPage => _state._pageInStage;
 }
 
 class PanelSwitcher extends StatefulWidget {
   const PanelSwitcher({
-    Key key,
-    this.pageMap,
-    this.controller,
-    @required this.initPage,
+    super.key,
+    required this.pageMap,
+    required this.controller,
+    required this.initPage,
     this.curve = Curves.easeOutCubic,
     this.reverseCurve = Curves.easeInCubic,
     this.duration = const Duration(milliseconds: 300),
     this.backgroundColor = Colors.transparent,
-  }) : super(key: key);
+  });
 
   final Map<String, PanelItemBuilder> pageMap;
   final PanelSwitcherController controller;
@@ -47,15 +47,15 @@ class _PanelSwitcherState extends State<PanelSwitcher>
     with SingleTickerProviderStateMixin {
   _PanelSwitcherState(this._controller);
 
-  PanelSwitcherController _controller;
+  late PanelSwitcherController _controller;
 
-  AnimationController _animController;
-  Animation<double> _anim;
+  late AnimationController _animController;
+  late Animation<double> _anim;
 
-  String _pageInStage;
-  String _pageInBackground;
+  late String _pageInStage;
+  late String _pageInBackground;
 
-  List<PanelItemBuilder> _stages = List(2);
+  List<PanelItemBuilder> _stages = [];
   int _topStageIndex = 1;
   PanelItemBuilder get _topStage => _stages[_topStageIndex];
   set _topStage(PanelItemBuilder value) => _stages[_topStageIndex] = value;
@@ -64,11 +64,10 @@ class _PanelSwitcherState extends State<PanelSwitcher>
   @override
   void initState() {
     super.initState();
-    if (_controller == null) _controller = PanelSwitcherController();
     _controller._state = this;
 
     _pageInStage = widget.initPage;
-    _topStage = widget.pageMap[_pageInStage];
+    _topStage = widget.pageMap[_pageInStage]!;
 
     _animController =
         AnimationController(value: 0, duration: widget.duration, vsync: this);
@@ -107,9 +106,6 @@ class _PanelSwitcherState extends State<PanelSwitcher>
   }
 
   Future<void> _reset() async {
-    if (_backgroundStage == null) {
-      return TickerFuture.complete();
-    }
     _flipStage();
     return _animController.reverse(from: 1);
   }
@@ -119,7 +115,7 @@ class _PanelSwitcherState extends State<PanelSwitcher>
     final hideBackground = _anim.value == 1.0;
     return Container(
       color: widget.backgroundColor,
-      child: _backgroundStage == null || hideBackground
+      child: hideBackground
           ? _topStage(context, Tween(begin: 1.0, end: 1.0).animate(_anim))
           : Stack(
               children: <Widget>[

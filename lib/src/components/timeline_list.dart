@@ -8,32 +8,22 @@ import 'package:yide/src/config.dart';
 import 'tap_animator.dart';
 
 class TimelineListView extends StatefulWidget {
-  const TimelineListView._()
-      : tileBuilder = null,
-        onGenerateLabel = null,
-        onGenerateLabelColor = null,
-        onGenerateDotColor = null,
-        onGenerateDotIcon = null,
-        itemCount = 0,
-        placeholder = null;
-
   TimelineListView.build({
-    Key key,
-    @required this.tileBuilder,
+    super.key,
+    this.tileBuilder,
     this.onGenerateLabel,
     this.onGenerateDotColor,
     this.onGenerateDotIcon,
-    @required this.itemCount,
+    required this.itemCount,
     this.placeholder = const SizedBox(),
     this.onGenerateLabelColor,
-  })  : assert(onGenerateLabel != null),
-        super(key: key);
+  }) : assert(onGenerateLabel != null);
 
-  final IndexedWidgetBuilder tileBuilder;
-  final String Function(int index) onGenerateLabel;
-  final Color Function(int index) onGenerateLabelColor;
-  final Color Function(int index) onGenerateDotColor;
-  final Widget Function(int index) onGenerateDotIcon;
+  final IndexedWidgetBuilder? tileBuilder;
+  final String Function(int index)? onGenerateLabel;
+  final Color Function(int index)? onGenerateLabelColor;
+  final Color Function(int index)? onGenerateDotColor;
+  final Widget Function(int index)? onGenerateDotIcon;
   final int itemCount;
   final Widget placeholder;
 
@@ -97,11 +87,11 @@ class _TimelineListViewState extends State<TimelineListView> {
                       alignment: Alignment.topRight,
                       padding: const EdgeInsets.only(right: 23.5),
                       child: Text(
-                        widget.onGenerateLabel(index),
+                        widget.onGenerateLabel!(index),
                         maxLines: 1,
                         style: TextStyle(
                           color: widget.onGenerateLabelColor != null
-                              ? widget.onGenerateLabelColor(index)
+                              ? widget.onGenerateLabelColor!(index)
                               : const Color(0xFFC9A2F5),
                           fontSize: 12.0,
                         ),
@@ -109,9 +99,7 @@ class _TimelineListViewState extends State<TimelineListView> {
                     ),
                     Expanded(
                       child: TimelineDecorated(
-                        decorationIcon: widget.onGenerateDotIcon != null
-                            ? widget.onGenerateDotIcon(index)
-                            : null,
+                        decorationIcon: widget.onGenerateDotIcon!(index),
                         decorationColor: (widget.onGenerateDotColor ??
                             (i) => const Color(0xFFFFFFFF))(index),
                         isBorderShow: index + 1 != widget.itemCount,
@@ -134,29 +122,29 @@ class _TimelineListViewState extends State<TimelineListView> {
 
 class TimelineDecorated extends StatelessWidget {
   const TimelineDecorated({
-    Key key,
+    super.key,
     this.decorationColor,
     this.decorationIcon,
     this.child,
     this.isBorderShow = true,
-  }) : super(key: key);
+  });
 
-  final Color decorationColor;
-  final Widget decorationIcon;
-  final Widget child;
+  final Color? decorationColor;
+  final Widget? decorationIcon;
+  final Widget? child;
   final bool isBorderShow;
 
   @override
   Widget build(BuildContext context) {
     double size;
     if (decorationIcon is Icon) {
-      size = (decorationIcon as Icon).size;
+      size = (decorationIcon as Icon).size!;
     } else if (decorationIcon is SvgIcon) {
       size = (decorationIcon as SvgIcon).size;
     } else if (decorationIcon is Image) {
-      size = (decorationIcon as Image).width;
+      size = (decorationIcon as Image).width!;
     } else if (decorationIcon is Container) {
-      size = (decorationIcon as Container).constraints.maxWidth;
+      size = (decorationIcon as Container).constraints!.maxWidth;
     } else {
       size = 10.0;
     }
@@ -191,12 +179,12 @@ class TimelineTile extends StatelessWidget {
   final EdgeInsetsGeometry padding;
 
   const TimelineTile({
-    Key key,
-    @required this.rows,
-    this.onTap,
-    this.onLongPress,
+    super.key,
+    required this.rows,
+    required this.onTap,
+    required this.onLongPress,
     this.padding = const EdgeInsets.only(left: 27.5, bottom: 0.0),
-  }) : super(key: key);
+  });
   @override
   Widget build(BuildContext context) {
     return TapAnimator(
@@ -215,6 +203,7 @@ class TimelineTile extends StatelessWidget {
           children: rows,
         ),
       ),
+      onComplete: () {},
     );
   }
 }

@@ -28,7 +28,7 @@ import 'package:yide/src/screens/edit_main_screen.dart';
 import 'package:yide/src/tools/icon_tools.dart';
 
 class SingleDayListScreen extends StatefulWidget with NavigatableWithMenu {
-  SingleDayListScreen({Key key}) : super(key: key);
+  SingleDayListScreen({super.key});
 
   static SingleDayScreenController controller = SingleDayScreenController();
 
@@ -40,7 +40,7 @@ class SingleDayListScreen extends StatefulWidget with NavigatableWithMenu {
   Future<void> onDragNext(BuildContext context, double offset) async {
     final future = Completer();
     PushRouteNotification(MultipleDayListScreen(), callback: (d) {
-      controller?.updateListData();
+      controller.updateListData();
       future.complete();
     }).dispatch(context);
     //haptic();
@@ -49,7 +49,7 @@ class SingleDayListScreen extends StatefulWidget with NavigatableWithMenu {
 
   @override
   void onTransitionValueChange(double value) {
-    controller?.updateTransition(value);
+    controller.updateTransition(value);
   }
 
   @override
@@ -67,7 +67,6 @@ class _SingleDayListScreenState extends State<SingleDayListScreen>
   @override
   void initState() {
     super.initState();
-    _controller ??= SingleDayScreenController();
   }
 
   @override
@@ -203,10 +202,10 @@ class _HeaderPanel extends StatefulWidget {
   final SingleDayScreenController controller;
 
   const _HeaderPanel({
-    Key key,
-    this.dateTime,
-    this.controller,
-  }) : super(key: key);
+    super.key,
+    required this.dateTime,
+    required this.controller,
+  });
 
   @override
   _HeaderPanelState createState() => _HeaderPanelState();
@@ -216,7 +215,7 @@ class _HeaderPanelState extends State<_HeaderPanel> {
   String _cityName = ' - ';
   String _temp = ' - ';
 
-  DateTime _dateTime;
+  late DateTime _dateTime;
 
   Future<void> _updateLocAndTemp() async {
     setState(() {
@@ -225,7 +224,7 @@ class _HeaderPanelState extends State<_HeaderPanel> {
     });
     final location = await LocationMethods.getLocation();
     if (location.adcode?.isEmpty ?? false) {
-      _cityName = location.city.isEmpty ? ' - ' : location.city;
+      _cityName = (location.city?.isEmpty ?? true) ? ' - ' : location.city!;
     } else {
       final weather = await LocationMethods.getWeather(location.adcode);
       _cityName = weather.city ?? ' - ';
@@ -310,7 +309,7 @@ class _ListBody extends StatefulWidget {
   final SingleDayScreenController controller;
   final DateTime date;
 
-  const _ListBody({Key key, this.controller, this.date}) : super(key: key);
+  const _ListBody({super.key, required this.controller, required this.date});
   @override
   _ListBodyState createState() => _ListBodyState();
 }
@@ -323,19 +322,19 @@ class _ListBodyState extends State<_ListBody> {
     child: Config.listPlaceholder,
   );
   Widget _blank = const SizedBox();
-  List<TaskPack> _taskList;
-  DateTime _dateTime;
+  late List<TaskPack> _taskList;
+  late DateTime _dateTime;
 
-  SingleDayScreenController _controller;
+  late SingleDayScreenController _controller;
 
-  int _daytimeIndex;
-  int _nightIndex;
+  int? _daytimeIndex;
+  int? _nightIndex;
 
   @override
   void initState() {
     super.initState();
-    _dateTime = widget.date ?? DateTime.now();
-    _controller = widget.controller ?? SingleDayScreenController();
+    _dateTime = widget.date;
+    _controller = widget.controller;
     _controller._listState = this;
     _execUpdateListData().then((d) {
       _controller.isLoading = false;
@@ -352,19 +351,20 @@ class _ListBodyState extends State<_ListBody> {
     final baseList = await TaskDBAction.getTaskListTodo(_dateTime);
     final finishedList =
         await TaskDBAction.getTaskFinishedListByDate(_dateTime);
-    final dayTimeSet = SplayTreeSet<TaskPack>(
-        (a, b) => -a.data.createTime.compareTo(b.data.createTime));
-    final nightSet = SplayTreeSet<TaskPack>(
-        (a, b) => -a.data.createTime.compareTo(b.data.createTime));
-    baseList.forEach((item) {
-      if (item.data.timeType == DateTimeType.night) {
+    final now = DateTime.now();
+    final dayTimeSet = SplayTreeSet<TaskPack>((a, b) =>
+        -(a.data?.createTime ?? now).compareTo(b.data?.createTime ?? now));
+    final nightSet = SplayTreeSet<TaskPack>((a, b) =>
+        -(a.data?.createTime ?? now).compareTo(b.data?.createTime ?? now));
+    baseList?.forEach((item) {
+      if (item.data?.timeType == DateTimeType.night) {
         nightSet.add(item);
       } else {
         dayTimeSet.add(item);
       }
     });
-    finishedList.forEach((item) {
-      if (item.data.timeType == DateTimeType.night) {
+    finishedList?.forEach((item) {
+      if (item.data?.timeType == DateTimeType.night) {
         nightSet.add(item);
       } else {
         dayTimeSet.add(item);
@@ -376,7 +376,7 @@ class _ListBodyState extends State<_ListBody> {
         return;
       }
       item.isRecurring = true;
-      if (item.data.timeType == DateTimeType.night) {
+      if (item.data?.timeType == DateTimeType.night) {
         nightSet.add(item);
       } else {
         dayTimeSet.add(item);
@@ -391,7 +391,7 @@ class _ListBodyState extends State<_ListBody> {
         if (_daytimeIndex != null && _nightIndex != null) {
           break;
         }
-        final type = _taskList[i].data.timeType;
+        final type = _taskList[i].data?.timeType;
         if (type == DateTimeType.daytime || type == DateTimeType.datetime) {
           _daytimeIndex ??= i;
         } else if (type == DateTimeType.night) {
@@ -404,7 +404,7 @@ class _ListBodyState extends State<_ListBody> {
 
   @override
   Widget build(BuildContext context) {
-    if (_taskList == null || _taskList.isEmpty) {
+    if (_taskList.isEmpty) {
       return _controller.isLoading ? _blank : _placeholder;
     }
     return TimelineListView.build(
@@ -412,10 +412,10 @@ class _ListBodyState extends State<_ListBody> {
       itemCount: _taskList.length,
       tileBuilder: (context, index) {
         final item = _taskList[index];
-        final isFinished = item.data.isFinished;
+        final isFinished = item.data?.isFinished ?? false;
         final rows = <Widget>[
           Text(
-            item.data.content,
+            item.data?.content ?? '',
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -427,7 +427,7 @@ class _ListBodyState extends State<_ListBody> {
             height: 5.0,
           ),
           Text(
-            '于 ${_makeTimeLabel(item.data.taskTime)} 开始',
+            '于 ${_makeTimeLabel(item.data?.taskTime ?? DateTime.now())} 开始',
             style: TextStyle(
                 color: isFinished ? finishedColor : const Color(0xFFC9A2F5),
                 fontSize: 12.0),
@@ -439,22 +439,23 @@ class _ListBodyState extends State<_ListBody> {
             children: <Widget>[
               Icon(
                 FontAwesomeIcons.solidCircle,
-                color: isFinished ? finishedColor : item.tag.iconColor,
+                color: isFinished ? finishedColor : item.tag?.iconColor,
                 size: 8.0,
               ),
               const SizedBox(
                 width: 5.0,
               ),
               Text(
-                item.tag.name ?? '默认',
+                item.tag?.name ?? '默认',
                 style: TextStyle(
-                    color: isFinished ? finishedColor : item.tag.iconColor,
+                    color: isFinished ? finishedColor : item.tag?.iconColor,
                     fontSize: 12.0),
               ),
             ],
           ),
         ];
-        if (item.data.catalog != null && item.data.catalog.isNotEmpty) {
+        if (item.data?.catalog != null &&
+            (item.data?.catalog?.isNotEmpty ?? false)) {
           rows
             ..add(
               const SizedBox(
@@ -463,7 +464,7 @@ class _ListBodyState extends State<_ListBody> {
             )
             ..add(
               Text(
-                item.data.catalog,
+                item.data?.catalog ?? '',
                 style: TextStyle(
                     color: isFinished ? finishedColor : const Color(0xFFC9A2F5),
                     fontSize: 12.0),
@@ -471,8 +472,9 @@ class _ListBodyState extends State<_ListBody> {
             );
         }
         var remarkVisable;
-        if (item.data.remark != null && item.data.remark.isNotEmpty) {
-          remarkVisable = item.data.remark;
+        if (item.data?.remark != null &&
+            (item.data?.remark?.isNotEmpty ?? false)) {
+          remarkVisable = item.data?.remark;
         } else {
           remarkVisable = '';
         }
@@ -498,7 +500,7 @@ class _ListBodyState extends State<_ListBody> {
               onDetail: () => _enterDetail(item),
               onDone: () async {
                 await TaskDBAction.toggleTaskFinish(
-                    item.data.id, true, DateTime.now());
+                    item.data?.id, true, DateTime.now());
                 _controller.updateListData();
               },
               onDelete: () async {
@@ -507,7 +509,7 @@ class _ListBodyState extends State<_ListBody> {
               },
               onReactive: () async {
                 await TaskDBAction.toggleTaskFinish(
-                    item.data.id, false, DateTime.now());
+                    item.data?.id, false, DateTime.now());
                 _controller.updateListData();
               },
               isDone: isFinished,
@@ -567,22 +569,22 @@ String _makeTimeLabel(DateTime time) {
 }
 
 class _ButtonAndLoadingIcon extends StatefulWidget {
-  final bool isLoading;
-  final SingleDayScreenController controller;
+  final bool? isLoading;
+  final SingleDayScreenController? controller;
 
   const _ButtonAndLoadingIcon({
-    Key key,
+    super.key,
     this.isLoading,
     this.controller,
-  }) : super(key: key);
+  });
   @override
   _ButtonAndLoadingIconState createState() => _ButtonAndLoadingIconState();
 }
 
 class _ButtonAndLoadingIconState extends State<_ButtonAndLoadingIcon> {
-  bool _isLoadingValue;
-  bool get _isLoading => _isLoadingValue;
-  set _isLoading(bool value) {
+  bool? _isLoadingValue;
+  bool get _isLoading => _isLoadingValue ?? false;
+  set _isLoading(bool? value) {
     if (value == null) {
       return;
     }
@@ -591,7 +593,7 @@ class _ButtonAndLoadingIconState extends State<_ButtonAndLoadingIcon> {
     });
   }
 
-  SingleDayScreenController _controller;
+  late SingleDayScreenController _controller;
 
   @override
   void initState() {
@@ -635,38 +637,38 @@ class _ButtonAndLoadingIconState extends State<_ButtonAndLoadingIcon> {
 }
 
 class _TranslateContainer extends StatefulWidget {
-  final double initOffset;
+  final double? initOffset;
   final Widget child;
-  final SingleDayScreenController controller;
+  final SingleDayScreenController? controller;
 
   const _TranslateContainer({
-    Key key,
+    super.key,
     this.initOffset,
-    @required this.child,
+    required this.child,
     this.controller,
-  }) : super(key: key);
+  });
   @override
   _TranslateContainerState createState() => _TranslateContainerState();
 }
 
 class _TranslateContainerState extends State<_TranslateContainer> {
-  double _offsetValue;
-  double get offset => _offsetValue;
+  double? _offsetValue;
+  double get offset => _offsetValue ?? 0;
   set offset(double value) => setState(() => _offsetValue = value);
 
-  SingleDayScreenController _controller;
+  SingleDayScreenController? _controller;
 
   @override
   void initState() {
     super.initState();
     _offsetValue = widget.initOffset ?? 0.0;
     _controller = widget.controller ?? SingleDayScreenController();
-    _controller._transStates.add(this);
+    _controller?._transStates.add(this);
   }
 
   @override
   void dispose() {
-    _controller._transStates.remove(this);
+    _controller?._transStates.remove(this);
     super.dispose();
   }
 
@@ -682,9 +684,9 @@ class _TranslateContainerState extends State<_TranslateContainer> {
 }
 
 class SingleDayScreenController {
-  _ListBodyState _listState;
-  _ButtonAndLoadingIconState _loadingState;
-  List<_TranslateContainerState> _transStates = List();
+  _ListBodyState? _listState;
+  _ButtonAndLoadingIconState? _loadingState;
+  List<_TranslateContainerState> _transStates = [];
 
   double _transitionFactor = 0.0;
   double _transitionExt = 0.0;

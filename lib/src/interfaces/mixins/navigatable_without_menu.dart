@@ -61,18 +61,17 @@ mixin NavigatableWithOutMenu on Widget implements Navigatable {
 
 class _WithOutMenuDragBuilder extends StatefulWidget {
   final SlidePageBuilder builder;
-  final FutureOr<void> Function(double value) onDragPrevious;
-  final FutureOr<void> Function(double value) onDragNext;
+  final FutureOr<void> Function(double value)? onDragPrevious;
+  final FutureOr<void> Function(double value)? onDragNext;
 
   final hasNext;
 
   const _WithOutMenuDragBuilder(
-      {Key key,
-      @required this.builder,
+      {super.key,
+      required this.builder,
       this.onDragPrevious,
       this.onDragNext,
-      this.hasNext})
-      : super(key: key);
+      this.hasNext});
 
   @override
   _WithOutMenuDragBuilderState createState() => _WithOutMenuDragBuilderState();
@@ -112,14 +111,14 @@ class _WithOutMenuDragBuilderState extends State<_WithOutMenuDragBuilder> {
         if (_isPoping) return;
         _isPoping = true;
         if (widget.onDragPrevious != null) {
-          await widget.onDragPrevious(f);
+          await widget.onDragPrevious!(f);
         }
       },
       onRightMoveHalf: (f) async {
         if (_isPoping) return;
         _isPoping = true;
         if (widget.onDragPrevious != null) {
-          await widget.onDragPrevious(f);
+          await widget.onDragPrevious!(f);
         }
       },
       onLeftOutBoundUpdate: (frac) {
@@ -133,7 +132,7 @@ class _WithOutMenuDragBuilderState extends State<_WithOutMenuDragBuilder> {
         if (_isPushing) return;
         _isPushing = true;
         if (widget.onDragNext != null) {
-          await widget.onDragNext(frac);
+          await widget.onDragNext!(frac);
         }
         _dragController.moveLeftOutbound();
       },
@@ -141,7 +140,7 @@ class _WithOutMenuDragBuilderState extends State<_WithOutMenuDragBuilder> {
         if (_isPushing) return;
         _isPushing = true;
         if (widget.onDragNext != null) {
-          await widget.onDragNext(frac);
+          await widget.onDragNext!(frac);
         }
         _dragController.moveLeftOutbound();
       },

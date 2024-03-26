@@ -3,11 +3,10 @@ import 'package:flutter/cupertino.dart';
 class DetailDateTimePanel extends StatelessWidget {
   static const panelName = 'detail_datetime';
 
-  final DateTime selectedDate;
-  final ValueChanged<DateTime> onChange;
+  final DateTime? selectedDate;
+  final ValueChanged<DateTime>? onChange;
 
-  DetailDateTimePanel({Key key, this.selectedDate, this.onChange})
-      : super(key: key);
+  DetailDateTimePanel({super.key, this.selectedDate, this.onChange});
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +26,7 @@ class DetailDateTimePanel extends StatelessWidget {
           mode: CupertinoDatePickerMode.date,
           onDateTimeChanged: (date) {
             if (onChange != null) {
-              onChange(date);
+              onChange!(date);
             }
           },
         ),

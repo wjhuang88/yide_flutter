@@ -5,25 +5,24 @@ import 'package:yide/src/tools/sqlite_manager.dart';
 import 'package:yide/src/models/task_data.dart';
 
 class DetailTagPanel extends StatefulWidget {
-  const DetailTagPanel({Key key, this.selectedTag, this.onChange})
-      : super(key: key);
+  const DetailTagPanel({super.key, this.selectedTag, this.onChange});
 
   static const panelName = 'detail_tag';
 
-  final TaskTag selectedTag;
-  final ValueChanged<TaskTag> onChange;
+  final TaskTag? selectedTag;
+  final ValueChanged<TaskTag>? onChange;
 
   @override
   _DetailTagPanelState createState() => _DetailTagPanelState();
 }
 
 class _DetailTagPanelState extends State<DetailTagPanel> {
-  int _selectedIndex;
+  late int _selectedIndex;
 
-  Future<List<TaskTag>> _tagListFuture = TaskDBAction.getAllTaskTag();
-  static List<TaskTag> _initList = [const TaskTag.defaultNull()];
+  Future<List<TaskTag>?> _tagListFuture = TaskDBAction.getAllTaskTag();
+  static List<TaskTag>? _initList = [const TaskTag.defaultNull()];
 
-  FixedExtentScrollController _wheelController;
+  late FixedExtentScrollController _wheelController;
 
   @override
   void initState() {
@@ -38,16 +37,17 @@ class _DetailTagPanelState extends State<DetailTagPanel> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<TaskTag>>(
+    return FutureBuilder<List<TaskTag>?>(
       future: _tagListFuture,
       initialData: _initList,
       builder: (context, snap) {
         final _tagList = _initList = snap.data;
         if (widget.selectedTag != null) {
-          final selectedId = widget.selectedTag.id;
-          final foundTag = _tagList.firstWhere((item) => item.id == selectedId,
+          final selectedId = widget.selectedTag?.id;
+          final foundTag = _tagList?.firstWhere((item) => item.id == selectedId,
               orElse: () => _tagList.first);
-          _selectedIndex = _tagList.indexOf(foundTag);
+          _selectedIndex =
+              _tagList?.indexOf(foundTag ?? TaskTag.defaultNull()) ?? 0;
         } else {
           _selectedIndex = 0;
         }
@@ -69,18 +69,18 @@ class _DetailTagPanelState extends State<DetailTagPanel> {
               magnification: 1.2,
               scrollController: _wheelController,
               itemBuilder: (context, index) => _WheelRow(
-                label: _tagList[index].name,
-                color: _tagList[index].iconColor,
+                label: _tagList?[index].name ?? '',
+                color: _tagList?[index].iconColor ?? const Color(0xFFF),
                 selected: _selectedIndex == index,
               ),
-              childCount: _tagList.length,
+              childCount: _tagList?.length ?? 0,
               onSelectedItemChanged: (index) {
                 if (_selectedIndex == index) {
                   return;
                 }
                 final callback = widget.onChange;
                 if (callback != null) {
-                  callback(_tagList[index]);
+                  callback(_tagList?[index] ?? TaskTag.defaultNull());
                 }
                 setState(() {
                   _selectedIndex = index;
@@ -96,11 +96,11 @@ class _DetailTagPanelState extends State<DetailTagPanel> {
 
 class _WheelRow extends StatelessWidget {
   const _WheelRow({
-    Key key,
-    @required this.label,
-    @required this.color,
+    super.key,
+    required this.label,
+    required this.color,
     this.selected = false,
-  }) : super(key: key);
+  });
 
   final String label;
   final Color color;

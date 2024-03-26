@@ -13,9 +13,7 @@ class FeedbackScreen extends StatelessWidget with NavigatableMenuSide {
       backgroundColor: Colors.transparent,
       resizeToAvoidBottomInset: false,
       child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: backgroundGradient
-        ),
+        decoration: BoxDecoration(gradient: backgroundGradient),
         child: Column(
           children: <Widget>[
             HeaderBar(
@@ -24,7 +22,8 @@ class FeedbackScreen extends StatelessWidget with NavigatableMenuSide {
                 color: Color(0xFFD7CAFF),
                 size: 30.0,
               ),
-              onLeadingAction: () => PopRouteNotification(isSide: true).dispatch(context),
+              onLeadingAction: () =>
+                  PopRouteNotification(isSide: true).dispatch(context),
               actionIcon: const Text(
                 '提交',
                 style: const TextStyle(
@@ -55,7 +54,7 @@ class FeedbackScreen extends StatelessWidget with NavigatableMenuSide {
                         SizedBox(
                           width: 14.5,
                         ),
-                        FlatButton.icon(
+                        TextButton.icon(
                           icon: const Icon(
                             CupertinoIcons.add,
                             size: 20.0,
@@ -65,15 +64,17 @@ class FeedbackScreen extends StatelessWidget with NavigatableMenuSide {
                             '问题',
                             style: TextStyle(fontSize: 12.0),
                           ),
-                          textColor: const Color(0xFFD7C7F3),
-                          shape: const StadiumBorder(
-                              side: BorderSide(color: Color(0xFFD7C7F3))),
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFFD7C7F3),
+                            shape: const StadiumBorder(
+                                side: BorderSide(color: Color(0xFFD7C7F3))),
+                          ),
                           onPressed: () {},
                         ),
                         SizedBox(
                           width: 14.5,
                         ),
-                        FlatButton.icon(
+                        TextButton.icon(
                           icon: Icon(
                             CupertinoIcons.add,
                             size: 20.0,
@@ -83,9 +84,11 @@ class FeedbackScreen extends StatelessWidget with NavigatableMenuSide {
                             '建议',
                             style: TextStyle(fontSize: 12.0),
                           ),
-                          textColor: const Color(0xFFD7C7F3),
-                          shape: const StadiumBorder(
-                              side: BorderSide(color: Color(0xFFD7C7F3))),
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFFD7C7F3),
+                            shape: const StadiumBorder(
+                                side: BorderSide(color: Color(0xFFD7C7F3))),
+                          ),
                           onPressed: () {},
                         ),
                       ],

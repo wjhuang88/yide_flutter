@@ -28,11 +28,11 @@ class TaskTag {
         iconColor = Colors.white,
         name = '载入中';
 
-  final int id;
-  final Color backgroundColor;
-  final IconData icon;
-  final Color iconColor;
-  final String name;
+  final int? id;
+  final Color? backgroundColor;
+  final IconData? icon;
+  final Color? iconColor;
+  final String? name;
 }
 
 class TaskData {
@@ -75,17 +75,17 @@ class TaskData {
         timeTypeCode = 1,
         alarmTime = null;
 
-  int id;
-  DateTime createTime;
-  DateTime taskTime;
-  int tagId;
-  bool isFinished;
-  String content;
-  String remark;
-  int timeTypeCode;
-  String catalog;
-  DateTime alarmTime;
-  DateTime finishTime;
+  int? id;
+  DateTime? createTime;
+  DateTime? taskTime;
+  int? tagId;
+  bool? isFinished;
+  String? content;
+  String? remark;
+  int? timeTypeCode;
+  String? catalog;
+  DateTime? alarmTime;
+  DateTime? finishTime;
 
   DateTimeType get timeType {
     switch (timeTypeCode) {
@@ -118,10 +118,10 @@ class TaskData {
 }
 
 class TaskDetail {
-  int id;
-  final ReminderBitMap reminderBitMap;
-  final RepeatBitMap repeatBitMap;
-  AroundData address;
+  int? id;
+  final ReminderBitMap? reminderBitMap;
+  final RepeatBitMap? repeatBitMap;
+  AroundData? address;
 
   TaskDetail({this.id, this.reminderBitMap, this.repeatBitMap, this.address});
 
@@ -137,15 +137,15 @@ class TaskDetail {
 enum RepeatMode { daily, weekly, monthly, annual, none }
 
 class TaskRecurring {
-  final int id;
-  int taskId;
-  int repeatModeCode;
-  int repeatMaxNum;
-  int daysOfWeekCode;
-  int daysOfMonthCode;
-  int monthsOfYearCode;
-  DateTime taskTime;
-  DateTime nextTime;
+  final int? id;
+  int? taskId;
+  int? repeatModeCode;
+  int? repeatMaxNum;
+  int? daysOfWeekCode;
+  int? daysOfMonthCode;
+  int? monthsOfYearCode;
+  DateTime? taskTime;
+  DateTime? nextTime;
 
   TaskRecurring({
     this.id,
@@ -159,20 +159,25 @@ class TaskRecurring {
     this.nextTime,
   });
 
-  TaskRecurring.fromBitMap(RepeatBitMap bitMap)
+  TaskRecurring.fromBitMap(RepeatBitMap? bitMap)
       : id = null,
-        repeatModeCode = bitMap.isDailySelected
+        repeatModeCode = bitMap?.isDailySelected ?? false
             ? 0
-            : bitMap.isWeekSelected
+            : bitMap?.isWeekSelected ?? false
                 ? 1
-                : bitMap.isMonthSelected ? 2 : bitMap.isYearSelected ? 3 : null,
-        daysOfWeekCode = bitMap.isWeekSelected ? bitMap.getDaysOfWeek() : null,
-        repeatMaxNum = bitMap.isCountEnd ? bitMap.repeatCount : null;
+                : bitMap?.isMonthSelected ?? false
+                    ? 2
+                    : bitMap?.isYearSelected ?? false
+                        ? 3
+                        : null,
+        daysOfWeekCode =
+            bitMap?.isWeekSelected ?? false ? bitMap?.getDaysOfWeek() : null,
+        repeatMaxNum = bitMap?.isCountEnd ?? false ? bitMap?.repeatCount : null;
 
   List<int> get daysOfWeek {
-    final result = List<int>();
+    List<int> result = [];
     for (var i = 0; i < 7; i++) {
-      if (daysOfWeekCode & (1 << i) != 0) {
+      if (daysOfWeekCode! & (1 << i) != 0) {
         result.add(i + 1);
       }
     }
@@ -216,10 +221,10 @@ class TaskRecurring {
 }
 
 class TaskPack {
-  final TaskData data;
-  final TaskTag tag;
+  final TaskData? data;
+  final TaskTag? tag;
   bool isRecurring;
-  DateTime nextTime;
+  DateTime? nextTime;
 
   TaskPack(
     this.data,

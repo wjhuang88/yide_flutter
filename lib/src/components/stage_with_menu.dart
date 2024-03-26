@@ -12,35 +12,35 @@ class StageWithMenu extends StatefulWidget {
   final StageWithMenuController controller;
 
   const StageWithMenu({
-    Key key,
-    @required this.menu,
-    this.onSideTap,
-    @required this.child,
-    this.controller,
+    required Key key,
+    required this.menu,
+    required this.onSideTap,
+    required this.child,
+    required this.controller,
   }) : super(key: key);
   @override
   _StageWithMenuState createState() => _StageWithMenuState();
 }
 
 class StageWithMenuController {
-  _StageWithMenuState _state;
+  late _StageWithMenuState _state;
 
-  void setAnimationValue(double value) => _state?._animValue = value;
+  void setAnimationValue(double value) => _state._animValue = value;
 
-  bool get isMenuOpen => _state?._animValue != 0.0;
+  bool get isMenuOpen => _state._animValue != 0.0;
 }
 
 class _StageWithMenuState extends State<StageWithMenu> {
-  double _animValueStorage;
+  late double _animValueStorage;
   double get _animValue => _animValueStorage;
   set _animValue(double value) => setState(() => _animValueStorage = value);
 
-  StageWithMenuController controller;
+  late StageWithMenuController controller;
 
   @override
   void initState() {
-    _animValueStorage = menuAnimationOffset ?? 0.0;
-    controller = widget.controller ?? StageWithMenuController();
+    _animValueStorage = menuAnimationOffset;
+    controller = widget.controller;
     controller._state = this;
     super.initState();
   }

@@ -7,21 +7,20 @@ import 'package:yide/src/interfaces/navigatable.dart';
 import 'notification.dart';
 
 class MainMenu extends StatefulWidget {
-  final List<List<Map<String, Object>>> menuConfig;
-  final VoidCallback closeAction;
+  final List<List<Map<String, Object?>>> menuConfig;
+  final VoidCallback? closeAction;
 
   static const contentPadding =
       EdgeInsets.symmetric(horizontal: 25.0, vertical: 14.0);
 
-  const MainMenu({Key key, @required this.menuConfig, this.closeAction})
-      : super(key: key);
+  const MainMenu({super.key, required this.menuConfig, this.closeAction});
 
   @override
   _MainMenuState createState() => _MainMenuState();
 }
 
 class _MainMenuState extends State<MainMenu> {
-  List<List<Map<String, Object>>> menuConfig;
+  late List<List<Map<String, Object?>>> menuConfig;
 
   @override
   void initState() {
@@ -85,7 +84,7 @@ class _MainMenuState extends State<MainMenu> {
   }
 
   List<Widget> _buildMenuItems(BuildContext context) {
-    final result = List<Widget>();
+    final result = <Widget>[];
     for (var group in menuConfig) {
       result.add(
         const Divider(
@@ -105,7 +104,7 @@ class _MainMenuState extends State<MainMenu> {
                 SizedBox(
                   width: 40.0 * (item['level'] as int),
                 ),
-                item['icon'],
+                item['icon'] as Widget? ?? SizedBox(),
                 const SizedBox(
                   width: 20.0,
                 ),
@@ -122,16 +121,16 @@ class _MainMenuState extends State<MainMenu> {
             ),
           ),
           onTap: () async {
-            final route = item['route'] as Function;
-            final isSide = item['side'] as bool;
+            final route = item['route'] as Function?;
+            final isSide = item['side'] as bool? ?? false;
             if (!isSide && widget.closeAction != null) {
-              widget.closeAction();
+              widget.closeAction!();
             }
             if (route != null) {
               final page = route();
               if (page is Navigatable) {
                 if (!isSide && widget.closeAction != null) {
-                  widget.closeAction();
+                  widget.closeAction!();
                 }
                 PushRouteNotification(page, isSide: isSide).dispatch(context);
               }

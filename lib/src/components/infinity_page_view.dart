@@ -8,10 +8,7 @@ class InfinityPageController implements Listenable {
     int initialPage = 0,
     bool keepPage = true,
     double viewportFraction = 1.0,
-  })  : assert(initialPage != null),
-        assert(keepPage != null),
-        assert(viewportFraction != null),
-        assert(viewportFraction > 0.0),
+  })  : assert(viewportFraction > 0.0),
         _pageController = PageController(
             initialPage: initialPage + _hugePageOffset,
             keepPage: keepPage,
@@ -23,9 +20,10 @@ class InfinityPageController implements Listenable {
 
   int get initialPage => _pageController.initialPage - _hugePageOffset;
 
-  double get page => _pageController.page - _hugePageOffset;
+  double get page => _pageController.page! - _hugePageOffset;
 
-  Future<void> animateToPage(int page, {Duration duration, Curve curve}) {
+  Future<void> animateToPage(int page,
+      {required Duration duration, required Curve curve}) {
     return _pageController.animateToPage(page + _hugePageOffset,
         duration: duration, curve: curve);
   }
@@ -56,25 +54,25 @@ class InfinityPageView extends StatefulWidget {
   final Axis scrollDirection;
   final bool reverse;
   final InfinityPageController controller;
-  final ScrollPhysics physics;
+  final ScrollPhysics? physics;
   final bool pageSnapping;
   final ValueChanged<int> onPageChanged;
   final IndexedWidgetBuilder itemBuilder;
-  final int itemCount;
+  final int? itemCount;
   final DragStartBehavior dragStartBehavior;
 
   const InfinityPageView({
-    Key key,
+    super.key,
     this.scrollDirection = Axis.horizontal,
     this.reverse = false,
-    this.controller,
+    required this.controller,
     this.physics,
     this.pageSnapping = true,
-    this.onPageChanged,
-    @required this.itemBuilder,
+    required this.onPageChanged,
+    required this.itemBuilder,
     this.itemCount,
     this.dragStartBehavior = DragStartBehavior.start,
-  }) : super(key: key);
+  });
 
   @override
   _InfinityPageViewState createState() => _InfinityPageViewState(controller);
@@ -88,12 +86,11 @@ class _InfinityPageViewState extends State<InfinityPageView> {
   @override
   void initState() {
     super.initState();
-    _controller ??= InfinityPageController();
   }
 
   @override
   void dispose() {
-    _controller?.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
@@ -106,9 +103,7 @@ class _InfinityPageViewState extends State<InfinityPageView> {
       physics: widget.physics,
       pageSnapping: widget.pageSnapping,
       onPageChanged: (_innerPage) {
-        if (widget.onPageChanged != null) {
-          widget.onPageChanged(_innerPage - _hugePageOffset);
-        }
+        widget.onPageChanged(_innerPage - _hugePageOffset);
       },
       itemBuilder: (context, _innerPage) =>
           widget.itemBuilder(context, _innerPage - _hugePageOffset),

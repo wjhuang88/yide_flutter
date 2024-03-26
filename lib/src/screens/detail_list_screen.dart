@@ -24,9 +24,9 @@ import 'detail_screens/detail_reminder_screen.dart';
 import 'detail_screens/detail_repeat_screen.dart';
 
 class DetailListScreen extends StatefulWidget implements Navigatable {
-  final TaskPack taskPack;
+  final TaskPack? taskPack;
 
-  const DetailListScreen({Key key, @required this.taskPack}) : super(key: key);
+  const DetailListScreen({super.key, this.taskPack});
 
   @override
   _DetailListScreenState createState() => _DetailListScreenState();
@@ -75,12 +75,12 @@ class AnimationPageFade extends CompoundAnimation<double> {
 
 class _DetailListScreenState extends State<DetailListScreen>
     with SingleTickerProviderStateMixin {
-  TaskData _data;
-  TaskTag _tag;
+  TaskData? _data;
+  TaskTag? _tag;
 
-  TaskDetail _savedDetail;
+  TaskDetail? _savedDetail;
 
-  int _repeatCodeBeforeSave;
+  int? _repeatCodeBeforeSave;
 
   bool _isLoadingValue = true;
   bool get _isLoading => _isLoadingValue;
@@ -90,19 +90,19 @@ class _DetailListScreenState extends State<DetailListScreen>
     });
   }
 
-  ScrollController _scrollController;
+  ScrollController? _scrollController;
   bool _backProcessing = false;
 
   @override
   void initState() {
     super.initState();
-    _data = widget.taskPack.data;
-    _tag = widget.taskPack.tag;
+    _data = widget.taskPack?.data;
+    _tag = widget.taskPack?.tag;
 
     _scrollController = ScrollController();
-    _scrollController.addListener(() {
-      if (_scrollController.offset <
-          _scrollController.position.minScrollExtent - 100) {
+    _scrollController?.addListener(() {
+      if (_scrollController!.offset <
+          _scrollController!.position.minScrollExtent - 100) {
         if (_backProcessing) {
           return;
         }
@@ -118,34 +118,34 @@ class _DetailListScreenState extends State<DetailListScreen>
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _scrollController?.dispose();
     super.dispose();
   }
 
   Future<void> _updateDetailData() async {
     _isLoading = true;
-    final detail = await TaskDBAction.getTaskDetailById(_data.id);
+    final detail = await TaskDBAction.getTaskDetailById(_data?.id);
     setState(() {
       _savedDetail = detail ?? _savedDetail;
     });
     _isLoading = false;
   }
 
-  Future<int> _saveTask() async {
+  Future<int?> _saveTask() async {
     _isLoading = true;
     final r = await TaskDBAction.saveTask(_data);
     _isLoading = false;
     return r;
   }
 
-  Future<int> _saveDetail() async {
+  Future<int?> _saveDetail() async {
     _isLoading = true;
-    _savedDetail.id = _data.id;
+    _savedDetail?.id = _data?.id;
     final r = await TaskDBAction.saveTaskDetail(_savedDetail);
-    if (_savedDetail.repeatBitMap.bitMap != _repeatCodeBeforeSave) {
-      final recurring = TaskRecurring.fromBitMap(_savedDetail.repeatBitMap);
-      recurring.taskId = _data.id;
-      recurring.taskTime = _data.taskTime;
+    if (_savedDetail?.repeatBitMap?.bitMap != _repeatCodeBeforeSave) {
+      final recurring = TaskRecurring.fromBitMap(_savedDetail?.repeatBitMap);
+      recurring.taskId = _data?.id;
+      recurring.taskTime = _data?.taskTime;
       await TaskDBAction.updateRecurring(recurring);
     }
     _isLoading = false;
@@ -230,11 +230,11 @@ class _DetailListScreenState extends State<DetailListScreen>
               padding: EdgeInsets.zero,
               children: <Widget>[
                 _HeaderPanel(
-                  content: _data.content,
-                  dateTime: _data.taskTime,
-                  timeType: _data.timeType,
-                  tagName: _tag.name,
-                  tagColor: _tag.iconColor,
+                  content: _data?.content,
+                  dateTime: _data?.taskTime ?? DateTime.now(),
+                  timeType: _data?.timeType ?? DateTimeType.datetime,
+                  tagName: _tag?.name,
+                  tagColor: _tag?.iconColor,
                   onTap: () async {
                     final packAsync = Completer<TaskPack>();
                     PushRouteNotification(
@@ -242,14 +242,12 @@ class _DetailListScreenState extends State<DetailListScreen>
                       callback: (ret) => packAsync.complete(ret as TaskPack),
                     ).dispatch(context);
                     final pack = await packAsync.future;
-                    if (pack != null) {
-                      setState(() {
-                        _data = pack.data;
-                        _tag = pack.tag;
-                        _data.tagId = _tag.id;
-                      });
-                      _saveTask();
-                    }
+                    setState(() {
+                      _data = pack.data;
+                      _tag = pack.tag;
+                      _data?.tagId = _tag?.id;
+                    });
+                    _saveTask();
                   },
                 ),
                 const SizedBox(
@@ -257,10 +255,10 @@ class _DetailListScreenState extends State<DetailListScreen>
                 ),
                 _ListItem(
                   icon: SvgIcon.reminder,
-                  child: _savedDetail.reminderBitMap != null &&
-                          _savedDetail.reminderBitMap.bitMap != 0
+                  child: _savedDetail?.reminderBitMap != null &&
+                          _savedDetail?.reminderBitMap?.bitMap != 0
                       ? Text(
-                          _savedDetail.reminderBitMap.makeLabel(),
+                          _savedDetail?.reminderBitMap?.makeLabel() ?? '',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: contentStyle,
@@ -276,7 +274,7 @@ class _DetailListScreenState extends State<DetailListScreen>
                       onEdit: _reminderForward,
                       onClear: () {
                         setState(() {
-                          _savedDetail.reminderBitMap.bitMap = 0;
+                          _savedDetail?.reminderBitMap?.bitMap = 0;
                         });
                         _saveDetail();
                       },
@@ -288,12 +286,15 @@ class _DetailListScreenState extends State<DetailListScreen>
                 ),
                 _ListItem(
                   icon: SvgIcon.recurring,
-                  child: _savedDetail.repeatBitMap != null &&
-                          !(_savedDetail.repeatBitMap.isNoneRepeat)
+                  child: _savedDetail?.repeatBitMap != null &&
+                          !(_savedDetail?.repeatBitMap?.isNoneRepeat ?? false)
                       ? Text(
-                          _savedDetail.repeatBitMap.makeRepeatTimeLabel() +
+                          (_savedDetail?.repeatBitMap?.makeRepeatTimeLabel() ??
+                                  '') +
                               ' / ' +
-                              _savedDetail.repeatBitMap.makeRepeatModeLabel(),
+                              (_savedDetail?.repeatBitMap
+                                      ?.makeRepeatModeLabel() ??
+                                  ''),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: contentStyle,
@@ -309,7 +310,7 @@ class _DetailListScreenState extends State<DetailListScreen>
                       onEdit: _repeatForward,
                       onClear: () {
                         setState(() {
-                          _savedDetail.repeatBitMap.bitMap =
+                          _savedDetail?.repeatBitMap?.bitMap =
                               RepeatBitMap.noneBitmap;
                         });
                         _saveDetail();
@@ -322,10 +323,10 @@ class _DetailListScreenState extends State<DetailListScreen>
                 ),
                 _ListItem(
                   icon: SvgIcon.address,
-                  child: _savedDetail.address != null &&
-                          _savedDetail.address.name?.isNotEmpty == true
+                  child: _savedDetail?.address != null &&
+                          _savedDetail?.address?.name?.isNotEmpty == true
                       ? Text(
-                          _savedDetail.address.name,
+                          _savedDetail?.address?.name ?? '',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: contentStyle,
@@ -341,7 +342,7 @@ class _DetailListScreenState extends State<DetailListScreen>
                       onEdit: _addressForward,
                       onClear: () {
                         setState(() {
-                          _savedDetail.address = null;
+                          _savedDetail?.address = null;
                         });
                         _saveDetail();
                       },
@@ -353,9 +354,10 @@ class _DetailListScreenState extends State<DetailListScreen>
                 ),
                 _ListItem(
                   icon: SvgIcon.project,
-                  child: _data.catalog != null && _data.catalog.isNotEmpty
+                  child: _data?.catalog != null &&
+                          (_data?.catalog?.isNotEmpty ?? false)
                       ? Text(
-                          _data.catalog,
+                          _data?.catalog ?? '',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: contentStyle,
@@ -371,9 +373,10 @@ class _DetailListScreenState extends State<DetailListScreen>
                 ),
                 _ListItem(
                   icon: SvgIcon.remark,
-                  child: _data.remark != null && _data.remark.isNotEmpty
+                  child: _data?.remark != null &&
+                          (_data?.remark?.isNotEmpty ?? false)
                       ? Text(
-                          _data.remark,
+                          _data?.remark ?? '',
                           // maxLines: 1,
                           // overflow: TextOverflow.ellipsis,
                           style: contentStyle,
@@ -386,7 +389,7 @@ class _DetailListScreenState extends State<DetailListScreen>
                       onEdit: _remarkForward,
                       onClear: () {
                         setState(() {
-                          _data.remark = null;
+                          _data?.remark = null;
                         });
                         _saveTask();
                       },
@@ -404,82 +407,75 @@ class _DetailListScreenState extends State<DetailListScreen>
   Future<void> _reminderForward() async {
     final codeAsync = Completer<int>();
     PushRouteNotification(
-      DetailReminderScreen(stateCode: _savedDetail.reminderBitMap.bitMap ?? 0),
+      DetailReminderScreen(
+          stateCode: _savedDetail?.reminderBitMap?.bitMap ?? 0),
       callback: (ret) => codeAsync.complete(ret as int),
     ).dispatch(context);
     final code = await codeAsync.future;
-    if (code != null) {
-      setState(() {
-        _savedDetail.reminderBitMap.bitMap = code;
-      });
-      _saveDetail();
-    }
+    setState(() {
+      _savedDetail?.reminderBitMap?.bitMap = code;
+    });
+    _saveDetail();
   }
 
   Future<void> _repeatForward() async {
     final codeAsync = Completer<int>();
-    _repeatCodeBeforeSave = _savedDetail.repeatBitMap.bitMap;
+    _repeatCodeBeforeSave = _savedDetail?.repeatBitMap?.bitMap;
     PushRouteNotification(
       DetailRepeatScreen(stateCode: _repeatCodeBeforeSave ?? 0),
       callback: (ret) => codeAsync.complete(ret as int),
     ).dispatch(context);
     final code = await codeAsync.future;
-    if (code != null) {
-      setState(() {
-        _savedDetail.repeatBitMap.bitMap = code;
-      });
-      _saveDetail();
-    }
+    setState(() {
+      _savedDetail?.repeatBitMap?.bitMap = code;
+    });
+    _saveDetail();
   }
 
   Future<void> _addressForward() async {
     final addressAsync = Completer<AroundData>();
     PushRouteNotification(
-      DetailMapScreen(address: _savedDetail.address),
+      DetailMapScreen(address: _savedDetail?.address),
       callback: (ret) => addressAsync.complete(ret as AroundData),
     ).dispatch(context);
     final address = await addressAsync.future;
-    if (address != null) {
-      setState(() {
-        _savedDetail.address = address;
-      });
-      _saveDetail();
-    }
+    setState(() {
+      _savedDetail?.address = address;
+    });
+    _saveDetail();
   }
 
   Future<void> _remarkForward() async {
     final valueAsync = Completer<String>();
     PushRouteNotification(
-      DetailCommentsScreen(value: _data.remark),
+      DetailCommentsScreen(value: _data?.remark),
       callback: (ret) => valueAsync.complete(ret as String),
     ).dispatch(context);
     final value = await valueAsync.future;
-    if (value != null) {
-      setState(() {
-        _data.remark = value;
-      });
-      _saveTask();
-    }
+    setState(() {
+      _data?.remark = value;
+    });
+    _saveTask();
   }
 }
 
 class _HeaderPanel extends StatelessWidget {
   const _HeaderPanel({
-    Key key,
-    @required this.onTap,
-    @required this.content,
-    @required this.dateTime,
-    @required this.timeType,
-    @required this.tagName,
-    @required this.tagColor,
-  }) : super(key: key);
+    super.key,
+    required this.onTap,
+    required this.content,
+    required this.dateTime,
+    required this.timeType,
+    required this.tagName,
+    required this.tagColor,
+  });
 
-  final VoidCallback onTap;
-  final String content;
+  final VoidCallback? onTap;
+  final String? content;
   final DateTime dateTime;
   final DateTimeType timeType;
-  final String tagName;
-  final Color tagColor;
+  final String? tagName;
+  final Color? tagColor;
 
   @override
   Widget build(BuildContext context) {
@@ -545,7 +541,7 @@ class _HeaderPanel extends StatelessWidget {
                 height: 20.0,
               ),
               Text(
-                content,
+                content ?? '',
                 textAlign: TextAlign.start,
                 style:
                     const TextStyle(fontSize: 20.0, color: Color(0xFFEDE7FF)),
@@ -560,16 +556,16 @@ class _HeaderPanel extends StatelessWidget {
 
 class _ListItem extends StatelessWidget {
   _ListItem({
-    @required this.icon,
-    @required this.child,
-    @required this.onTap,
+    required this.icon,
+    required this.child,
+    required this.onTap,
     this.onLongPress,
   });
 
   final Widget icon;
   final Widget child;
-  final VoidCallback onTap;
-  final VoidCallback onLongPress;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {

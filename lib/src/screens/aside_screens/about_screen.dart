@@ -148,7 +148,8 @@ class AboutScreen extends StatelessWidget with NavigatableMenuSide {
     );
   }
 
-  Future _showWeb(BuildContext context, String url, {String title, Color headerColor}) {
+  Future _showWeb(BuildContext context, String url,
+      {String? title, Color? headerColor}) {
     return showCupertinoModalPopup(
       useRootNavigator: false,
       context: context,
@@ -158,7 +159,7 @@ class AboutScreen extends StatelessWidget with NavigatableMenuSide {
           child: Column(
             children: <Widget>[
               HeaderBar(
-                title: title,
+                title: title ?? '',
                 leadingIcon: const Icon(
                   CupertinoIcons.clear,
                   color: Color(0xFFF5F5F7),
@@ -167,9 +168,7 @@ class AboutScreen extends StatelessWidget with NavigatableMenuSide {
                 onLeadingAction: Navigator.of(context).maybePop,
               ),
               Expanded(
-                child: WebView(
-                  initialUrl: url,
-                ),
+                child: Text("No content"),
               ),
             ],
           ),

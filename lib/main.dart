@@ -24,13 +24,13 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  Timer _updateTimer;
-  DateTime _lastUpdateTime;
+  late Timer _updateTimer;
+  DateTime? _lastUpdateTime;
 
   void _updateOnDateChange() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    if (_lastUpdateTime == null || !today.isAtSameMomentAs(_lastUpdateTime)) {
+    if (_lastUpdateTime == null || !today.isAtSameMomentAs(_lastUpdateTime!)) {
       print('Start to update recurring task list when app init.');
       TaskDBAction.updateRecurringNextTime().then((f) {
         print('Update recurring task list complete.');
@@ -65,7 +65,7 @@ class _MyAppState extends State<MyApp> {
         color: const Color(0xFFCD86AD),
         initialRoute: 'page',
         onGenerateRoute: (RouteSettings settings) {
-          final String name = settings.name;
+          final String? name = settings.name;
           if ('page' == name) {
             return ScreenContainer().route;
           } else {

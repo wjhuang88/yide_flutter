@@ -6,9 +6,9 @@ import 'package:yide/src/interfaces/navigatable.dart';
 import 'package:yide/src/notification.dart';
 
 class DetailCommentsScreen extends StatefulWidget implements Navigatable {
-  DetailCommentsScreen({Key key, this.value}) : super(key: key);
+  DetailCommentsScreen({super.key, this.value});
 
-  final String value;
+  final String? value;
 
   @override
   _DetailCommentsScreenState createState() => _DetailCommentsScreenState();
@@ -46,7 +46,7 @@ class DetailCommentsScreen extends StatefulWidget implements Navigatable {
 class _DetailCommentsScreenState extends State<DetailCommentsScreen> {
   NativeTextFieldController _controller = NativeTextFieldController();
 
-  String _text;
+  late String _text;
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +79,7 @@ class _DetailCommentsScreenState extends State<DetailCommentsScreen> {
             margin: const EdgeInsets.only(top: 40.0, left: 15.0, right: 15.0),
             child: NativeTextField(
               autofocus: true,
-              text: widget.value,
+              text: widget.value ?? '',
               height: 200.0,
               controller: _controller,
               onChanged: (text) => _text = text,

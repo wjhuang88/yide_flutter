@@ -2,23 +2,21 @@ import 'dart:math' as Math;
 import 'package:flutter/widgets.dart';
 
 class TapAnimator extends StatefulWidget {
-  final Widget Function(double animValue) builder;
-  final VoidCallback onTap;
-  final VoidCallback onComplete;
-  final VoidCallback onLongPress;
+  final Widget Function(double animValue)? builder;
+  final VoidCallback? onTap;
+  final VoidCallback? onComplete;
+  final VoidCallback? onLongPress;
   final HitTestBehavior behavior;
   final Duration duration;
 
   const TapAnimator(
-      {Key key,
-      @required this.builder,
+      {super.key,
+      this.builder,
       this.onTap,
       this.onComplete,
       this.onLongPress,
       this.duration = const Duration(milliseconds: 100),
-      this.behavior = HitTestBehavior.deferToChild})
-      : assert(onTap != null || onComplete != null),
-        super(key: key);
+      this.behavior = HitTestBehavior.deferToChild});
 
   @override
   _TapAnimatorState createState() => _TapAnimatorState();
@@ -26,12 +24,12 @@ class TapAnimator extends StatefulWidget {
 
 class _TapAnimatorState extends State<TapAnimator>
     with TickerProviderStateMixin {
-  AnimationController _animationController;
-  AnimationController _tapAnimationController;
-  Animation _animation;
-  Animation _tapAnimation;
+  late AnimationController _animationController;
+  late AnimationController _tapAnimationController;
+  late Animation _animation;
+  late Animation _tapAnimation;
 
-  double _factor;
+  late double _factor;
 
   @override
   void initState() {
@@ -85,17 +83,13 @@ class _TapAnimatorState extends State<TapAnimator>
         await _animationController.reverse(from: _factor);
       },
       onTap: () async {
-        if (widget.onTap != null) {
-          widget.onTap();
-        }
+        widget.onTap!();
         await _tapAnimationController.forward(from: _factor);
         await _tapAnimationController.reverse(from: _factor);
-        if (widget.onComplete != null) {
-          widget.onComplete();
-        }
+        widget.onComplete!();
       },
       onLongPress: widget.onLongPress,
-      child: widget.builder(_factor),
+      child: widget.builder!(_factor),
     );
   }
 }
